@@ -15,7 +15,7 @@ class Wall():
         if type == TYPE_EDGE:
             self.status = STATUS_PLACED
         else:
-            self.status = NOT_PLACED
+            self.status = STATUS_NOT_PLACED
         self.id = id
         
         self.position_cells = None
@@ -54,10 +54,11 @@ class Wall():
             else:
                 raise Exception("ASSERT ERROR: verbose notation wrong. Should be of the kind: 3f  or b0. Provide string was: {}".format(verbose))
             
-            ord(          
                 
             
-        except:
+        except :
+            raise
+            pass
             
         
     @property
@@ -75,7 +76,7 @@ class Wall():
             return False
 
 if __name__ == "__main__":
-    w = wall(TYPE_PLAYER, "test")
+    w = Wall(TYPE_PLAYER, "test")
     
     pass
     
