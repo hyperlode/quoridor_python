@@ -1,4 +1,4 @@
-import wall
+import player
 
 BOARD_WIDTH = 9 
 BOARD_HEIGHT = 9 
@@ -42,8 +42,10 @@ class Board():
     refer to a node with a tuple (x,y)
     '''
     
-    def __init__(self):
+    def __init__(self,players):
         nodes = [(x,y) for x in range(BOARD_WIDTH) for y in range(BOARD_HEIGHT)]
+        
+        self.players = players
         
         self.board_graph = {node:{"edges":None, "pawn":None} for node in nodes}
         # https://www.python.org/doc/essays/graphs/
@@ -53,6 +55,8 @@ class Board():
             # neighbours = [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]
             valid_neighbours = [dir(node) for dir in DIRECTIONS_ORTHO if dir(node) in nodes]    
             self.board_graph[node]["edges"] = valid_neighbours
+            
+        
         
         
     def move_pawn(self, direction, simulate = True):
@@ -86,24 +90,24 @@ class Board():
                 line.append(BOARD_CELL_EMPTY)
             board_array.append(line)
         
-        #lines
-        
-        
-        
-        # borders
+        # empty board: borders and lines
         for col in range(cells_horizontal):
             for row in range(cells_vertical):
                 if row == 0 or row == cells_vertical-1 or col == 0 or col == cells_horizontal-1:
                     board_array[row][col] = BOARD_CELL_WALL
+        
                 elif row%2 == 0 and col%2 == 0:
                     board_array[row][col] = BOARD_CELL_LINE_CROSSING
+                
                 elif row%2 == 0:
                     board_array[row][col] = BOARD_CELL_LINE_HORIZONTAL
+                
                 elif col%2 == 0:
                     board_array[row][col] = BOARD_CELL_LINE_VERTICAL
-                    
-                # board_array[cells_vertical - 1][col] = BOARD_CELL_LINE_HORIZONTAL
-            
+        #add pawns
+        
+        
+        
         return board_array
         
     def __str__(self):
@@ -127,7 +131,10 @@ class Board():
         # return output
 
 if __name__ == "__main__":
-    qboard = Board()
+    player1 = player.Player("lode")
+    player2 = player.Player("brecht")
+    players = [player1, player2]
+    qboard = Board(players)
     print(str(qboard))
     print(SOUTH((1,2)))
     print(NORTH_NORTH((1,2)))
