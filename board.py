@@ -5,8 +5,8 @@ BOARD_HEIGHT = 9
 
 #board output (ASCII) visualization
 BOARD_CELL_EMPTY = " "
-BOARD_CELL_PLAYER_1= "1"
-BOARD_CELL_PLAYER_2= "2"
+BOARD_CELL_PLAYER_TO_NORTH = "1"
+BOARD_CELL_PLAYER_TO_SOUTH = "2"
 BOARD_CELL_WALL = "O"
 BOARD_CELL_LINE_HORIZONTAL = "-"
 BOARD_CELL_LINE_VERTICAL = "|"
@@ -32,6 +32,12 @@ DIRECTIONS_ORTHO = [NORTH, EAST, SOUTH, WEST]
 DIRECTIONS_ORTHO_JUMP = [NORTH_NORTH, EAST_EAST, SOUTH_SOUTH, WEST_WEST]
 DIRECTIONS_DIAGONAL_JUMP = [NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST]
 
+PAWN_INIT_POS = [(4, 0), (4, 8)] 
+# = (PAWN_INIT_POS_X, 0), (PAWN_INIT_POS_X, BOARD_HEIGHT-1)
+
+PAWN_WINNING_POS = [(x,8) for x in range(BOARD_WIDTH)], [(x,0) for x in range(BOARD_WIDTH)]
+        
+
 class Board():
 
     #pawn cells for 
@@ -42,10 +48,11 @@ class Board():
     refer to a node with a tuple (x,y)
     '''
     
-    def __init__(self,players):
+    # def __init__(self,players):
+    def __init__(self):
         nodes = [(x,y) for x in range(BOARD_WIDTH) for y in range(BOARD_HEIGHT)]
         
-        self.players = players
+        # self.players = players
         
         self.board_graph = {node:{"edges":None, "pawn":None} for node in nodes}
         # https://www.python.org/doc/essays/graphs/
@@ -56,8 +63,11 @@ class Board():
             valid_neighbours = [dir(node) for dir in DIRECTIONS_ORTHO if dir(node) in nodes]    
             self.board_graph[node]["edges"] = valid_neighbours
             
+        self.players = []
         
-        
+    def addPlayer(self, player_instance):
+        self.players.append(player_instance)
+        self.board_graph[player_instance.pawn.position]["pawn"] = player_instance
         
     def move_pawn(self, direction, simulate = True):
         pass
@@ -105,7 +115,20 @@ class Board():
                 elif col%2 == 0:
                     board_array[row][col] = BOARD_CELL_LINE_VERTICAL
         #add pawns
-        
+        for pos in list(self.board_graph):
+            cell= self.board_graph[pos]
+            
+            # print(cell)
+            pawn = cell["pawn"]
+            
+            if pawn is not None:
+                if pawn.direction == player.PLAYER_TO_NORTH:
+                    board_array[pos[1]*2 + 1][pos[0]*2 + 1] = BOARD_CELL_PLAYER_TO_NORTH
+                elif pawn.direction == player.PLAYER_TO_SOUTH:
+                    board_array[pos[1]*2 + 1][pos[0]*2 + 1] = BOARD_CELL_PLAYER_TO_SOUTH
+                else:
+                    print("ASSERT ERROR: no correct direction indicated")
+                
         
         
         return board_array
@@ -131,10 +154,11 @@ class Board():
         # return output
 
 if __name__ == "__main__":
-    player1 = player.Player("lode")
-    player2 = player.Player("brecht")
-    players = [player1, player2]
-    qboard = Board(players)
+    # player1 = player.Player("lode")
+    # player2 = player.Player("brecht")
+    # players = [player1, player2]
+    # qboard = Board(players)
+    qboard = Board()
     print(str(qboard))
     print(SOUTH((1,2)))
     print(NORTH_NORTH((1,2)))
