@@ -114,22 +114,31 @@ class Board():
                 
                 elif col%2 == 0:
                     board_array[row][col] = BOARD_CELL_LINE_VERTICAL
+                    
         #add pawns
-        for pos in list(self.board_graph):
-            cell= self.board_graph[pos]
-            
-            # print(cell)
-            pawn = cell["pawn"]
-            
-            if pawn is not None:
-                if pawn.direction == player.PLAYER_TO_NORTH:
-                    board_array[pos[1]*2 + 1][pos[0]*2 + 1] = BOARD_CELL_PLAYER_TO_NORTH
-                elif pawn.direction == player.PLAYER_TO_SOUTH:
-                    board_array[pos[1]*2 + 1][pos[0]*2 + 1] = BOARD_CELL_PLAYER_TO_SOUTH
-                else:
-                    print("ASSERT ERROR: no correct direction indicated")
-                
+        for p in self.players:
+            x,y = p.pawn.position
+            col, row = x, y
+            if p.direction == player.PLAYER_TO_NORTH:
+                board_array[row*2 + 1][col*2 + 1] = BOARD_CELL_PLAYER_TO_NORTH
+            elif p.direction == player.PLAYER_TO_SOUTH:
+                board_array[row*2 + 1][col*2 + 1] = BOARD_CELL_PLAYER_TO_SOUTH
+            else:
+                print("ASSERT ERROR: no correct direction indicated")
+              
         
+        # for pos in list(self.board_graph):
+            # cell= self.board_graph[pos]
+            # pawn = cell["pawn"]
+            # if pawn is not None:
+                # if pawn.direction == player.PLAYER_TO_NORTH:
+                    # board_array[pos[1]*2 + 1][pos[0]*2 + 1] = BOARD_CELL_PLAYER_TO_NORTH
+                # elif pawn.direction == player.PLAYER_TO_SOUTH:
+                    # board_array[pos[1]*2 + 1][pos[0]*2 + 1] = BOARD_CELL_PLAYER_TO_SOUTH
+                # else:
+                    # print("ASSERT ERROR: no correct direction indicated")
+                    
+        #add walls
         
         return board_array
         
@@ -137,7 +146,7 @@ class Board():
         output = ""
         board = self.board_array()
         # print(board)
-        return "\n".join(["".join(row) for row in board])
+        return "\n".join(["".join(row) for row in board[::-1]])
         
         # # return str(self.board_graph)
         # for y in range(BOARD_HEIGHT):
