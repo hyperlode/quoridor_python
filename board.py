@@ -1,4 +1,5 @@
 import player
+import pawn
 
 BOARD_WIDTH = 9 
 BOARD_HEIGHT = 9 
@@ -12,32 +13,13 @@ BOARD_CELL_LINE_HORIZONTAL = "-"
 BOARD_CELL_LINE_VERTICAL = "|"
 BOARD_CELL_LINE_CROSSING = "+"
 
-#directions
-NORTH = lambda (x, y): (x, y-1)
-EAST  = lambda (x, y): (x+1, y)
-SOUTH = lambda (x, y): (x, y+1)
-WEST  = lambda (x, y): (x-1, y)
-
-NORTH_NORTH = lambda x:  NORTH(NORTH(x))
-SOUTH_SOUTH = lambda x:  SOUTH(SOUTH(x))
-WEST_WEST = lambda x:  WEST(WEST(x))
-EAST_EAST = lambda x:  EAST(EAST(x))
-
-SOUTH_WEST = lambda d: SOUTH(WEST(d))
-NORTH_WEST = lambda d: NORTH(WEST(d))
-SOUTH_EAST = lambda d: SOUTH(EAST(d))
-NORTH_EAST = lambda d: NORTH(EAST(d))
-
-DIRECTIONS_ORTHO = [NORTH, EAST, SOUTH, WEST]
-DIRECTIONS_ORTHO_JUMP = [NORTH_NORTH, EAST_EAST, SOUTH_SOUTH, WEST_WEST]
-DIRECTIONS_DIAGONAL_JUMP = [NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST]
-
 PAWN_INIT_POS = [(4, 0), (4, 8)] 
 # = (PAWN_INIT_POS_X, 0), (PAWN_INIT_POS_X, BOARD_HEIGHT-1)
 
 PAWN_WINNING_POS = [(x,8) for x in range(BOARD_WIDTH)], [(x,0) for x in range(BOARD_WIDTH)]
         
 
+        
 class Board():
 
     #pawn cells for 
@@ -60,7 +42,7 @@ class Board():
         for node in nodes:
             x,y = node
             # neighbours = [(x+1,y),(x-1,y),(x,y+1),(x,y-1)]
-            valid_neighbours = [dir(node) for dir in DIRECTIONS_ORTHO if dir(node) in nodes]    
+            valid_neighbours = [dir(node) for dir in pawn.DIRECTIONS_ORTHO if dir(node) in nodes]    
             self.board_graph[node]["edges"] = valid_neighbours
             
         self.players = []
@@ -69,9 +51,40 @@ class Board():
         self.players.append(player_instance)
         self.board_graph[player_instance.pawn.position]["pawn"] = player_instance
         
-    def move_pawn(self, direction, simulate = True):
+    def move_pawn(self, position, simulate = True):
         pass
         
+    # def get_cell_neighbours(self, node, ortho = True, jump = False, diag = False):
+        # if (ortho):
+            # cell.
+    def get_node_content(self, node):
+        return self.board_graph[node]
+        pass
+        
+    def direction_to_node(self, node, direction):
+        #direction i.e. pawn.NORTH
+        #returns None if board edge reached.
+        node_neighbour = direction(node)
+        
+        #check if node exists
+        if node_neighbour not in list(self.board_graph):
+            print("node not existing: {}".format(node_neighbour))
+            return None
+        return node_neighbour
+    
+    def nodes_directly_connected(self, node, node_test):
+        #check if no wall between nodes. of if node_test is an ortho neighbour.
+        if node_test in self.board_graph[node]["edges"]:
+            return True
+        else:
+            return False
+            
+    def node_direction_ok(self, node, direction):
+        node_neigh = self.direction_to_node(node, direction)
+        if node_neigh is None:
+            return False
+        return self.nodes_directly_connected(node, node_neigh)
+    
     def place_wall(self, wall, simulate = True):
         #nodes contains the two affected nodes as list
         # if type(cells) != list:
@@ -118,6 +131,7 @@ class Board():
         #add pawns
         for p in self.players:
             x,y = p.pawn.position
+            print("pawn pos id: {}: x{}, y{}".format(p.id,x,y))
             col, row = x, y
             if p.direction == player.PLAYER_TO_NORTH:
                 board_array[row*2 + 1][col*2 + 1] = BOARD_CELL_PLAYER_TO_NORTH
@@ -169,6 +183,5 @@ if __name__ == "__main__":
     # qboard = Board(players)
     qboard = Board()
     print(str(qboard))
-    print(SOUTH((1,2)))
-    print(NORTH_NORTH((1,2)))
+
     
