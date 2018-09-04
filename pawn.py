@@ -1,12 +1,13 @@
+import getter_setter_property_example as tmp
 # POSITION_INIT = 0
 # POSITION_GAME = 1
 # POSITION_END = 2
 
 #directions
-NORTH = lambda (x, y): (x, y-1)
-EAST  = lambda (x, y): (x+1, y)
-SOUTH = lambda (x, y): (x, y+1)
-WEST  = lambda (x, y): (x-1, y)
+NORTH = lambda pos: (pos[0], pos[1]+1)
+EAST  = lambda pos: (pos[0]+1, pos[1])
+SOUTH = lambda pos: (pos[0], pos[1]-1)
+WEST  = lambda pos: (pos[0]-1, pos[1])
 
 NORTH_NORTH = lambda x:  NORTH(NORTH(x))
 SOUTH_SOUTH = lambda x:  SOUTH(SOUTH(x))
@@ -27,29 +28,35 @@ class Pawn():
     def __init__(self, position_init, positions_win):
         # self.player = player
         self.position_init = position_init
-        self.position = position_init
+        self._position = position_init
         self.positions_win = positions_win
-        self.positions_history = [self.position]
+        self.positions_history = [self._position]
         
         
     def win(self):
-        return self.position in self.positions_win
+        return self._position in self.positions_win
    
    
     # def move(self, direction,simulation=False):
         # #direction is one of the lambda functions (NORTH, SOUTH,....
-        # self.position = direction(self.position)
+        # self._position = direction(self._position)
         
         
     @property
     def position(self):
-        return self.position
+        return self._position
 
     @position.setter
     def position(self,value):
-        self.position = value
-        self.positions_history.append(self.position)
+        # print("ieifjeijf")
+        self._position = value
+        self.positions_history.append(self._position)
+        # print("posssef: {}".format(self._position))
         
 if __name__ == "__main__":
     print(SOUTH((1,2)))
     print(NORTH_NORTH((1,2)))
+    test = Pawn("bkj","bibiji")
+    test.position = 3
+    temp = tmp.Celsius()
+    temp.temperature = 30

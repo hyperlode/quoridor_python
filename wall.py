@@ -13,9 +13,9 @@ class Wall():
     def __init__(self, type, id):
         self.type = type
         if type == TYPE_EDGE:
-            self.status = STATUS_PLACED
+            self._status = STATUS_PLACED
         else:
-            self.status = STATUS_NOT_PLACED
+            self._status = STATUS_NOT_PLACED
         self.id = id
         
         self.position_cells = None
@@ -64,10 +64,10 @@ class Wall():
     @property
     def status(self):
         return self.position
-    @status.setter
-    def status(self,status):
         
-        self.status = status
+    @status.setter
+    def status(self,s):
+        self._status = s
         return True
 
     def place(position_verbose):

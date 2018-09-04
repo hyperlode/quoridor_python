@@ -67,10 +67,11 @@ class Player():
         # valid = self.board.node_direction_ok(self.pawn.position, direction)
         
         #check if move possible.
-        
+        # print("ifieijfieifjef")
         if (valid):
-            self.pawn.postion = neighbourNode
-            
+            print("neigh: {} {}".format(self.pawn.position, neighbourNode))
+            self.pawn.position = neighbourNode
+            print(self.pawn.position)
             return True
         else:
         
@@ -78,6 +79,7 @@ class Player():
         
 if __name__ == "__main__":
     test = Player("superlode", PLAYER_TO_NORTH)
+    
     
     
         
