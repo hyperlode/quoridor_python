@@ -65,7 +65,7 @@ class Board():
         #direction i.e. pawn.NORTH
         #returns None if board edge reached.
         node_neighbour = direction(node)
-        
+        print("node from direction: {}".format(node_neighbour))
         #check if node exists
         if node_neighbour not in list(self.board_graph):
             print("node not existing: {}".format(node_neighbour))
@@ -85,6 +85,15 @@ class Board():
             return False
         return self.nodes_directly_connected(node, node_neigh)
     
+    def pawn_on_node(self, node):
+        print(node)
+        # print(self.board_graph[node]["pawn"])
+        print(self.board_graph[node])
+        if self.board_graph[node]["pawn"] is None:
+            return False
+        else:
+            return True
+        
     def place_wall(self, wall, simulate = True):
         #nodes contains the two affected nodes as list
         # if type(cells) != list:
