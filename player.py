@@ -59,57 +59,74 @@ class Player():
     def move_pawn(self, direction):
     
         #direction i.e. pawn.NORTH
-        
-        #get neighbour cell
-        # self.get_possible_pawn_moves()
-        
-        
-        valid = False
-        
+                    
         if direction in pawn.DIRECTIONS_ORTHO:
-            neighbourNode = self.board.direction_to_node(self.pawn.position, direction)
-            valid = self.board.nodes_directly_connected(self.pawn.position, neighbourNode)
+            new_position = self.board.direction_to_node(self.pawn.position, direction)
+            
+            if new_position is None:
+                print ("ASSERT ERROR: checked neighbour node is not valid. ")
+                return False
+            
+            if self.board.pawn_on_node(new_position):
+                print ("error: pawn on neighbour.")
+                return False 
+                
+            if not self.board.nodes_directly_connected(self.pawn.position, new_position):
+                print ("no move possible: wall")
+                return False
+             
         
         elif direction in pawn.DIRECTIONS_ORTHO_JUMP:
+            
+            #get neighbour node
             neighbourNode = self.board.direction_to_node(self.pawn.position, pawn.FIRST_DIRECTION_FOR_ORTHO_JUMPS[direction])
             if neighbourNode is None:
                 print ("ASSERT ERROR: checked neighbour node is not valid. ")
                 return False
-                
-                
             
             #check for pawn on neighbour node
-            pawn_on_adjecent_node = self.board.pawn_on_node(neighbourNode)
+            if not self.board.pawn_on_node(neighbourNode):
+                self.board.check_pawn_positions()
+                #no pawn on neighbour node
+                print ("error: no pawn on neighbour node")
+                return False
+                
+            if not self.board.nodes_directly_connected(self.pawn.position, neighbourNode):
+                #wall between jumper and jumpee
+                print ("wall in the way")
+                return False
             
-            #check if no wall in between.
-            no_wall_in_the_way = self.board.nodes_directly_connected(self.pawn.position, neighbourNode)
+            #check the jump node
+            new_position = self.board.direction_to_node(self.pawn.position, direction)
             
+            if new_position is None:
+                print ("ASSERT ERROR: jump node is not valid. ")
+                return False
             
-            if pawn_on_adjecent_node and no_wall_in_the_way:
-                valid = True
-            else:
-                valid = False
-            print ("jump validness? {}".format(valid))    
+            #check wall to jump node
+            if not self.board.nodes_directly_connected(neighbourNode, new_position):
+                print("wall encountered to jump node")
+                return False
+            
+            # print ("jump valid")    
             
         elif direction in pawn.DIRECTIONS_DIAGONAL_JUMP:
-            valid = False
+            # valid = False
+            print ("not yet implemented. ")
+            return False
             pass
         else:
-            valid = False
             print("ASSERT ERROR: illegal direction ({})".format(direction))
             return False
         
          # valid = self.board.node_direction_ok(self.pawn.position, direction)
         
         #check if move possible.
-        if (valid):
-            print("neigh: {} {}".format(self.pawn.position, neighbourNode))
-            self.pawn.position = neighbourNode
-            print(self.pawn.position)
-            return True
-        else:
-        
-            return False #not successful
+    
+        print("move from: {}  to:{}".format(self.pawn.position, new_position))
+        self.board.move_pawn(self.pawn.position, new_position)
+        self.pawn.position = new_position
+        return True
         
 if __name__ == "__main__":
     test = Player("superlode", PLAYER_TO_NORTH)

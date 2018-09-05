@@ -30,11 +30,8 @@ class Board():
     refer to a node with a tuple (x,y)
     '''
     
-    # def __init__(self,players):
     def __init__(self):
         nodes = [(x,y) for x in range(BOARD_WIDTH) for y in range(BOARD_HEIGHT)]
-        
-        # self.players = players
         
         self.board_graph = {node:{"edges":None, "pawn":None} for node in nodes}
         # https://www.python.org/doc/essays/graphs/
@@ -50,9 +47,17 @@ class Board():
     def addPlayer(self, player_instance):
         self.players.append(player_instance)
         self.board_graph[player_instance.pawn.position]["pawn"] = player_instance
-        
-    def move_pawn(self, position, simulate = True):
-        pass
+    
+    def check_pawn_positions(self):
+        for pl in self.players:
+            node = pl.pawn.position
+            okOnBoard = self.pawn_on_node(node)
+            print("player {} at postion {}, ok on board:{} ".format(pl.id, node, okOnBoard))
+            
+            
+    def move_pawn(self, old, new):
+            self.board_graph[new]["pawn"] = self.board_graph[old]["pawn"]
+            self.board_graph[old]["pawn"] = None
         
     # def get_cell_neighbours(self, node, ortho = True, jump = False, diag = False):
         # if (ortho):
@@ -65,7 +70,6 @@ class Board():
         #direction i.e. pawn.NORTH
         #returns None if board edge reached.
         node_neighbour = direction(node)
-        print("node from direction: {}".format(node_neighbour))
         #check if node exists
         if node_neighbour not in list(self.board_graph):
             print("node not existing: {}".format(node_neighbour))
@@ -86,9 +90,9 @@ class Board():
         return self.nodes_directly_connected(node, node_neigh)
     
     def pawn_on_node(self, node):
-        print(node)
+        
         # print(self.board_graph[node]["pawn"])
-        print(self.board_graph[node])
+        print("what is on node({})?: {}".format(node,self.board_graph[node]))
         if self.board_graph[node]["pawn"] is None:
             return False
         else:
