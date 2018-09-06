@@ -93,7 +93,16 @@ class Board():
     # def get_cell_neighbours(self, node, ortho = True, jump = False, diag = False):
         # if (ortho):
             # cell.
-    def place_wall(self, node1, node2):
+    def place_wall(self, wall):
+        #if valid
+        #unlink all nodes
+        
+        pass
+            
+    def check_wall_valid(self, wall):
+        pass
+            
+    def unlink_nodes(self, node1, node2):
         #will destroy edge between two nodes
         #check if wall already placed
         if node2 in self.board_graph[node1]["edges"]:

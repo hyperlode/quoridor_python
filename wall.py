@@ -21,24 +21,24 @@ class Wall():
         self._id = id
         self._position_nodes = None
         self._position_verbose = None
-        self._position_lines_center = None   # format (horiline, vertiline,orientation) lines as digits, from 1 to 8, orientation NORTH_SOUTH or EAST_WEST
+        self._position_lines_orientation = None   # format (horiline, vertiline,orientation) lines as digits, from 1 to 8, orientation NORTH_SOUTH or EAST_WEST
         
     @staticmethod    
     def position_verbose_to_nodes(verbose):
-        position_lines_center = Wall._notation_to_lines_and_orientation(verbose)
+        position_lines_orientation = Wall._notation_to_lines_and_orientation(verbose)
         
-        if position_lines_center is None:
+        if position_lines_orientation is None:
             print ("failed to interpret wall notation")
             return None, None
         
-        nodes =  Wall._position_lines_to_nodes(position_lines_center)
+        nodes =  Wall._position_lines_to_nodes(position_lines_orientation)
         if nodes is None:
             return None, None
-        return nodes, position_lines_center
+        return nodes, position_lines_orientation
         
     @staticmethod
-    def _position_lines_to_nodes( position_lines_center):
-        hori_line, vert_line, orientation = position_lines_center
+    def _position_lines_to_nodes( position_lines_orientation):
+        hori_line, vert_line, orientation = position_lines_orientation
         
         #there are four nodes (2x2) involved per wall. get 2 x and 2 y coords.
         x_nodes = [vert_line - 1, vert_line]
@@ -139,34 +139,59 @@ class Wall():
             return None
         else:
             return self._position_nodes
-        
-    def set_position(self, position_verbose):
+            
+    def reset_position(self, allow_reset_placed_wall = False):
+        if self._status == STATUS_SIMULATION or self._status == STATUS_NOT_PLACED or allow_reset_placed_wall:
+            self._position_nodes = None
+            self._position_verbose = None
+            self._position_lines_orientation = None   
+            return True
+        else:
+            print("once a wall is placed, it cannot be undone").
+            return False
+            
+    def consolidate_position(self):
+        if self._status == STATUS_SIMULATION:
+            self._status = STATUS_PLACED
+            return True
+        elif self._status == STATUS_PLACED:
+            print ("already consolidated")
+            return True
+        elif self._status == STATUS_NOT_PLACED:
+            print ("nothing to consolidate")
+            return False
+        else:
+            print ("ASSERT ERROR: illegal status")
+            return False
+    def set_position(self, position_verbose, tentative = False):
         #position is verbose.
         
         if self._status != STATUS_NOT_PLACED:
             print("ASSERT ERROR: wall can only be placed once")
             return False
         
-        nodes, position_lines_center = Wall.position_verbose_to_nodes(position_verbose)
+        nodes, position_lines_orientation = Wall.position_verbose_to_nodes(position_verbose)
         
         print("nodes: {}".format(nodes))
             
         if nodes is not None:
             self._position_nodes = nodes
             self._position_verbose = position_verbose
-            self._position_lines_center = position_lines_center
-            self._status = STATUS_PLACED
+            self._position_lines_orientation = position_lines_orientation
+            if tentative:
+                self._status = STATUS_SIMULATION
+            else:
+                self._status = STATUS_PLACED
             return True
         else:
             return False
     
-        
-        
     def __str__(self):
         if self._status != STATUS_PLACED:
             return "Wall with id {} was not yet placed".format(self._id)
         else:
-            return "Wall with id {}, was played on position {}. Affected nodes: {}".format(self._id, self._position_verbose, self._position_nodes)    
+            return "Wall with id {0}, was played on position {1}. (horizontal line:{2[0]}, vertical line: {2[1]:}, orientation(0=north-south): {2[2]}) and affects nodes: {3}".format(
+            self._id, self._position_verbose, self._position_lines_orientation, self._position_nodes)    
         
 if __name__ == "__main__":
     w = Wall(TYPE_PLAYER, "test")

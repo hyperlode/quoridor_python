@@ -48,13 +48,27 @@ class Player():
     def place_wall(self, verbose_position):
         
         unplaced_wall = self.get_unplaced_wall()
-        
         if unplaced_wall is None:
             print("no free walls")
             return False
         
-        success = unplaced_wall.set_position(verbose_position)
-        print("wall was placed? {}".format(success))
+        placed = unplaced_wall.set_position(verbose_position, tentative = True)
+        
+        #place wall temporarily
+        if not placed:
+            print("error in placing wall")
+            return False
+            
+        #check validity
+        success = self.board.place_wall()
+        if not success:
+            print("illegal wall placement")
+            
+            unplaced_wall.resetPosition()
+            return False
+        
+        
+        
         return success
         
     # @property
