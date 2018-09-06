@@ -1,6 +1,7 @@
 import player
 import board
 import pawn
+import wall
 
 TEST = 10
 
@@ -19,6 +20,11 @@ NOTATION_TO_DIRECTION = {
     "nw":pawn.NORTH_WEST,
     "se":pawn.SOUTH_EAST,
     "ne":pawn.NORTH_EAST
+}
+
+WALL_NOTATION_TO_POSITION = {
+    
+
 }
 
 class Quoridor():
@@ -45,15 +51,15 @@ class Quoridor():
         played = False
         
         if move in NOTATION_TO_DIRECTION:
-            pawnMove = True
         
-        #check for pawn or wall move
-        pawnMove = True
-        if pawnMove:
+            #check for pawn or wall move
             direction = NOTATION_TO_DIRECTION[move]
             #move pawn
             played = self.movePawn(direction)
-        
+
+        else:
+            # print(wall.Wall.position_verbose_to_cells(move))
+            self.players[self.playerAtMoveIndex].place_wall(move)
         
         if played:
             self.nextPlayer()
@@ -99,6 +105,8 @@ if __name__ == "__main__":
     q.playTurn("ss")
     q.playTurn("ss")
     q.playTurn("s")
+    q.playTurn("e4")
+    q.playTurn("4e")
     print(q)
     
     

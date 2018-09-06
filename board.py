@@ -23,12 +23,43 @@ PAWN_WINNING_POS = [(x,8) for x in range(BOARD_WIDTH)], [(x,0) for x in range(BO
 class Board():
 
     #pawn cells for 
-    '''the board is split in two sub board
-    pawnBoard = 9x9 nodes with positions for the pawn.
-
-     0 1 2 3 4 5 6 7 8  = pawn nodes. 
-    refer to a node with a tuple (x,y)
     '''
+    
+    board graph:  9x9 nodes with positions for the pawn.
+    wall are broken edges between nodes.
+    refer to a node with a tuple (x,y)
+    
+    
+    8
+    7
+    6
+    5         wall lines
+    4
+    3
+    2
+    1
+     a   b   c   d   e   f   g   h
+     
+     
+    8 
+    7
+    6
+    5
+    4
+    3           nodes
+    2
+    1
+    0
+       0  1   2   3   4   5   6   7   8   
+       
+   
+
+
+
+    
+    '''    
+    
+    
     
     def __init__(self):
         nodes = [(x,y) for x in range(BOARD_WIDTH) for y in range(BOARD_HEIGHT)]
@@ -62,6 +93,22 @@ class Board():
     # def get_cell_neighbours(self, node, ortho = True, jump = False, diag = False):
         # if (ortho):
             # cell.
+    def place_wall(self, node1, node2):
+        #will destroy edge between two nodes
+        #check if wall already placed
+        if node2 in self.board_graph[node1]["edges"]:
+            if node1 not in self.board_graph[node2]["edges"]:
+                print ("ASSERT ERROR: assymetrical links between two nodes.")
+                return False
+            
+            #now remove edges.
+            self.board_graph[node1]["edges"].remove(node2)
+            self.board_graph[node2]["edges"].remove(node1)
+            print("wall placed between {} and {}".format(node1, node2))
+        else:
+            print("no link between two nodes. Indicates a placed wall")
+            return False
+            
     def get_node_content(self, node):
         return self.board_graph[node]
         pass
@@ -98,23 +145,7 @@ class Board():
         else:
             return True
         
-    def place_wall(self, wall, simulate = True):
-        #nodes contains the two affected nodes as list
-        # if type(cells) != list:
-            # raise Exception("ASSERT ERROR: list expected")
-             
-        # if len(cells) != 2:
-            # raise Exception("ASSERT ERROR: wall placement needs two cell positions (list with two elements)")
-                
-        #check if cells occupied
-        # for position in cells:
-            # if self.wallBoard[position] is not None:
-                # return False
-            # else:
-                # self.wallBoard[position]
-        #check if route free
-        
-        pass
+
     def board_array(self):
         #setup
         board_array = []
@@ -153,6 +184,9 @@ class Board():
             else:
                 print("ASSERT ERROR: no correct direction indicated")
               
+        #add walls
+        
+        
         
         # for pos in list(self.board_graph):
             # cell= self.board_graph[pos]
@@ -195,6 +229,7 @@ if __name__ == "__main__":
     # players = [player1, player2]
     # qboard = Board(players)
     qboard = Board()
+    qboard.place_wall((2,3),(3,3))
     print(str(qboard))
 
     

@@ -27,9 +27,36 @@ class Player():
     
     def set_board(self, board_instance):
         self.board = board_instance
+    
+    
+    def get_unplaced_wall(self):
+        #returns first unused wall.
+        #None if all walls are placed.
         
-    def place_wall(self, position):
-        pass
+        found = False
+        index = 0
+        while not found and index < NUMBER_OF_WALLS:
+            if self.walls[index].status == wall.STATUS_NOT_PLACED:
+                found = True
+                return self.walls[index]
+            else:
+                index += 1
+         
+        return None 
+            
+        
+    def place_wall(self, verbose_position):
+        
+        unplaced_wall = self.get_unplaced_wall()
+        
+        if unplaced_wall is None:
+            print("no free walls")
+            return False
+        
+        success = unplaced_wall.set_position(verbose_position)
+        print("wall was placed? {}".format(success))
+        return success
+        
     # @property
     # def pawn(self):
         # return self.pawn.
@@ -51,11 +78,12 @@ class Player():
         
         #diagonal
         
-        print("direction to node:")
-        self.board.direction_to_node(self.pawn.position, pawn.WEST)
-        
+        # print("direction to node:")
+        # self.board.direction_to_node(self.pawn.position, pawn.WEST)
+        print("not yet implemented")
         pass
         
+    
     def move_pawn(self, direction):
     
         #direction i.e. pawn.NORTH
