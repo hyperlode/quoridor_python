@@ -111,7 +111,8 @@ if __name__ == "__main__":
     q.playTurn("NN")
     q.playTurn("NN")
     q.playTurn("NN")
-    q.playTurn("NW")
+    q.playTurn("NN")
+    q.playTurn("NN")
     print(q)
     
     
