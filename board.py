@@ -97,8 +97,7 @@ class Board():
 
         hori_new,vert_new,orientation_new = new_wall.get_position("lines_orientation")
         
-        
-        valid = True
+        #check all walls
         for pl in self.players:
             for w in pl.walls:
                 if w.status == wall.STATUS_PLACED:
@@ -229,8 +228,9 @@ class Board():
                 elif col%2 == 0:
                     board_array[row][col] = BOARD_CELL_LINE_VERTICAL
                     
-        #add pawns
+        
         for p in self.players:
+            #add pawns
             x,y = p.pawn.position
             print("pawn pos id: {}: x{}, y{}".format(p.id,x,y))
             col, row = x, y
@@ -241,8 +241,19 @@ class Board():
             else:
                 print("ASSERT ERROR: no correct direction indicated")
               
-        #add walls
-        
+            #add walls
+            for w in p.walls:
+                if w.status == wall.STATUS_PLACED:
+                    hori, vert, orientation = w.get_position("lines_orientation")
+                    
+                    board_array[hori*2 ][vert*2 ] = BOARD_CELL_WALL
+                    if orientation == wall.NORTH_SOUTH:
+                        board_array[hori*2 -1 ][vert*2] = BOARD_CELL_WALL
+                        board_array[hori*2 +1][vert*2] = BOARD_CELL_WALL
+                    elif orientation == wall.EAST_WEST:
+                        board_array[hori*2][vert*2 -1 ] = BOARD_CELL_WALL
+                        board_array[hori*2][vert*2 + 1] = BOARD_CELL_WALL
+                    
         
         
         # for pos in list(self.board_graph):
