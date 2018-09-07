@@ -1,10 +1,11 @@
 import player
 import pawn
+import wall
 
 BOARD_WIDTH = 9 
 BOARD_HEIGHT = 9 
 
-#board output (ASCII) visualization
+# board output (ASCII) visualization
 BOARD_CELL_EMPTY = " "
 BOARD_CELL_PLAYER_TO_NORTH = "1"
 BOARD_CELL_PLAYER_TO_SOUTH = "2"
@@ -59,8 +60,6 @@ class Board():
     
     '''    
     
-    
-    
     def __init__(self):
         nodes = [(x,y) for x in range(BOARD_WIDTH) for y in range(BOARD_HEIGHT)]
         
@@ -75,7 +74,7 @@ class Board():
             
         self.players = []
         
-    def addPlayer(self, player_instance):
+    def add_player(self, player_instance):
         self.players.append(player_instance)
         self.board_graph[player_instance.pawn.position]["pawn"] = player_instance
     
@@ -93,13 +92,35 @@ class Board():
     # def get_cell_neighbours(self, node, ortho = True, jump = False, diag = False):
         # if (ortho):
             # cell.
-    def place_wall(self, wall):
-        #if valid
+    def place_wall(self, play_wall):
+        #if valid check if pawns can still reach the other side
+
+        hw,vw,ow = play_wall.get_position("lines_orientation")
+        valid = True
+        for pl in self.players:
+            for w in pl.walls:
+                if w.status == wall.STATUS_PLACED:
+                    h,v,orientation = w.get_position("lines_orientation")
+                    if h==hw and v ==vw :
+                        if orientation==ow:
+
+                            print("attempt to place wall on exactly the same location of another wall.")
+                        else:
+
+                            print("attempt to place wall with same centerpoint as other wall (but in another orientation).")
+                        return False
+        print("wall can be placed.")
+
         #unlink all nodes
-        
-        pass
-            
-    def check_wall_valid(self, wall):
+        for node1, node2 in play_wall.get_position("nodes"):
+            success = self.unlink_nodes(node1, node2)
+            if not success:
+                print("connections on the board could not be severed when placing the wall. Board might be corrupt")
+                raise Exception("board potentioally corrupt.")
+                return False
+        return True
+
+    def check_wall_valid(self, play_wall):
         pass
             
     def unlink_nodes(self, node1, node2):
@@ -114,6 +135,7 @@ class Board():
             self.board_graph[node1]["edges"].remove(node2)
             self.board_graph[node2]["edges"].remove(node1)
             print("wall placed between {} and {}".format(node1, node2))
+            return True
         else:
             print("no link between two nodes. Indicates a placed wall")
             return False

@@ -1,7 +1,7 @@
 import wall
 import pawn
 import board
-import quori_constants
+# import quori_constants
 
 PLAYER_TO_NORTH = 0
 PLAYER_TO_SOUTH = 1
@@ -9,167 +9,154 @@ PLAYER_TO_SOUTH = 1
 NUMBER_OF_WALLS = 10
 
 
-
-class Player():
+class Player:
     def __init__(self, id, player_direction):
-    
-        
+
         self.id = id
         
-        #create walls
+        # create walls
         self.walls = [wall.Wall(wall.TYPE_PLAYER, i) for i in range(NUMBER_OF_WALLS)]
         
-        #create pawn
+        # create pawn
         self.pawn = pawn.Pawn( board.PAWN_INIT_POS[player_direction], board.PAWN_WINNING_POS[player_direction])
         
-        #id
+        self.board = None
         self.player_direction = player_direction
-    
+        
     def set_board(self, board_instance):
         self.board = board_instance
-    
-    
+        
     def get_unplaced_wall(self):
-        #returns first unused wall.
-        #None if all walls are placed.
+        # returns first unused wall.
+        # None if all walls are placed.
         
         found = False
         index = 0
         while not found and index < NUMBER_OF_WALLS:
             if self.walls[index].status == wall.STATUS_NOT_PLACED:
-                found = True
                 return self.walls[index]
             else:
                 index += 1
-         
         return None 
-            
         
     def place_wall(self, verbose_position):
         
-        unplaced_wall = self.get_unplaced_wall()
-        if unplaced_wall is None:
+        playWall = self.get_unplaced_wall()
+        if playWall is None:
             print("no free walls")
             return False
+        placed = playWall.set_position(verbose_position, tentative=True)
         
-        placed = unplaced_wall.set_position(verbose_position, tentative = True)
-        
-        #place wall temporarily
+        # place wall temporarily
         if not placed:
             print("error in placing wall")
             return False
             
-        #check validity
-        success = self.board.place_wall()
+        # check validity
+        success = self.board.place_wall(playWall)
         if not success:
             print("illegal wall placement")
             
-            unplaced_wall.resetPosition()
+            playWall.resetPosition()
             return False
-        
-        
-        
-        return success
+        else:
+            playWall.consolidate_position()
+            return success
         
     # @property
     # def pawn(self):
         # return self.pawn.
     
-    
-    
     @property
     def direction(self):
         return self.player_direction
         
-        
     def get_possible_pawn_moves(self):
-        #list up all possible directions.
+        # list up all possible directions.
         
-        #ortho
+        # ortho
         # self.board_instance.
         
-        #jump
+        # jump
         
-        #diagonal
+        # diagonal
         
         # print("direction to node:")
         # self.board.direction_to_node(self.pawn.position, pawn.WEST)
         print("not yet implemented")
         pass
-        
     
     def move_pawn(self, direction):
     
-        #direction i.e. pawn.NORTH
-                    
+        # direction i.e. pawn.NORTH
         if direction in pawn.DIRECTIONS_ORTHO:
             new_position = self.board.direction_to_node(self.pawn.position, direction)
             
             if new_position is None:
-                print ("ASSERT ERROR: checked neighbour node is not valid. ")
+                print("ASSERT ERROR: checked neighbour node is not valid. ")
                 return False
             
             if self.board.pawn_on_node(new_position):
-                print ("error: pawn on neighbour.")
+                print("error: pawn on neighbour.")
                 return False 
                 
             if not self.board.nodes_directly_connected(self.pawn.position, new_position):
-                print ("no move possible: wall")
+                print("no move possible: wall")
                 return False
-             
         
         elif direction in pawn.DIRECTIONS_ORTHO_JUMP:
             
-            #get neighbour node
-            neighbourNode = self.board.direction_to_node(self.pawn.position, pawn.FIRST_DIRECTION_FOR_ORTHO_JUMPS[direction])
-            if neighbourNode is None:
-                print ("ASSERT ERROR: checked neighbour node is not valid. ")
+            # get neighbour node
+            neighbour_node = self.board.direction_to_node(self.pawn.position, pawn.FIRST_DIRECTION_FOR_ORTHO_JUMPS[direction])
+            if neighbour_node is None:
+                print("ASSERT ERROR: checked neighbour node is not valid. ")
                 return False
             
-            #check for pawn on neighbour node
-            if not self.board.pawn_on_node(neighbourNode):
+            # check for pawn on neighbour node
+            if not self.board.pawn_on_node(neighbour_node):
                 self.board.check_pawn_positions()
-                #no pawn on neighbour node
-                print ("error: no pawn on neighbour node")
+                # no pawn on neighbour node
+                print("error: no pawn on neighbour node")
                 return False
                 
-            if not self.board.nodes_directly_connected(self.pawn.position, neighbourNode):
-                #wall between jumper and jumpee
-                print ("wall in the way")
+            if not self.board.nodes_directly_connected(self.pawn.position, neighbour_node):
+                # wall between jumper and jumpee
+                print("wall in the way")
                 return False
             
-            #check the jump node
+            # check the jump node
             new_position = self.board.direction_to_node(self.pawn.position, direction)
             
             if new_position is None:
-                print ("ASSERT ERROR: jump node is not valid. ")
+                print("ASSERT ERROR: jump node is not valid. ")
                 return False
             
-            #check wall to jump node
-            if not self.board.nodes_directly_connected(neighbourNode, new_position):
+            # check wall to jump node
+            if not self.board.nodes_directly_connected(neighbour_node, new_position):
                 print("wall encountered to jump node")
                 return False
             
-            # print ("jump valid")    
+            # print("jump valid")    
             
         elif direction in pawn.DIRECTIONS_DIAGONAL_JUMP:
             # valid = False
-            print ("not yet implemented. ")
+            print("not yet implemented. ")
             return False
             pass
         else:
             print("ASSERT ERROR: illegal direction ({})".format(direction))
             return False
         
-         # valid = self.board.node_direction_ok(self.pawn.position, direction)
+            # valid = self.board.node_direction_ok(self.pawn.position, direction)
         
-        #check if move possible.
+        # check if move possible.
     
         print("move from: {}  to:{}".format(self.pawn.position, new_position))
         self.board.move_pawn(self.pawn.position, new_position)
         self.pawn.position = new_position
         return True
-        
+
+
 if __name__ == "__main__":
     test = Player("superlode", PLAYER_TO_NORTH)
     

@@ -64,6 +64,9 @@ class Pawn():
         self._position = value
         self.positions_history.append(self._position)
         # print("posssef: {}".format(self._position))
+
+    def __str__(self):
+        return ("Pawn at position: {}".format(self.position))
         
 if __name__ == "__main__":
     print(SOUTH((1,2)))

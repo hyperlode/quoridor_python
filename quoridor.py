@@ -34,8 +34,8 @@ class Quoridor():
         player2 = player.Player("brecht", player.PLAYER_TO_SOUTH)
         self.players = [player1, player2]
         self.gameBoard = board.Board()
-        self.gameBoard.addPlayer(player1)
-        self.gameBoard.addPlayer(player2)
+        self.gameBoard.add_player(player1)
+        self.gameBoard.add_player(player2)
         
         for pl in self.players:
             pl.set_board(self.gameBoard)
@@ -59,7 +59,7 @@ class Quoridor():
 
         else:
             # print(wall.Wall.position_verbose_to_cells(move))
-            self.players[self.playerAtMoveIndex].place_wall(move)
+            played = self.players[self.playerAtMoveIndex].place_wall(move)
         
         if played:
             self.nextPlayer()
@@ -106,7 +106,7 @@ if __name__ == "__main__":
     q.playTurn("ss")
     q.playTurn("s")
     q.playTurn("e4")
-    q.playTurn("4e")
+    q.playTurn("e5")icorrupatl
     print(q)
     
     

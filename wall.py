@@ -40,19 +40,17 @@ class Wall():
     def _position_lines_to_nodes( position_lines_orientation):
         hori_line, vert_line, orientation = position_lines_orientation
         
-        #there are four nodes (2x2) involved per wall. get 2 x and 2 y coords.
+        # there are four nodes (2x2) involved per wall. get 2 x and 2 y coords.
         x_nodes = [vert_line - 1, vert_line]
         y_nodes = [hori_line - 1, hori_line]
-        
-        
+
         if orientation == EAST_WEST:
-            #define node which links will be severed by the wall.
+            # define node which links will be severed by the wall.
             edge_cut_0 = ((x_nodes[0], y_nodes[0]), (x_nodes[0], y_nodes[1]))
             edge_cut_1 = ((x_nodes[1], y_nodes[0]), (x_nodes[1], y_nodes[1]))
-            
-            
+
         elif orientation == NORTH_SOUTH:
-            #define node which links will be severed by the wall.
+            # define node which links will be severed by the wall.
             edge_cut_0 = ((x_nodes[0], y_nodes[0]), (x_nodes[1], y_nodes[0]))
             edge_cut_1 = ((x_nodes[0], y_nodes[1]), (x_nodes[1], y_nodes[1]))
                        
@@ -83,7 +81,7 @@ class Wall():
     
     @staticmethod
     def _notation_to_lines_and_orientation(verbose):
-        #notation a1 to 8h
+        # notation a1 to 8h
         
         verbose = verbose.lower()
         
@@ -104,11 +102,11 @@ class Wall():
             digit = b
             letter = a
            
-        #notation to wall line numbers
+        # notation to wall line numbers
         vert_line = ord(letter) - 96  # a = 97
         hori_line = int(digit)
         
-        #check boundaries
+        # check boundaries
         if vert_line<1 or vert_line > 8 or hori_line<1 or hori_line>8:
             print("outside boundaries. a1 to h8. Submission:letter {} digit".format(letter,digit))
             return None
@@ -127,19 +125,29 @@ class Wall():
     @property
     def status(self):
         return self._status
-        
+
+
     @status.setter
     def status(self,s):
         self._status = s
         return True
     
-    def get_position(self, as_nodes = True):
-        
+    def get_position(self, notation = "verbose"):
+        # notation = "verbose", "lines_orientation", "nodes"
+
         if self._status == STATUS_NOT_PLACED:  
             return None
-        else:
+
+        if notation == "nodes":
             return self._position_nodes
-            
+        elif notation == "verbose":
+            return self._position_verbose
+        elif notation == "lines_orientation":
+            return self._position_lines_orientation
+        else:
+            print("please provide notation")
+            return None
+
     def reset_position(self, allow_reset_placed_wall = False):
         if self._status == STATUS_SIMULATION or self._status == STATUS_NOT_PLACED or allow_reset_placed_wall:
             self._position_nodes = None
@@ -147,7 +155,7 @@ class Wall():
             self._position_lines_orientation = None   
             return True
         else:
-            print("once a wall is placed, it cannot be undone").
+            print("once a wall is placed, it cannot be undone")
             return False
             
     def consolidate_position(self):
