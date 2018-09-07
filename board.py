@@ -92,27 +92,53 @@ class Board():
     # def get_cell_neighbours(self, node, ortho = True, jump = False, diag = False):
         # if (ortho):
             # cell.
-    def place_wall(self, play_wall):
-        #if valid check if pawns can still reach the other side
+    def place_wall(self, new_wall):
+        #if valid, check if pawns can still reach the other side
 
-        hw,vw,ow = play_wall.get_position("lines_orientation")
+        hori_new,vert_new,orientation_new = new_wall.get_position("lines_orientation")
+        
+        
         valid = True
         for pl in self.players:
             for w in pl.walls:
                 if w.status == wall.STATUS_PLACED:
-                    h,v,orientation = w.get_position("lines_orientation")
-                    if h==hw and v ==vw :
-                        if orientation==ow:
-
+                    hori, vert, orientation = w.get_position("lines_orientation")
+                    
+                    #check for overlapping center points.
+                    if hori == hori_new and vert ==vert_new :
+                        # centerpoint is the same, so for sure a failure. We just have to check what kind of failure:
+                        if orientation==orientation_new:
                             print("attempt to place wall on exactly the same location of another wall.")
                         else:
-
                             print("attempt to place wall with same centerpoint as other wall (but in another orientation).")
                         return False
+                     
+                    if orientation == orientation_new:
+                        # print("oooorientation_newohori_newoehoorientation_newheohorientation_newhehoeoh")
+                        # print (orientation)
+                        # print ("x:{},y:{}".format(v, h))
+                        # print ("x:{},y:{}".format(vert_new, hori_new))
+                        
+                        if orientation == wall.NORTH_SOUTH:
+                            #x is the same.
+                            #check for y at least 2 different.
+                            if abs(hori - hori_new) < 2:
+                                #overlap!
+                                print("walls one same line and overlapping")
+                                return False
+                                
+                        elif orientation == wall.EAST_WEST:
+                            #y is the same
+                            if abs(vert - vert_new) < 2:
+                                #overlap!
+                                print("walls one same line and overlapping")
+                                return False
+                     #check for overlapping wall (placed in same direction, on same line, not sharing center point, just half a wall overlap.
+                     
         print("wall can be placed.")
 
         #unlink all nodes
-        for node1, node2 in play_wall.get_position("nodes"):
+        for node1, node2 in new_wall.get_position("nodes"):
             success = self.unlink_nodes(node1, node2)
             if not success:
                 print("connections on the board could not be severed when placing the wall. Board might be corrupt")
@@ -120,7 +146,7 @@ class Board():
                 return False
         return True
 
-    def check_wall_valid(self, play_wall):
+    def check_wall_valid(self, new_wall):
         pass
             
     def unlink_nodes(self, node1, node2):
@@ -259,8 +285,8 @@ if __name__ == "__main__":
     # player2 = player.Player("brecht")
     # players = [player1, player2]
     # qboard = Board(players)
-    qboard = Board()
-    qboard.place_wall((2,3),(3,3))
-    print(str(qboard))
-
+    # qboard = Board()
+    # qboard.place_wall((2,3),(3,3))
+    # print(str(qboard))
+    pass
     

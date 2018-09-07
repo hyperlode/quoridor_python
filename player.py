@@ -43,25 +43,26 @@ class Player:
         
         playWall = self.get_unplaced_wall()
         if playWall is None:
-            print("no free walls")
+            print("no free walls for this player available")
             return False
+       
+        # temporarily set wall
         placed = playWall.set_position(verbose_position, tentative=True)
-        
-        # place wall temporarily
         if not placed:
             print("error in placing wall")
             return False
             
         # check validity
-        success = self.board.place_wall(playWall)
-        if not success:
+        valid = self.board.place_wall(playWall)
+        
+        # deal with outcome
+        if not valid:
             print("illegal wall placement")
-            
-            playWall.resetPosition()
+            playWall.reset_position()
             return False
         else:
             playWall.consolidate_position()
-            return success
+            return True
         
     # @property
     # def pawn(self):

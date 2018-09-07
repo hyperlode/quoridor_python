@@ -106,7 +106,8 @@ if __name__ == "__main__":
     q.playTurn("ss")
     q.playTurn("s")
     q.playTurn("e4")
-    q.playTurn("e5")icorrupatl
+    q.playTurn("e5")
+    q.playTurn("e6")
     print(q)
     
     
