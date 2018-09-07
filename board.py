@@ -10,6 +10,7 @@ BOARD_CELL_EMPTY = " "
 BOARD_CELL_PLAYER_TO_NORTH = "1"
 BOARD_CELL_PLAYER_TO_SOUTH = "2"
 BOARD_CELL_WALL = "O"
+BOARD_CELL_WALL_BORDER = "."
 BOARD_CELL_LINE_HORIZONTAL = "-"
 BOARD_CELL_LINE_VERTICAL = "|"
 BOARD_CELL_LINE_CROSSING = "+"
@@ -217,7 +218,7 @@ class Board():
         for col in range(cells_horizontal):
             for row in range(cells_vertical):
                 if row == 0 or row == cells_vertical-1 or col == 0 or col == cells_horizontal-1:
-                    board_array[row][col] = BOARD_CELL_WALL
+                    board_array[row][col] = BOARD_CELL_WALL_BORDER
         
                 elif row%2 == 0 and col%2 == 0:
                     board_array[row][col] = BOARD_CELL_LINE_CROSSING
@@ -227,6 +228,13 @@ class Board():
                 
                 elif col%2 == 0:
                     board_array[row][col] = BOARD_CELL_LINE_VERTICAL
+        
+        #add row and column indicators
+        for row in range(1,9):        
+            board_array[row*2 ][0] = str(row)
+        for col in range(1,9):        
+            board_array[0 ][col*2] = str(unichr(col + 96))
+              
                     
         
         for p in self.players:
@@ -253,7 +261,8 @@ class Board():
                     elif orientation == wall.EAST_WEST:
                         board_array[hori*2][vert*2 -1 ] = BOARD_CELL_WALL
                         board_array[hori*2][vert*2 + 1] = BOARD_CELL_WALL
-                    
+              
+         
         
         
         # for pos in list(self.board_graph):
