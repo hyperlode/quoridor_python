@@ -240,7 +240,7 @@ class Board():
 
             #add pawns
             x,y = p.pawn.position
-            print("pawn pos id: {}: x{}, y{}".format(p.id,x,y))
+            # print("pawn pos id: {}: x{}, y{}".format(p.id,x,y))
             col, row = x, y
             if p.direction == player.PLAYER_TO_NORTH:
                 board_array[row*2 + 1][col*2 + 1] = BOARD_CELL_PLAYER_TO_NORTH
