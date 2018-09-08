@@ -233,11 +233,10 @@ class Board():
         for row in range(1,9):        
             board_array[row*2 ][0] = str(row)
         for col in range(1,9):        
-            board_array[0 ][col*2] = str(unichr(col + 96))
-              
-                    
-        
+            board_array[0 ][col*2] = str(chr(col + 96))
+
         for p in self.players:
+
             #add pawns
             x,y = p.pawn.position
             print("pawn pos id: {}: x{}, y{}".format(p.id,x,y))
@@ -258,13 +257,11 @@ class Board():
                     if orientation == wall.NORTH_SOUTH:
                         board_array[hori*2 -1 ][vert*2] = BOARD_CELL_WALL
                         board_array[hori*2 +1][vert*2] = BOARD_CELL_WALL
+
                     elif orientation == wall.EAST_WEST:
                         board_array[hori*2][vert*2 -1 ] = BOARD_CELL_WALL
                         board_array[hori*2][vert*2 + 1] = BOARD_CELL_WALL
               
-         
-        
-        
         # for pos in list(self.board_graph):
             # cell= self.board_graph[pos]
             # pawn = cell["pawn"]
