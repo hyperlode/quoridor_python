@@ -116,22 +116,22 @@ class Board():
                     if orientation == orientation_new:
                         # print("oooorientation_newohori_newoehoorientation_newheohorientation_newhehoeoh")
                         # print (orientation)
-                        # print ("x:{},y:{}".format(v, h))
+                        # print ("x:{},y:{}".format(vert, hori))
                         # print ("x:{},y:{}".format(vert_new, hori_new))
-                        
+                        # print (w)
+                        # print ("new_wall:{}".format(new_wall))
                         if orientation == wall.NORTH_SOUTH:
                             #x is the same.
                             #check for y at least 2 different.
-                            if abs(hori - hori_new) < 2:
+                            if (vert == vert_new) and abs(hori - hori_new) < 2:
                                 #overlap!
-                                print("walls one same line and overlapping")
+                                print("north south walls on same line and overlapping")
                                 return False
                                 
                         elif orientation == wall.EAST_WEST:
-                            #y is the same
-                            if abs(vert - vert_new) < 2:
+                            if (hori == hori_new) and abs(vert - vert_new) < 2:
                                 #overlap!
-                                print("walls one same line and overlapping")
+                                print("east-west walls are on the same line and overlapping")
                                 return False
                      #check for overlapping wall (placed in same direction, on same line, not sharing center point, just half a wall overlap.
                      
@@ -174,6 +174,7 @@ class Board():
         #direction i.e. pawn.NORTH
         #returns None if board edge reached.
         node_neighbour = direction(node)
+        
         #check if node exists
         if node_neighbour not in list(self.board_graph):
             print("node not existing: {}".format(node_neighbour))

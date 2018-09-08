@@ -111,8 +111,13 @@ if __name__ == "__main__":
     q.playTurn("NN")
     q.playTurn("NN")
     q.playTurn("NN")
-    q.playTurn("NN")
-    q.playTurn("NN")
+    q.playTurn("NW")
+    q.playTurn("3d")
+    q.playTurn("se")
+    q.playTurn("sw")
+    q.playTurn("ww")
+    q.playTurn("3a")
+    
     print(q)
     
     
