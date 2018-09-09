@@ -28,9 +28,26 @@ GAME_STATUS_FINISHED = 2
 
 class Quoridor():
     
-    def __init__(self):
-        player1 = player.Player("lode", player.PLAYER_TO_NORTH)
-        player2 = player.Player("brecht", player.PLAYER_TO_SOUTH)
+    def __init__(self, settings = None):
+        # settings = dict. 
+    
+        if settings is None:
+            # start from scratch
+            player1_name = input("Name for player 1 (going north) [player_1]:") or "player_1"
+            player2_name = input("Name for player 2 (going south) [player_2]:") or "player_2"
+            self.settings = {}
+        else:
+            # scrape the dict to see what settings are available
+            
+            player1_name = settings["player_1"]
+            player2_name = settings["player_2"]
+            
+            #if direction of player 1 is not North, change it here.
+            
+        
+        player1 = player.Player(player1_name, player.PLAYER_TO_NORTH)
+        player2 = player.Player(player2_name, player.PLAYER_TO_SOUTH)
+        
         self.players = [player1, player2]
         self.gameBoard = board.Board()
         self.gameBoard.add_player(player1)
@@ -50,13 +67,15 @@ class Quoridor():
                 symbol = board.BOARD_CELL_PLAYER_TO_NORTH    
             else:
                 symbol = board.BOARD_CELL_PLAYER_TO_SOUTH    
-            
+            self.print_board()
             move = input("player {} ({}) input move: ".format(self.players[self.playerAtMoveIndex].id, symbol))
             played = self.play_turn(move)
-            self.turn_aftermath(played = played, display_board = True)
+            self.turn_aftermath(played = played, display_board = False)
             
-    def turn_prelude (self):\
+    def print_board (self):
         console_clear()
+        print(self)
+        
         
     def turn_aftermath(self, played = True, display_board = True):
         
@@ -73,8 +92,8 @@ class Quoridor():
             print("game should be stopped now....")
 
         if display_board:
-           
-            print(self)
+            self.print_board()
+            
             
        
         
@@ -93,8 +112,8 @@ class Quoridor():
             played = self.movePawn(direction)
 
         elif wall.Wall._notation_to_lines_and_orientation(move) is not None:
-            
             played = self.players[self.playerAtMoveIndex].place_wall(move)
+            
         else:
             print("Move {} has a wrong notation or is not yet implemented".format(move))
             
@@ -103,11 +122,10 @@ class Quoridor():
         return played
     
     def play_turn_animated(self, move, animation_time_ms = 100):
-       
+        time.sleep(animation_time_ms/1000)
+        self.print_board()
         if self.play_turn(move):
             self.turn_aftermath()
-           
-            time.sleep(animation_time_ms/1000)
             return True
         else:
             #no success == no animation
@@ -172,11 +190,13 @@ def console_clear():
     os.system('cls' if os.name == 'nt' else 'echo -e \\\\033c')
         
 if __name__ == "__main__":
-    q = Quoridor()
-    print(str(q))
-   
-    q.game_user_input()
+    
+    # q.game_user_input()
    
     game_20180908_Brecht_Lode_0 = {"player_1":"Lode", "player_2":"Brecht", "remarks":"fictional demo game" , "date":"20180908", "game":["n s n s n s n s"]}  
+    game_Brecht_Lode = {"player_1":"Lode", "player_2":"Brecht"}  
     
-    
+    q = Quoridor(game_Brecht_Lode)
+    q.game_user_input()
+    # print(str(q))
+   
