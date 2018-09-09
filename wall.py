@@ -101,6 +101,8 @@ class Wall():
             orientation = NORTH_SOUTH
             digit = b
             letter = a
+        else:
+            return None
            
         # notation to wall line numbers
         vert_line = ord(letter) - 96  # a = 97

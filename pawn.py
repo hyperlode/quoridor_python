@@ -51,16 +51,17 @@ DIRECTIONS_DIAGONAL_JUMP = [NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST]
 
 
 class Pawn():
-    def __init__(self, position_init, positions_win):
+    # def __init__(self, position_init, positions_win):
+    def __init__(self, position_init):
         # self.player = player
         self.position_init = position_init
         self._position = position_init
-        self.positions_win = positions_win
+        # self.positions_win = positions_win
         self.positions_history = [self._position]
         
         
-    def win(self):
-        return self._position in self.positions_win
+    # def win(self):
+        # return self._position in self.positions_win
    
    
     # def move(self, direction,simulation=False):
@@ -79,7 +80,7 @@ class Pawn():
         self.positions_history.append(self._position)
         # print("posssef: {}".format(self._position))
 
-    def __str__(self):
+    def __repr__(self):
         return ("Pawn at position: {}".format(self.position))
         
 if __name__ == "__main__":

@@ -21,6 +21,11 @@ NOTATION_TO_DIRECTION = {
     "ne":pawn.NORTH_EAST
 }
 
+GAME_STATUS_NOT_STARTED = 0
+GAME_STATUS_PLAYING = 1
+GAME_STATUS_FINISHED = 2
+
+
 class Quoridor():
     
     def __init__(self):
@@ -35,15 +40,46 @@ class Quoridor():
             pl.set_board(self.gameBoard)
             
         self.playerAtMoveIndex = 0
+    
+    def game_user_input(self):
+         #ask user for move if not provided.
+        success = None
+        while success is None:
             
+            if self.players[self.playerAtMoveIndex].player_direction == 0:
+                symbol = board.BOARD_CELL_PLAYER_TO_NORTH    
+            else:
+                symbol = board.BOARD_CELL_PLAYER_TO_SOUTH    
+            
+            move = input("player {} ({}) input move: ".format(self.players[self.playerAtMoveIndex].id, symbol))
+            played = self.play_turn(move)
+            self.turn_aftermath(played = played, display_board = True)
+            
+    def turn_prelude (self):\
+        console_clear()
         
-    def playTurn(self, move = None):
-    
-        #ask user for move if not provided.
-        if move is None:
-            move = input("player {} input move: ".format(self.players[self.playerAtMoveIndex].id))
+    def turn_aftermath(self, played = True, display_board = True):
+        
+        game_finished = False
+        if played:
+            #check winner
+            game_finished = self.players[self.playerAtMoveIndex].get_pawn_winning_position()
+            if game_finished:
+                print("Game won by {}".format(str(self.players[self.playerAtMoveIndex])))
+            else:
+                self.nextPlayer()
             
-    
+        if game_finished:
+            print("game should be stopped now....")
+
+        if display_board:
+           
+            print(self)
+            
+       
+        
+    def play_turn(self, move):
+        console_clear()   
         print("----play turn ( {} playing move: {})------".format(self.players[self.playerAtMoveIndex].id, move))
         #move in standard notation.
         
@@ -61,16 +97,16 @@ class Quoridor():
             played = self.players[self.playerAtMoveIndex].place_wall(move)
         else:
             print("Move {} has a wrong notation or is not yet implemented".format(move))
-        if played:
-            self.nextPlayer()
+            
+            
+       
         return played
     
     def play_turn_animated(self, move, animation_time_ms = 100):
-    
-        
-        if self.playTurn(move):
-            console_clear()
-            print(self)
+       
+        if self.play_turn(move):
+            self.turn_aftermath()
+           
             time.sleep(animation_time_ms/1000)
             return True
         else:
@@ -79,8 +115,8 @@ class Quoridor():
                 tmp = input("wrong move notation, press key to continue.")
             except:
                 pass
-                
             return False
+            
     def nextPlayer(self):
         #swap player
         self.playerAtMoveIndex += 1
@@ -98,9 +134,35 @@ class Quoridor():
         print("succes?:{}".format(success))
         return success
         
+    def state_as_dict(self):
+        pass 
+        
+    def state_as_json(self):
+        import json
+    
+        # r = {'is_claimed': 'True', 'rating': 3.5}
+        json = json.dumps(r) # note i gave it a different name
+        file.write(str(r['rating']))
+        # def load_json():
+        
+        
     def __str__(self):
         return str(self.gameBoard)
 
+def game_from_archive(gameString):
+    pass
+    
+def game_to_archive(game, outputFile):
+    pass
+
+def game_from_json(json):
+    pass
+    
+def game_to_json(game):
+
+    pass
+    
+    
 def console_clear():
     '''
     Clears the terminal screen and scroll back to present
@@ -112,34 +174,9 @@ def console_clear():
 if __name__ == "__main__":
     q = Quoridor()
     print(str(q))
-    while True:
-        q.play_turn_animated( None, 100)
-    # q.playTurn()
-    # q.play_turn_animated("k")
-    q.play_turn_animated("n")
-    q.play_turn_animated("s")
-    q.play_turn_animated("n")
-    q.play_turn_animated("s")
-    q.play_turn_animated("n")
-    q.play_turn_animated("s")
-    q.play_turn_animated("n")
-    q.play_turn_animated("ss")
-    q.play_turn_animated("ss")
-    q.play_turn_animated("ss")
-    q.play_turn_animated("ss")
-    # q.play_turn_animated("s")
-    q.play_turn_animated("e4")
-    q.play_turn_animated("5e")
-    q.play_turn_animated("e6")
-    q.play_turn_animated("NN")
-    q.play_turn_animated("NN")
-    q.play_turn_animated("NN")
-    q.play_turn_animated("NW")
-    q.play_turn_animated("3d")
-    q.play_turn_animated("se")
-    q.play_turn_animated("sw")
-    q.play_turn_animated("ww")
-    # q.play_turn_animated("1i")
-  
+   
+    q.game_user_input()
+   
+    game_20180908_Brecht_Lode_0 = {"player_1":"Lode", "player_2":"Brecht", "remarks":"fictional demo game" , "date":"20180908", "game":["n s n s n s n s"]}  
     
     

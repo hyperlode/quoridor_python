@@ -18,13 +18,18 @@ class Player:
         self.walls = [wall.Wall(wall.TYPE_PLAYER, i) for i in range(NUMBER_OF_WALLS)]
         
         # create pawn
-        self.pawn = pawn.Pawn( board.PAWN_INIT_POS[player_direction], board.PAWN_WINNING_POS[player_direction])
+        self.pawn = pawn.Pawn( board.PAWN_INIT_POS[player_direction])
         
         self.board = None
         self.player_direction = player_direction
-        
+    def __repr__(self):
+        return str("Player {} at position: {}".format(self.id, self.pawn.position))
     def set_board(self, board_instance):
         self.board = board_instance
+    
+    def get_pawn_winning_position(self):
+        return self.pawn.position in board.PAWN_WINNING_POS[self.player_direction]
+        
         
     def get_unplaced_wall(self):
         # returns first unused wall.
