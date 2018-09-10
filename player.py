@@ -22,15 +22,16 @@ class Player:
         
         self.board = None
         self.player_direction = player_direction
+        
     def __repr__(self):
         return str("Player {} at position: {}".format(self.id, self.pawn.position))
+        
     def set_board(self, board_instance):
         self.board = board_instance
     
-    def get_pawn_winning_position(self):
+    def get_pawn_on_winning_position(self):
         return self.pawn.position in board.PAWN_WINNING_POS[self.player_direction]
-        
-        
+                
     def get_unplaced_wall(self):
         # returns first unused wall.
         # None if all walls are placed.
@@ -45,7 +46,6 @@ class Player:
         return None 
         
     def place_wall(self, verbose_position):
-        
         playWall = self.get_unplaced_wall()
         if playWall is None:
             print("no free walls for this player available")

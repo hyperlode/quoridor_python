@@ -74,6 +74,7 @@ class Quoridor():
             
     def print_board (self):
         console_clear()
+        self.gameBoard.distances_to_winning_node()
         print(self)
         
         
@@ -82,7 +83,7 @@ class Quoridor():
         game_finished = False
         if played:
             #check winner
-            game_finished = self.players[self.playerAtMoveIndex].get_pawn_winning_position()
+            game_finished = self.players[self.playerAtMoveIndex].get_pawn_on_winning_position()
             if game_finished:
                 print("Game won by {}".format(str(self.players[self.playerAtMoveIndex])))
             else:
