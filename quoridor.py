@@ -67,9 +67,6 @@ class Quoridor():
             for move in moves:
                 self.play_turn(move)
             
-                
-        
-    
     def game_user_input(self):
          #ask user for move if not provided.
         success = None
@@ -93,12 +90,9 @@ class Quoridor():
         
     def turn_aftermath(self, played = True, display_board = True):
         
-      
-            
-      
-
-        if display_board:
-            self.print_board()
+        pass
+        # if display_board:
+            # self.print_board()
             
             
        

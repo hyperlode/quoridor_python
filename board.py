@@ -157,6 +157,11 @@ class Board():
         
         #get proper weighted graph
         board_graph_weighted = {node: {n:1 for n in self.board_graph[node]["edges"] } for node in list(self.board_graph)}
+        
+        for node in list(board_graph_weighted):
+            print("{}:{}".format(node, board_graph_weighted[node]))
+        print("nodes: {}".format(len(list(board_graph_weighted))) )
+        
         # board_graph_weighted = {}
         # print(self.board_graph)
         # for node in list(self.board_graph):
@@ -171,7 +176,7 @@ class Board():
         for pl in self.players:
             pawn_position = pl.pawn.position
             board_node_distances_to_pawn = dijkstra.dijkstra_graph(board_graph_weighted, pawn_position)
-            print( board_node_distances_to_pawn)
+            # print( board_node_distances_to_pawn)
             
             dist = 100000000
             closest_winning_node = None           
@@ -183,9 +188,10 @@ class Board():
                         dist = board_node_distances_to_pawn[node]
                         closest_winning_node = node
                 else:
-                    print("node not reachable: {}".format(node))
+                    # print("node not reachable: {}".format(node))
+                    pass
                 distances[pl.player_direction]= closest_winning_node
-        print( distances)
+        # print( distances)
         return distances
             
     def unlink_nodes(self, node1, node2):
@@ -272,8 +278,10 @@ class Board():
         #add row and column indicators
         for row in range(1,9):        
             board_array[row*2 ][0] = str(row)
+            board_array[row*2 ][BOARD_WIDTH * 2 ] = str(row)
         for col in range(1,9):        
-            board_array[0 ][col*2] = str(chr(col + 96))
+            board_array[0][col*2] = str(chr(col + 96))
+            board_array[BOARD_HEIGHT * 2][col*2] = str(chr(col + 96))
 
         for p in self.players:
 
