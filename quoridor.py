@@ -41,7 +41,7 @@ class Quoridor():
             
             player1_name = settings["player_1"]
             player2_name = settings["player_2"]
-            
+            self.settings = settings
             #if direction of player 1 is not North, change it here.
             
         
@@ -57,6 +57,18 @@ class Quoridor():
             pl.set_board(self.gameBoard)
             
         self.playerAtMoveIndex = 0
+        
+        self.move_history = []
+        if "game" in list(self.settings):
+            #if game in it, play automatically till end of recording.
+            #game = string with space between every move.
+            moves= self.settings["game"].split(" ")
+            
+            for move in moves:
+                self.play_turn(move)
+            
+                
+        
     
     def game_user_input(self):
          #ask user for move if not provided.
@@ -68,6 +80,7 @@ class Quoridor():
             else:
                 symbol = board.BOARD_CELL_PLAYER_TO_SOUTH    
             self.print_board()
+            print("move history: {}".format(self.move_history))
             move = input("player {} ({}) input move: ".format(self.players[self.playerAtMoveIndex].id, symbol))
             played = self.play_turn(move)
             self.turn_aftermath(played = played, display_board = False)
@@ -80,17 +93,9 @@ class Quoridor():
         
     def turn_aftermath(self, played = True, display_board = True):
         
-        game_finished = False
-        if played:
-            #check winner
-            game_finished = self.players[self.playerAtMoveIndex].get_pawn_on_winning_position()
-            if game_finished:
-                print("Game won by {}".format(str(self.players[self.playerAtMoveIndex])))
-            else:
-                self.nextPlayer()
+      
             
-        if game_finished:
-            print("game should be stopped now....")
+      
 
         if display_board:
             self.print_board()
@@ -118,8 +123,19 @@ class Quoridor():
         else:
             print("Move {} has a wrong notation or is not yet implemented".format(move))
             
-            
-       
+        if played:
+            self.move_history.append(move)
+        
+        game_finished = False
+        if played:
+            #check winner
+            game_finished = self.players[self.playerAtMoveIndex].get_pawn_on_winning_position()
+            if game_finished:
+                print("Game won by {}".format(str(self.players[self.playerAtMoveIndex])))
+                  
+                print("game should be stopped now.... work with game statusses!")
+            else:
+                self.nextPlayer()
         return played
     
     def play_turn_animated(self, move, animation_time_ms = 100):
@@ -194,10 +210,11 @@ if __name__ == "__main__":
     
     # q.game_user_input()
    
-    game_20180908_Brecht_Lode_0 = {"player_1":"Lode", "player_2":"Brecht", "remarks":"fictional demo game" , "date":"20180908", "game":["n s n s n s n s"]}  
+    game_20180908_Brecht_Lode_0 = {"player_1":"Lode", "player_2":"Brecht", "remarks":"fictional demo game" , "date":"20180908", "game":"n s n s n s n s"}  
     game_Brecht_Lode = {"player_1":"Lode", "player_2":"Brecht"}  
+    game_Brecht_Lode_wall_isolates_part_of_board = {"player_1":"Lode", "player_2":"Brecht", "game":"n s n s 7a"}  
     
-    q = Quoridor(game_Brecht_Lode)
+    q = Quoridor(game_Brecht_Lode_wall_isolates_part_of_board)
     q.game_user_input()
     # print(str(q))
    
