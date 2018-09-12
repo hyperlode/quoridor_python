@@ -158,9 +158,9 @@ class Board():
         #get proper weighted graph
         board_graph_weighted = {node: {n:1 for n in self.board_graph[node]["edges"] } for node in list(self.board_graph)}
         
-        for node in list(board_graph_weighted):
-            print("{}:{}".format(node, board_graph_weighted[node]))
-        print("nodes: {}".format(len(list(board_graph_weighted))) )
+        # for node in list(board_graph_weighted):
+            # print("{}:{}".format(node, board_graph_weighted[node]))
+        # print("nodes: {}".format(len(list(board_graph_weighted))) )
         
         # board_graph_weighted = {}
         # print(self.board_graph)

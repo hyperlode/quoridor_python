@@ -30,7 +30,7 @@
 
     # return visited
 
-def dijkstra_graph(graph, start_node):
+def dijkstra_graph_original(graph, start_node):
     unvisited = {node: None for node in list(graph)} #using None as +inf
     visited = {}
     current = start_node
@@ -55,6 +55,39 @@ def dijkstra_graph(graph, start_node):
         current, currentDistance = sorted(candidates, key = lambda x: x[1])[0]
     return visited
     
+def dijkstra_graph(graph, start_node):
+    unvisited = {node: None for node in list(graph)} #using None as +inf
+    visited = {}
+    current = start_node
+    currentDistance = 0
+    unvisited[current] = currentDistance
+    toBeVisited = [current]
+    
+    while len(toBeVisited) > 0:
+        print(toBeVisited)
+        #visit current node
+        for neighbour, distance in graph[current].items():  # go over all neighbours of current node.
+            
+            if neighbour in unvisited: 
+                toBeVisited.append(neighbour)
+                
+                newDistance = currentDistance + distance  # check distance
+                if unvisited[neighbour] is None or unvisited[neighbour] > newDistance:  # if new distance less, apply!
+                    unvisited[neighbour] = newDistance
+                    visited[current] = currentDistance
+        
+        toBeVisited.remove(current)
+        del unvisited[current]
+        # if not unvisited: 
+            # break
+         
+        candidates = [node for node in unvisited.items() if node[1]]  # if node is not None (infinite), add it to candidates.
+        
+              
+        print(candidates)
+        if len(candidates)>0:
+            current, currentDistance = sorted(candidates, key = lambda x: x[1])[0]
+    return visited    
 def dijkstra_graph_unweighted(graph, start_node):
     #graph = {node:[neighbour1, neigh2,...], node2:[neighbournode1,...]}
     unvisited = {node: None for node in list(graph)} #using None as +inf
@@ -106,7 +139,7 @@ if __name__ == "__main__":
     nodes = ('A', 'B',  'D')
     distances_D_isolated = {
     'B': {'A': 5 },
-    'A': {'B': 5, 'D':2},
+    'A': {'B': 5},
     'D': {'A':3, 'B':3}}
     
     print("weighted d isolated:")
