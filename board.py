@@ -3,8 +3,8 @@ import pawn
 import wall
 import dijkstra
 
-BOARD_WIDTH = 9 
-BOARD_HEIGHT = 9 
+BOARD_WIDTH = 3 # 9 is default should be an odd number of squares, for the pawn to be able to start in the middle.
+BOARD_HEIGHT = 3  # 9 is default
 
 # board output (ASCII) visualization
 BOARD_CELL_EMPTY = " "
@@ -17,10 +17,12 @@ BOARD_CELL_LINE_HORIZONTAL = "-"
 BOARD_CELL_LINE_VERTICAL = "|"
 BOARD_CELL_LINE_CROSSING = "+"
 
-PAWN_INIT_POS = [(4, 0), (4, 8)] 
+startPosX = BOARD_WIDTH // 2   # for width 9 --> 4  
+
+PAWN_INIT_POS = [(startPosX, 0), (startPosX, BOARD_HEIGHT-1)] 
 # = (PAWN_INIT_POS_X, 0), (PAWN_INIT_POS_X, BOARD_HEIGHT-1)
 
-PAWN_WINNING_POS = [(x,8) for x in range(BOARD_WIDTH)], [(x,0) for x in range(BOARD_WIDTH)]
+PAWN_WINNING_POS = [(x,BOARD_HEIGHT-1) for x in range(BOARD_WIDTH)], [(x,0) for x in range(BOARD_WIDTH)]
         
 
         
@@ -161,7 +163,13 @@ class Board():
         # for node in list(board_graph_weighted):
             # print("{}:{}".format(node, board_graph_weighted[node]))
         # print("nodes: {}".format(len(list(board_graph_weighted))) )
+        nodes_sorted = sorted( list(board_graph_weighted), key = lambda pos: 10*pos[0]+pos[1])
+        print("board nodes:")
+        for n in nodes_sorted:
+            print("{}:{}".format(n,board_graph_weighted[n]))
+           
         
+            
         # board_graph_weighted = {}
         # print(self.board_graph)
         # for node in list(self.board_graph):
@@ -174,21 +182,32 @@ class Board():
         # dijkstra.
         
         for pl in self.players:
+            print("situation for player {}".format(pl.id))
             pawn_position = pl.pawn.position
             board_node_distances_to_pawn = dijkstra.dijkstra_graph(board_graph_weighted, pawn_position)
-            # print( board_node_distances_to_pawn)
+            # print( list(board_node_distances_to_pawn))
             
+            nodes_sorted_after_dijkstra = sorted( list(board_node_distances_to_pawn), key = lambda pos: 10*(pos[0])+pos[1])
+            print(nodes_sorted_after_dijkstra)
+            print("dijkstra for node: {}".format(pawn_position))
+            for n in nodes_sorted_after_dijkstra:
+                print("{} --> {}".format(n,board_node_distances_to_pawn[n] ))
+            print("xxxxxxxx")
+            # glass expo  glass garden shi
+            #chewing gum street
             dist = 100000000
             closest_winning_node = None           
             
             #get winning positions
             for node in PAWN_WINNING_POS[pl.player_direction]:
+                print(node)
                 if node in board_node_distances_to_pawn:
+                
                     if dist > board_node_distances_to_pawn[node]:
                         dist = board_node_distances_to_pawn[node]
                         closest_winning_node = node
                 else:
-                    # print("node not reachable: {}".format(node))
+                    print("node not reachable: {}".format(node))
                     pass
                 distances[pl.player_direction]= closest_winning_node
         # print( distances)
@@ -276,10 +295,10 @@ class Board():
                     board_array[row][col] = BOARD_CELL_LINE_VERTICAL
         
         #add row and column indicators
-        for row in range(1,9):        
+        for row in range(1,BOARD_WIDTH):        
             board_array[row*2 ][0] = str(row)
             board_array[row*2 ][BOARD_WIDTH * 2 ] = str(row)
-        for col in range(1,9):        
+        for col in range(1,BOARD_HEIGHT):        
             board_array[0][col*2] = str(chr(col + 96))
             board_array[BOARD_HEIGHT * 2][col*2] = str(chr(col + 96))
 

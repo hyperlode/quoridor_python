@@ -19,7 +19,6 @@ class Player:
         
         # create pawn
         self.pawn = pawn.Pawn( board.PAWN_INIT_POS[player_direction])
-        
         self.board = None
         self.player_direction = player_direction
         

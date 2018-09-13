@@ -30,7 +30,7 @@
 
     # return visited
 
-def dijkstra_graph_original(graph, start_node):
+def dijkstra_graph(graph, start_node):
     unvisited = {node: None for node in list(graph)} #using None as +inf
     visited = {}
     current = start_node
@@ -50,12 +50,41 @@ def dijkstra_graph_original(graph, start_node):
             break
          
         candidates = [node for node in unvisited.items() if node[1]]
-        print(candidates)
+        # print(candidates)
        
         current, currentDistance = sorted(candidates, key = lambda x: x[1])[0]
     return visited
-    
-def dijkstra_graph(graph, start_node):
+def dijkstra_graphxxx(graph, start_node):
+    print("yoeeiejoieioeioeiojeioejioejio")
+    unvisited = {node: None for node in list(graph)} #using None as +inf
+    visited = {}
+    current = start_node
+    currentDistance = 0
+    unvisited[current] = currentDistance
+
+    while True:
+        for neighbour, distance in graph[current].items():
+            if neighbour in unvisited: 
+                newDistance = currentDistance + distance
+                if unvisited[neighbour] is None or unvisited[neighbour] > newDistance:
+                    unvisited[neighbour] = newDistance
+                    visited[current] = currentDistance
+
+        del unvisited[current]
+        if not unvisited: 
+            break
+         
+        candidates = [node for node in unvisited.items() if node[1]]
+        # print(candidates)
+        # current, currentDistance = sorted(candidates, key = lambda x: x[1])[0]
+        if len(candidates)>0:
+            current, currentDistance = sorted(candidates, key = lambda x: x[1])[0]
+        else:
+            break  # no more candidates (if there are nodes isolated, not all nodes will be visited. Their distance remains None (inf).
+        
+    return visited
+        
+def dijkstra_graph_isolated_nodes_enabled(graph, start_node):
     unvisited = {node: None for node in list(graph)} #using None as +inf
     visited = {}
     current = start_node
@@ -87,6 +116,8 @@ def dijkstra_graph(graph, start_node):
         print(candidates)
         if len(candidates)>0:
             current, currentDistance = sorted(candidates, key = lambda x: x[1])[0]
+        else:
+            break
     return visited    
 def dijkstra_graph_unweighted(graph, start_node):
     #graph = {node:[neighbour1, neigh2,...], node2:[neighbournode1,...]}
@@ -123,30 +154,30 @@ if __name__ == "__main__":
     'E': {'A': 12, 'D': 1, 'C': 1, 'F': 2},
     'F': {'A': 5, 'E': 2, 'C': 16}}
     graph = {node:distances[node] for node in nodes}
-    # print(graph)
-    # print(dijkstra_graph(graph, 'B')) # return the distances to all nodes.
-    
+    print(graph)
+    print(dijkstra_graph(graph, 'B')) # return the distances to all nodes.
+    print("-------------------------------")
     nodes = ('A', 'B', 'C', 'D', 'E', 'F', 'G')
     
-    # distances_D_isolated = {
-    # 'B': {'A': 5,  'G': 2},
-    # 'A': {'B': 5,  'E': 12, 'F' :5},
-    # 'D':{'A':5},
-    # 'G': {'B': 2, 'D':2,  'C': 2},
-    # 'C': {'G': 2, 'E': 1, 'F': 16},
-    # 'E': {'A': 12, 'C': 1, 'F': 2},
-    # 'F': {'A': 5, 'E': 2, 'C': 16}}
-    nodes = ('A', 'B',  'D')
     distances_D_isolated = {
-    'B': {'A': 5 },
-    'A': {'B': 5},
-    'D': {'A':3, 'B':3}}
+    'B': {'A': 5,  'G': 2},
+    'A': {'B': 5,  'E': 12, 'F' :5},
+    'D':{'A':5},
+    'G': {'B': 2, 'D':2,  'C': 2},
+    'C': {'G': 2, 'E': 1, 'F': 16},
+    'E': {'A': 12, 'C': 1, 'F': 2},
+    'F': {'A': 5, 'E': 2, 'C': 16}}
+    # nodes = ('A', 'B',  'D')
+    # distances_D_isolated = {
+    # 'B': {'A': 5 },
+    # 'A': {'B': 5},
+    # 'D': {'A':3, 'B':3}}
     
     print("weighted d isolated:")
     graph = {node:distances_D_isolated[node] for node in nodes}
     print(graph)
     print(dijkstra_graph(graph, 'B')) # return the distances to all nodes.
-    
+    print("-------------------------------")
     print("Dijkstra weighted as 1:")
     nodes = ('A', 'B', 'C', 'D', 'E', 'F', 'G')
     distances = {

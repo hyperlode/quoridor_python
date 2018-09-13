@@ -208,7 +208,8 @@ if __name__ == "__main__":
     game_Brecht_Lode = {"player_1":"Lode", "player_2":"Brecht"}  
     game_Brecht_Lode_wall_isolates_part_of_board = {"player_1":"Lode", "player_2":"Brecht", "game":"n s n s 7a"}  
     
-    q = Quoridor(game_Brecht_Lode_wall_isolates_part_of_board)
+    # q = Quoridor(game_Brecht_Lode_wall_isolates_part_of_board)
+    q = Quoridor(game_Brecht_Lode)
     q.game_user_input()
     # print(str(q))
    
