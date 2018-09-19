@@ -3,8 +3,8 @@ import pawn
 import wall
 import dijkstra
 
-BOARD_WIDTH = 3 # 9 is default should be an odd number of squares, for the pawn to be able to start in the middle.
-BOARD_HEIGHT = 3  # 9 is default
+BOARD_WIDTH = 9 # 9 is default should be an odd number of squares, for the pawn to be able to start in the middle.
+BOARD_HEIGHT = 9# 9 is default
 
 # board output (ASCII) visualization
 BOARD_CELL_EMPTY = " "
@@ -155,7 +155,7 @@ class Board():
         
     def distances_to_winning_node(self):    
         # returns tuple with distances for each player to nearest winning square. None if not reachable
-        distances = [None,None]
+        shortest_path = [None,None]
         
         #get proper weighted graph
         board_graph_weighted = {node: {n:1 for n in self.board_graph[node]["edges"] } for node in list(self.board_graph)}
@@ -184,34 +184,40 @@ class Board():
         for pl in self.players:
             # print("situation for player {}".format(pl.id))
             pawn_position = pl.pawn.position
+
+            # distance from all reachable nodes to pawn position
             board_node_distances_to_pawn = dijkstra.dijkstra_graph_isolated_nodes_enabled(board_graph_weighted, pawn_position)
-            # print( list(board_node_distances_to_pawn))
-            
-            nodes_sorted_after_dijkstra = sorted( list(board_node_distances_to_pawn), key = lambda pos: 10*(pos[0])+pos[1])
+
+
+            # nodes_sorted_after_dijkstra = sorted( list(board_node_distances_to_pawn), key = lambda pos: 10*(pos[0])+pos[1])
             # print("nodes sorted after dijkstra:{}".format(nodes_sorted_after_dijkstra))
             # print("dijkstra for node: {}".format(pawn_position))
             # for n in nodes_sorted_after_dijkstra:
                 # print("{} --> {}".format(n,board_node_distances_to_pawn[n] ))
-            # print("xxxxxxxx")
-            # glass expo  glass garden shi
-            #chewing gum street
-            dist = 100000000
+
+            # distance from winning nodes to pawn
+            board_winning_nodes_to_pawn = {}
+
+            dist_to_win = None  # None is +inf
             closest_winning_node = None           
-            
-            #get winning positions
             for node in PAWN_WINNING_POS[pl.player_direction]:
-                # print(node)
+
                 if node in board_node_distances_to_pawn:
-                
-                    if dist > board_node_distances_to_pawn[node]:
-                        dist = board_node_distances_to_pawn[node]
+                    dist = board_node_distances_to_pawn[node]
+                    board_winning_nodes_to_pawn[node] = dist
+
+                    # check for shortest distance
+                    if dist_to_win is None or dist_to_win > dist:
+                        dist_to_win  = dist
                         closest_winning_node = node
                 else:
-                    print("for player {}: node not reachable: {}".format(pl.id, node))
-                    pass
-                distances[pl.player_direction]= closest_winning_node
-        # print( distances)
-        return distances
+                    board_winning_nodes_to_pawn[node] = None  # None is +inf
+
+            print("Distances to winning nodes for player {}: {}".format(pl.id, board_winning_nodes_to_pawn))
+
+            shortest_path[pl.player_direction]= dist_to_win
+
+        return shortest_path
             
     def unlink_nodes(self, node1, node2):
         #will destroy edge between two nodes
