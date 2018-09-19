@@ -164,9 +164,9 @@ class Board():
             # print("{}:{}".format(node, board_graph_weighted[node]))
         # print("nodes: {}".format(len(list(board_graph_weighted))) )
         nodes_sorted = sorted( list(board_graph_weighted), key = lambda pos: 10*pos[0]+pos[1])
-        print("board nodes:")
-        for n in nodes_sorted:
-            print("{}:{}".format(n,board_graph_weighted[n]))
+        # print("board nodes:")
+        # for n in nodes_sorted:
+            # print("{}:{}".format(n,board_graph_weighted[n]))
            
         
             
@@ -182,17 +182,17 @@ class Board():
         # dijkstra.
         
         for pl in self.players:
-            print("situation for player {}".format(pl.id))
+            # print("situation for player {}".format(pl.id))
             pawn_position = pl.pawn.position
-            board_node_distances_to_pawn = dijkstra.dijkstra_graph(board_graph_weighted, pawn_position)
+            board_node_distances_to_pawn = dijkstra.dijkstra_graph_isolated_nodes_enabled(board_graph_weighted, pawn_position)
             # print( list(board_node_distances_to_pawn))
             
             nodes_sorted_after_dijkstra = sorted( list(board_node_distances_to_pawn), key = lambda pos: 10*(pos[0])+pos[1])
-            print(nodes_sorted_after_dijkstra)
-            print("dijkstra for node: {}".format(pawn_position))
-            for n in nodes_sorted_after_dijkstra:
-                print("{} --> {}".format(n,board_node_distances_to_pawn[n] ))
-            print("xxxxxxxx")
+            # print("nodes sorted after dijkstra:{}".format(nodes_sorted_after_dijkstra))
+            # print("dijkstra for node: {}".format(pawn_position))
+            # for n in nodes_sorted_after_dijkstra:
+                # print("{} --> {}".format(n,board_node_distances_to_pawn[n] ))
+            # print("xxxxxxxx")
             # glass expo  glass garden shi
             #chewing gum street
             dist = 100000000
@@ -200,14 +200,14 @@ class Board():
             
             #get winning positions
             for node in PAWN_WINNING_POS[pl.player_direction]:
-                print(node)
+                # print(node)
                 if node in board_node_distances_to_pawn:
                 
                     if dist > board_node_distances_to_pawn[node]:
                         dist = board_node_distances_to_pawn[node]
                         closest_winning_node = node
                 else:
-                    print("node not reachable: {}".format(node))
+                    print("for player {}: node not reachable: {}".format(pl.id, node))
                     pass
                 distances[pl.player_direction]= closest_winning_node
         # print( distances)

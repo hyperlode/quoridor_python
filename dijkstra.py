@@ -39,20 +39,27 @@ def dijkstra_graph(graph, start_node):
 
     while True:
         for neighbour, distance in graph[current].items():
+            
             if neighbour in unvisited: 
+                
                 newDistance = currentDistance + distance
                 if unvisited[neighbour] is None or unvisited[neighbour] > newDistance:
+                    print("neigh: {}".format(neighbour))
                     unvisited[neighbour] = newDistance
-                    visited[current] = currentDistance
+        visited[current] = currentDistance
+        print("visited:{}".format(visited))
 
         del unvisited[current]
         if not unvisited: 
             break
          
         candidates = [node for node in unvisited.items() if node[1]]
-        # print(candidates)
+        print("candidates: {}".format(candidates))
        
         current, currentDistance = sorted(candidates, key = lambda x: x[1])[0]
+        
+        print("current: {}".format(current))
+        
     return visited
 def dijkstra_graphxxx(graph, start_node):
     print("yoeeiejoieioeioeiojeioejioejio")
@@ -93,7 +100,7 @@ def dijkstra_graph_isolated_nodes_enabled(graph, start_node):
     toBeVisited = [current]
     
     while len(toBeVisited) > 0:
-        print(toBeVisited)
+        # print(toBeVisited)
         #visit current node
         for neighbour, distance in graph[current].items():  # go over all neighbours of current node.
             
@@ -103,7 +110,7 @@ def dijkstra_graph_isolated_nodes_enabled(graph, start_node):
                 newDistance = currentDistance + distance  # check distance
                 if unvisited[neighbour] is None or unvisited[neighbour] > newDistance:  # if new distance less, apply!
                     unvisited[neighbour] = newDistance
-                    visited[current] = currentDistance
+        visited[current] = currentDistance #was erroneously tabbed!
         
         toBeVisited.remove(current)
         del unvisited[current]
@@ -113,7 +120,7 @@ def dijkstra_graph_isolated_nodes_enabled(graph, start_node):
         candidates = [node for node in unvisited.items() if node[1]]  # if node is not None (infinite), add it to candidates.
         
               
-        print(candidates)
+        # print(candidates)
         if len(candidates)>0:
             current, currentDistance = sorted(candidates, key = lambda x: x[1])[0]
         else:
