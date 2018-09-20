@@ -78,45 +78,95 @@ class Quoridor():
                 symbol = board.BOARD_CELL_PLAYER_TO_SOUTH    
             self.print_board()
             print("move history: {}".format(self.move_history))
-            move = input("player {} ({}) input move: ".format(self.players[self.playerAtMoveIndex].id, symbol))
-            played = self.play_turn(move)
-            self.turn_aftermath(played = played, display_board = False)
+
+            move = input("player {} {} input move(u to undo)): ".format(self.players[self.playerAtMoveIndex].name, symbol))
+
+            if move == "u":
+                print("undo previous move")
+                self.undo_turn()
+            else:
+                self.play_turn(move)
+
             
     def print_board (self):
         console_clear()
-        self.gameBoard.distances_to_winning_node()
         print(self)
-        
-        
-    def turn_aftermath(self, played = True, display_board = True):
-        
-        pass
+
+    # def turn_aftermath(self, played=True, display_board=True):
+
+        # pass
         # if display_board:
             # self.print_board()
-            
-            
-       
-        
+
+    def undo_turn(self, steps=1):
+        # undoing a turn.
+
+        if len(self.move_history)==0:
+            print("nothing to undo")
+            return False
+
+        # check what the previous move was.
+
+        move_to_undo = self.move_history.pop()
+        previous_player_index = self.get_previous_player_index()
+        success = False
+
+        print("previous move:{} by {}".format(move_to_undo, self.players[previous_player_index].name))
+        if move_to_undo in NOTATION_TO_DIRECTION:
+            # if pawn move : set back to previous position
+            #move pawn
+            # played = self.move_pawn(move)
+            print("undo pawn move")
+            self.players[previous_player_index].undo_move_pawn()
+            success = True
+        else:
+            # if wall : remove wall
+            print("undo wall move")
+            success = self.gameBoard.remove_wall(move_to_undo)
+
+        if success:
+            # activate previous player.
+            self.playerAtMoveIndex = previous_player_index
+        else:
+            raise Exception("Big troubles at undoing.")
+        # remake the previous statistics
+        pass
+
+        #take away wall, undo move. --> remember previous absolute position.
+
     def play_turn(self, move):
         console_clear()   
-        print("----play turn ( {} playing move: {})------".format(self.players[self.playerAtMoveIndex].id, move))
+        print("----play turn ( {} playing move: {})------".format(self.players[self.playerAtMoveIndex].name, move))
         #move in standard notation.
         
         move = move.lower()
         played = False
         
         if move in NOTATION_TO_DIRECTION:
-            #check for pawn or wall move
-            direction = NOTATION_TO_DIRECTION[move]
+
             #move pawn
-            played = self.movePawn(direction)
+            played = self.move_pawn(move)
 
         elif wall.Wall._notation_to_lines_and_orientation(move) is not None:
-            played = self.players[self.playerAtMoveIndex].place_wall(move)
+            played = self.place_wall(move)
             
         else:
             print("Move {} has a wrong notation or is not yet implemented".format(move))
-            
+
+
+        #check validity of board
+        distances_to_win = self.gameBoard.distances_to_winning_node()
+
+        if None in distances_to_win:
+
+            played = False
+            # undo turn.
+
+        else:
+            # valid
+            pass
+
+        #add valid move to history
         if played:
             self.move_history.append(move)
         
@@ -129,7 +179,7 @@ class Quoridor():
                   
                 print("game should be stopped now.... work with game statusses!")
             else:
-                self.nextPlayer()
+                self.next_player()
         return played
     
     def play_turn_animated(self, move, animation_time_ms = 100):
@@ -145,17 +195,30 @@ class Quoridor():
             except:
                 pass
             return False
-            
-    def nextPlayer(self):
-        #swap player
+
+    def get_previous_player_index(self):
+        #returns the previous player index.
+        previous = self.playerAtMoveIndex - 1
+        if previous < 0:
+            previous = len(self.players) - 1
+        return previous
+
+    def next_player(self):
+        #activate next player
         self.playerAtMoveIndex += 1
-        
         if self.playerAtMoveIndex >= len(self.players):
             self.playerAtMoveIndex = 0
-        print("change player. new player at move: {}".format(self.players[self.playerAtMoveIndex].id))
-    
-    def movePawn(self, direction):
+
+        print("change player. new player at move: {}".format(self.players[self.playerAtMoveIndex].name))
+
+    def place_wall(self, position_verbose) :
+        success = self.players[self.playerAtMoveIndex].place_wall(position_verbose)
+        return success
+
+    def move_pawn(self, move_verbose):
         print("move pawn:")
+        # check for pawn or wall move
+        direction = NOTATION_TO_DIRECTION[move_verbose]
         #move pawn
         success = self.players[self.playerAtMoveIndex].move_pawn(direction)
         
@@ -165,7 +228,7 @@ class Quoridor():
         
     def state_as_dict(self):
         pass 
-        
+
     def state_as_json(self):
         import json
     

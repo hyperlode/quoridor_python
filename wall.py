@@ -154,7 +154,8 @@ class Wall():
         if self._status == STATUS_SIMULATION or self._status == STATUS_NOT_PLACED or allow_reset_placed_wall:
             self._position_nodes = None
             self._position_verbose = None
-            self._position_lines_orientation = None   
+            self._position_lines_orientation = None
+            self._status = STATUS_NOT_PLACED
             return True
         else:
             print("once a wall is placed, it cannot be undone")

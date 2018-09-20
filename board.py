@@ -88,21 +88,43 @@ class Board():
         for pl in self.players:
             node = pl.pawn.position
             okOnBoard = self.pawn_on_node(node)
-            print("player {} at postion {}, ok on board:{} ".format(pl.id, node, okOnBoard))
+            print("player {} at postion {}, ok on board:{} ".format(pl.name, node, okOnBoard))
           
     def move_pawn(self, old, new):
             self.board_graph[new]["pawn"] = self.board_graph[old]["pawn"]
             self.board_graph[old]["pawn"] = None
-        
-    # def get_cell_neighbours(self, node, ortho = True, jump = False, diag = False):
-        # if (ortho):
-            # cell.
-    def place_wall(self, new_wall):
-        #if valid, check if pawns can still reach the other side
 
+    def remove_wall(self,position_verbose):
+        #used for undo or backwards replay.
+
+        success = False
+
+        # check with placed walls
+        for pl in self.players:
+            for w in pl.walls:
+                if w.get_position("verbose") == position_verbose:
+                    print("wall found")
+
+                    #reconnect nodes
+                    for node1, node2 in w.get_position("nodes"):
+                        success = self.link_nodes(node1, node2)
+                        if not success:
+                            print(
+                                "connections on the board could not be connected when removing the wall. Board might be corrupt")
+                            raise Exception("board potentially corrupt.")
+                            return False
+
+                    w.reset_position(allow_reset_placed_wall=True)
+                    success = True
+        if not success:
+            print("wall not found. check if verbose position is accurate: {}".format(position_verbose))
+
+        return success
+
+    def place_wall(self, new_wall):
         hori_new,vert_new,orientation_new = new_wall.get_position("lines_orientation")
         
-        #check all walls
+        #check with placed walls
         for pl in self.players:
             for w in pl.walls:
                 if w.status == wall.STATUS_PLACED:
@@ -116,7 +138,8 @@ class Board():
                         else:
                             print("attempt to place wall with same centerpoint as other wall (but in another orientation).")
                         return False
-                     
+
+                    # check for overlapping wall (placed in same direction, on same line, not sharing center point, just half a wall overlap.
                     if orientation == orientation_new:
                         # print("oooorientation_newohori_newoehoorientation_newheohorientation_newhehoeoh")
                         # print (orientation)
@@ -137,16 +160,15 @@ class Board():
                                 #overlap!
                                 print("east-west walls are on the same line and overlapping")
                                 return False
-                     #check for overlapping wall (placed in same direction, on same line, not sharing center point, just half a wall overlap.
-                     
+
         print("wall can be placed.")
 
-        #unlink all nodes
+        #unlink nodes that are separated by the wall
         for node1, node2 in new_wall.get_position("nodes"):
             success = self.unlink_nodes(node1, node2)
             if not success:
                 print("connections on the board could not be severed when placing the wall. Board might be corrupt")
-                raise Exception("board potentioally corrupt.")
+                raise Exception("board potentially corrupt.")
                 return False
         return True
 
@@ -182,7 +204,7 @@ class Board():
         # dijkstra.
         
         for pl in self.players:
-            # print("situation for player {}".format(pl.id))
+            # print("situation for player {}".format(pl.name))
             pawn_position = pl.pawn.position
 
             # distance from all reachable nodes to pawn position
@@ -213,12 +235,26 @@ class Board():
                 else:
                     board_winning_nodes_to_pawn[node] = None  # None is +inf
 
-            print("Distances to winning nodes for player {}: {}".format(pl.id, board_winning_nodes_to_pawn))
+            print("Distances to winning nodes for player {}: {}".format(pl.name, board_winning_nodes_to_pawn))
 
             shortest_path[pl.player_direction]= dist_to_win
 
         return shortest_path
-            
+
+    def link_nodes(self, node1, node2):
+        if node2 not in self.board_graph[node1]["edges"]:
+            self.board_graph[node1]["edges"].append(node2)
+        else:
+            print ("ASSERT ERROR: nodes already connected.")
+            return False
+
+        if node1 not in self.board_graph[node2]["edges"]:
+            self.board_graph[node2]["edges"].append(node1)
+        else:
+            print("ASSERT ERROR: nodes already connected")
+            return False
+        return True
+
     def unlink_nodes(self, node1, node2):
         #will destroy edge between two nodes
         #check if wall already placed
@@ -312,7 +348,7 @@ class Board():
 
             #add pawns
             x,y = p.pawn.position
-            # print("pawn pos id: {}: x{}, y{}".format(p.id,x,y))
+            # print("pawn pos id: {}: x{}, y{}".format(p.name,x,y))
             col, row = x, y
             if p.direction == player.PLAYER_TO_NORTH:
                 board_array[row*2 + 1][col*2 + 1] = BOARD_CELL_PLAYER_TO_NORTH

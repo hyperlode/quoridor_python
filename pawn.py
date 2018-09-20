@@ -82,7 +82,13 @@ class Pawn():
 
     def __repr__(self):
         return ("Pawn at position: {}".format(self.position))
-        
+
+    def previous_position(self):
+        #remove last move.
+
+        self.positions_history.pop()
+        self._position = self.positions_history[-1]
+
 if __name__ == "__main__":
     print(SOUTH((1,2)))
     print(NORTH_NORTH((1,2)))

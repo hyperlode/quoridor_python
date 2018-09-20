@@ -10,9 +10,9 @@ NUMBER_OF_WALLS = 10
 
 
 class Player:
-    def __init__(self, id, player_direction):
+    def __init__(self, name, player_direction):
 
-        self.id = id
+        self.name = name
         
         # create walls
         self.walls = [wall.Wall(wall.TYPE_PLAYER, i) for i in range(NUMBER_OF_WALLS)]
@@ -23,7 +23,7 @@ class Player:
         self.player_direction = player_direction
         
     def __repr__(self):
-        return str("Player {} at position: {}".format(self.id, self.pawn.position))
+        return str("Player {} at position: {}".format(self.name, self.pawn.position))
         
     def set_board(self, board_instance):
         self.board = board_instance
@@ -90,7 +90,16 @@ class Player:
         # self.board.direction_to_node(self.pawn.position, pawn.WEST)
         print("not yet implemented")
         pass
-    
+
+    def undo_move_pawn(self):
+
+        current_pos = self.pawn.position
+        move_back_pos = self.pawn.positions_history[-2]
+        self.board.move_pawn(current_pos, move_back_pos)
+        self.pawn.previous_position()
+        return True
+
+
     def move_pawn(self, direction):
     
         # direction i.e. pawn.NORTH
