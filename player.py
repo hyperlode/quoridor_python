@@ -94,6 +94,7 @@ class Player:
     def undo_move_pawn(self):
 
         current_pos = self.pawn.position
+        # print("hsitore: {}".format(self.pawn.positions_history))
         move_back_pos = self.pawn.positions_history[-2]
         self.board.move_pawn(current_pos, move_back_pos)
         self.pawn.previous_position()

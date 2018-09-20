@@ -89,7 +89,7 @@ class Quoridor():
 
             
     def print_board (self):
-        console_clear()
+        # console_clear()
         print(self)
 
     # def turn_aftermath(self, played=True, display_board=True):
@@ -98,9 +98,10 @@ class Quoridor():
         # if display_board:
             # self.print_board()
 
-    def undo_turn(self, steps=1):
-        # undoing a turn.
-
+    def undo_turn(self, as_independent_turn=True, steps=1):
+        # undoing a turn. 
+        # as_independent_turn  if False --> we assume that we are in the middle of a turn, stays the same player.
+        
         if len(self.move_history)==0:
             print("nothing to undo")
             return False
@@ -108,7 +109,12 @@ class Quoridor():
         # check what the previous move was.
 
         move_to_undo = self.move_history.pop()
-        previous_player_index = self.get_previous_player_index()
+        
+        if as_independent_turn:
+            previous_player_index = self.get_previous_player_index()
+        else:
+            previous_player_index = self.playerAtMoveIndex
+            
         success = False
 
         print("previous move:{} by {}".format(move_to_undo, self.players[previous_player_index].name))
@@ -125,68 +131,73 @@ class Quoridor():
             success = self.gameBoard.remove_wall(move_to_undo)
 
         if success:
+            if as_independent_turn:
+                self.playerAtMoveIndex = previous_player_index
+            else:
+                pass
             # activate previous player.
-            self.playerAtMoveIndex = previous_player_index
+            
         else:
             raise Exception("Big troubles at undoing.")
         # remake the previous statistics
         pass
 
-        #take away wall, undo move. --> remember previous absolute position.
-
-    def play_turn(self, move):
-        console_clear()   
+    def make_move(self, move):
+        # console_clear()   
         print("----play turn ( {} playing move: {})------".format(self.players[self.playerAtMoveIndex].name, move))
         #move in standard notation.
         
         move = move.lower()
-        played = False
+        move_made = False
         
         if move in NOTATION_TO_DIRECTION:
 
             #move pawn
-            played = self.move_pawn(move)
+            move_made = self.move_pawn(move)
 
         elif wall.Wall._notation_to_lines_and_orientation(move) is not None:
-            played = self.place_wall(move)
+            move_made = self.place_wall(move)
             
         else:
             print("Move {} has a wrong notation or is not yet implemented".format(move))
 
+        #add valid move to history
+        if move_made:
+            self.move_history.append(move)
+        
+        return move_made
+    
+    def play_turn(self, move):
+        
+        played = self.make_move(move)
+            
+        if not played:
+            return False
 
         #check validity of board
         distances_to_win = self.gameBoard.distances_to_winning_node()
-
         if None in distances_to_win:
-
+            # board invalid(None indicates infinite distance to winning position for pawn), undo turn
+            self.undo_turn(as_independent_turn=False)
             played = False
-            # undo turn.
-
+            print("ERROR: move not executed. There always must be a path to at least one of the winning squares for all players.")
+            return False
+    
+        #check for winner
+        game_finished = self.players[self.playerAtMoveIndex].get_pawn_on_winning_position()
+        if game_finished:
+            print("Game won by {}".format(str(self.players[self.playerAtMoveIndex])))
+            print("game should be stopped now.... work with game statusses!")
         else:
-            # valid
-            pass
-
-        #add valid move to history
-        if played:
-            self.move_history.append(move)
-        
-        game_finished = False
-        if played:
-            #check winner
-            game_finished = self.players[self.playerAtMoveIndex].get_pawn_on_winning_position()
-            if game_finished:
-                print("Game won by {}".format(str(self.players[self.playerAtMoveIndex])))
-                  
-                print("game should be stopped now.... work with game statusses!")
-            else:
-                self.next_player()
+            self.next_player()
+                
         return played
     
     def play_turn_animated(self, move, animation_time_ms = 100):
         time.sleep(animation_time_ms/1000)
         self.print_board()
         if self.play_turn(move):
-            self.turn_aftermath()
+            # self.turn_aftermath()
             return True
         else:
             #no success == no animation
@@ -221,8 +232,7 @@ class Quoridor():
         direction = NOTATION_TO_DIRECTION[move_verbose]
         #move pawn
         success = self.players[self.playerAtMoveIndex].move_pawn(direction)
-        
-        
+                
         print("succes?:{}".format(success))
         return success
         
@@ -236,8 +246,7 @@ class Quoridor():
         json = json.dumps(r) # note i gave it a different name
         file.write(str(r['rating']))
         # def load_json():
-        
-        
+                
     def __str__(self):
         return str(self.gameBoard)
 
@@ -251,10 +260,8 @@ def game_from_json(json):
     pass
     
 def game_to_json(game):
-
     pass
-    
-    
+        
 def console_clear():
     '''
     Clears the terminal screen and scroll back to present
