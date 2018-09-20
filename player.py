@@ -2,6 +2,7 @@ import wall
 import pawn
 import board
 # import quori_constants
+import logging
 
 PLAYER_TO_NORTH = 0
 PLAYER_TO_SOUTH = 1
@@ -11,7 +12,7 @@ NUMBER_OF_WALLS = 10
 
 class Player:
     def __init__(self, name, player_direction):
-
+        logging.info("player created with name: {}".format(name))
         self.name = name
         
         # create walls

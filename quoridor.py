@@ -3,6 +3,8 @@ import board
 import pawn
 import wall
 
+import logging
+
 import time
 import os
 
@@ -30,7 +32,7 @@ class Quoridor():
     
     def __init__(self, settings = None):
         # settings = dict. 
-    
+        logging.info('dfefefefef')  
         if settings is None:
             # start from scratch
             player1_name = input("Name for player 1 (going north) [player_1]:") or "player_1"
@@ -66,7 +68,7 @@ class Quoridor():
             
             for move in moves:
                 self.play_turn(move)
-            
+                
     def game_user_input(self):
          #ask user for move if not provided.
         success = None
@@ -269,9 +271,31 @@ def console_clear():
     menu screens in terminal applications.
     '''
     os.system('cls' if os.name == 'nt' else 'echo -e \\\\033c')
-        
-if __name__ == "__main__":
     
+def logging_setup():
+    # https://docs.python.org/3/howto/logging.html
+    logging.basicConfig(filename='c:/temp/quoridortest.log', level=logging.INFO)
+    formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+    logging.info('Started')
+    # mylib.do_something()
+    logging.info('Finished')      
+    
+    
+    
+
+    # self.logger = logging.getLogger()    
+    # handler = logging.StreamHandler()
+    # formatter = logging.Formatter(
+            # '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+    # handler.setFormatter(formatter)
+    # self.logger.addHandler(handler)
+    # self.logger.setLevel(logging.DEBUG)
+
+    # self.logger.debug('often makes a very good meal of %s', 'visiting tourists')
+    
+    
+if __name__ == "__main__":
+    logging_setup()
     # q.game_user_input()
    
     game_20180908_Brecht_Lode_0 = {"player_1":"Lode", "player_2":"Brecht", "remarks":"fictional demo game" , "date":"20180908", "game":"n s n s n s n s"}  
