@@ -237,6 +237,8 @@ class Board():
 
             print("Distances to winning nodes for player {}: {}".format(pl.name, board_winning_nodes_to_pawn))
 
+            # print("Distances to winning nodes for player {}: from west to east".format(pl.name, board_winning_nodes_to_pawn))
+
             shortest_path[pl.player_direction]= dist_to_win
 
         return shortest_path

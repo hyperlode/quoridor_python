@@ -32,7 +32,7 @@ class Quoridor():
     
     def __init__(self, settings = None):
         # settings = dict. 
-        logging.info('dfefefefef')  
+        logging.info("Init Quoridor game ")
         if settings is None:
             # start from scratch
             player1_name = input("Name for player 1 (going north) [player_1]:") or "player_1"
@@ -65,9 +65,9 @@ class Quoridor():
             #if game in it, play automatically till end of recording.
             #game = string with space between every move.
             moves= self.settings["game"].split(" ")
-            
-            for move in moves:
-                self.play_turn(move)
+
+            self.play_sequence(moves, 200)
+
                 
     def game_user_input(self):
          #ask user for move if not provided.
@@ -79,12 +79,14 @@ class Quoridor():
             else:
                 symbol = board.BOARD_CELL_PLAYER_TO_SOUTH    
             self.print_board()
-            print("move history: {}".format(self.move_history))
+
+            status = "move history: {}".format(self.move_history)
+            print(status)
+            logging.info(status)
 
             move = input("player {} {} input move(u to undo)): ".format(self.players[self.playerAtMoveIndex].name, symbol))
 
             if move == "u":
-                print("undo previous move")
                 self.undo_turn()
             else:
                 self.play_turn(move)
@@ -105,7 +107,7 @@ class Quoridor():
         # as_independent_turn  if False --> we assume that we are in the middle of a turn, stays the same player.
         
         if len(self.move_history)==0:
-            print("nothing to undo")
+            logging.info("nothing to undo")
             return False
 
         # check what the previous move was.
@@ -118,35 +120,35 @@ class Quoridor():
             previous_player_index = self.playerAtMoveIndex
             
         success = False
-
-        print("previous move:{} by {}".format(move_to_undo, self.players[previous_player_index].name))
+        logging.info("undo previous move:{} by {}".format(move_to_undo, self.players[previous_player_index].name))
         if move_to_undo in NOTATION_TO_DIRECTION:
-            # if pawn move : set back to previous position
             #move pawn
-            # played = self.move_pawn(move)
-            print("undo pawn move")
+            logging.info("undo pawn move")
             self.players[previous_player_index].undo_move_pawn()
             success = True
         else:
             # if wall : remove wall
-            print("undo wall move")
+            logging.info("undo wall move")
             success = self.gameBoard.remove_wall(move_to_undo)
 
         if success:
             if as_independent_turn:
+                # activate previous player.
                 self.playerAtMoveIndex = previous_player_index
             else:
                 pass
-            # activate previous player.
-            
+
         else:
+            logging.error("undo unsuccessful")
             raise Exception("Big troubles at undoing.")
         # remake the previous statistics
         pass
 
     def make_move(self, move):
         # console_clear()   
-        print("----play turn ( {} playing move: {})------".format(self.players[self.playerAtMoveIndex].name, move))
+        status = "Play turn ( {} playing move: {})".format(self.players[self.playerAtMoveIndex].name, move)
+        print(status)
+        logging.info(status)
         #move in standard notation.
         
         move = move.lower()
@@ -156,19 +158,45 @@ class Quoridor():
 
             #move pawn
             move_made = self.move_pawn(move)
-
+            logging.info("moved made?:{}".format(move_made))
         elif wall.Wall._notation_to_lines_and_orientation(move) is not None:
             move_made = self.place_wall(move)
             
         else:
-            print("Move {} has a wrong notation or is not yet implemented".format(move))
+            status = "Move {} has a wrong notation or is not yet implemented".format(move)
+            print(status)
+            logging.info("INPUT VIOLATION: "+ status)
 
         #add valid move to history
         if move_made:
             self.move_history.append(move)
+        else:
+            logging.info("move not made")
         
         return move_made
-    
+
+    def play_sequence(self, moves, animation_time_ms = None):
+
+
+        success = False
+
+        for move in moves:
+            success = self.play_turn(move)
+            if not success:
+                status = "Illegal move in sequence! Aborting auto play. Provided sequence:{}. Played moves: {}".format(
+                    moves, self.move_history)
+                logging.info(status)
+                print(status)
+
+                return False
+            elif animation_time_ms is not None:
+                time.sleep(animation_time_ms / 1000)
+                self.print_board()
+
+        return True
+
+
+
     def play_turn(self, move):
         
         played = self.make_move(move)
@@ -182,7 +210,9 @@ class Quoridor():
             # board invalid(None indicates infinite distance to winning position for pawn), undo turn
             self.undo_turn(as_independent_turn=False)
             played = False
-            print("ERROR: move not executed. There always must be a path to at least one of the winning squares for all players.")
+            status = "ERROR: move not executed. There always must be a path to at least one of the winning squares for all players."
+            print(status)
+            logging.info("RULE VIOLATION: no winning path for both players. (dist pl1,dist pl2)(None = no path): {}".format(distances_to_win))
             return False
     
         #check for winner
@@ -195,19 +225,20 @@ class Quoridor():
                 
         return played
     
-    def play_turn_animated(self, move, animation_time_ms = 100):
-        time.sleep(animation_time_ms/1000)
-        self.print_board()
-        if self.play_turn(move):
-            # self.turn_aftermath()
-            return True
-        else:
-            #no success == no animation
-            try:
-                tmp = input("wrong move notation, press key to continue.")
-            except:
-                pass
-            return False
+    # def play_turn_animated(self, move, animation_time_ms = 100):
+    #     time.sleep(animation_time_ms/1000)
+    #     self.print_board()
+    #     if self.play_turn(move):
+    #         # self.turn_aftermath()
+    #         return True
+    #     else:
+    #         #no success == no animation
+    #         try:
+    #             tmp = input("wrong move notation, press key to continue.")
+    #         except:
+    #             pass
+    #         return False
+
 
     def get_previous_player_index(self):
         #returns the previous player index.
@@ -222,20 +253,25 @@ class Quoridor():
         if self.playerAtMoveIndex >= len(self.players):
             self.playerAtMoveIndex = 0
 
-        print("change player. new player at move: {}".format(self.players[self.playerAtMoveIndex].name))
+        status = "-----------Change player to {}".format(self.players[self.playerAtMoveIndex].name)
+        logging.info(status)
+        print(status)
 
     def place_wall(self, position_verbose) :
         success = self.players[self.playerAtMoveIndex].place_wall(position_verbose)
         return success
 
     def move_pawn(self, move_verbose):
-        print("move pawn:")
+
         # check for pawn or wall move
         direction = NOTATION_TO_DIRECTION[move_verbose]
+
         #move pawn
         success = self.players[self.playerAtMoveIndex].move_pawn(direction)
-                
-        print("succes?:{}".format(success))
+        if success:
+            logging.info("pawn moved.")
+        else:
+            logging.info("pawn not moved.")
         return success
         
     def state_as_dict(self):
@@ -245,8 +281,8 @@ class Quoridor():
         import json
     
         # r = {'is_claimed': 'True', 'rating': 3.5}
-        json = json.dumps(r) # note i gave it a different name
-        file.write(str(r['rating']))
+        # json = json.dumps(r) # note i gave it a different name
+        # file.write(str(r['rating']))
         # def load_json():
                 
     def __str__(self):
@@ -274,14 +310,10 @@ def console_clear():
     
 def logging_setup():
     # https://docs.python.org/3/howto/logging.html
-    logging.basicConfig(filename='c:/temp/quoridortest.log', level=logging.INFO)
-    formatter = logging.Formatter('%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
-    logging.info('Started')
-    # mylib.do_something()
-    logging.info('Finished')      
-    
-    
-    
+    # logging.basicConfig(filename='c:/temp/quoridortest.log', level=logging.INFO)
+    logging.basicConfig(filename='quoridortest.log', level=logging.INFO)
+    formatter = logging.Formatter(fmt='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    logging.info('<<<<<<<<<<<<<<<<<<Start of new logging session.>>>>>>>>>>>>>>>>>>>>')
 
     # self.logger = logging.getLogger()    
     # handler = logging.StreamHandler()
@@ -300,10 +332,10 @@ if __name__ == "__main__":
    
     game_20180908_Brecht_Lode_0 = {"player_1":"Lode", "player_2":"Brecht", "remarks":"fictional demo game" , "date":"20180908", "game":"n s n s n s n s"}  
     game_Brecht_Lode = {"player_1":"Lode", "player_2":"Brecht"}  
-    game_Brecht_Lode_wall_isolates_part_of_board = {"player_1":"Lode", "player_2":"Brecht", "game":"n s n s 7a"}  
+    game_Brecht_Lode_wall_isolates_part_of_board = {"player_1":"Lode", "player_2":"Brecht", "game":"n s n s 7a"}
     
     # q = Quoridor(game_Brecht_Lode_wall_isolates_part_of_board)
-    q = Quoridor(game_Brecht_Lode)
+    q = Quoridor(game_Brecht_Lode_wall_isolates_part_of_board)
     q.game_user_input()
     # print(str(q))
    
