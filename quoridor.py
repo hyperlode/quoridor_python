@@ -5,6 +5,7 @@ import wall
 
 import logging
 
+import sys
 import time
 import os
 
@@ -78,22 +79,46 @@ class Quoridor():
                 symbol = board.BOARD_CELL_PLAYER_TO_NORTH    
             else:
                 symbol = board.BOARD_CELL_PLAYER_TO_SOUTH    
+           
+            logging.info( "move history: {}".format(self.move_history))
+            
             self.print_board()
+            move = input("player {} {} input move(h for help)): ".format(self.players[self.playerAtMoveIndex].name, symbol))
 
-            status = "move history: {}".format(self.move_history)
-            print(status)
-            logging.info(status)
-
-            move = input("player {} {} input move(u to undo)): ".format(self.players[self.playerAtMoveIndex].name, symbol))
-
-            if move == "u":
+            if move in ["u", "undo"]:
                 self.undo_turn()
+            elif move in ["m", "moves"]:
+                 print("move history: {}".format(self.move_history))
+            elif move in ["h", "help"]:
+                print("\n"+
+                "QUORIDOR game\n"+
+                "    see ameije.com for rules\n"+
+                "\n"+
+                "PAWN movement commands:\n"+
+                "    uses the compass rose notation (i.e. n for north)\n"+
+                "n,e,s,w     for ortho movement\n"+
+                "nn,ee,ss,ww for jumping over pawn\n"+
+                "ne,nw,se,sw for diagonal jumping over pawn\n"+
+                "\n"+
+                "WALL placement commands:\n"+
+                "    letters and digits are written on the board\n"+
+                "[1-8][a-h]  for east-west wall placement (i.e. 2e)\n"+
+                "[a-h][1-8]  for north-south wall placement (i.e h5)\n"+
+                "\n"+
+                "GENERAL commands:\n"+
+                "u or undo   for undo last move\n"+
+                "m or moves  for move history\n"+
+                "h or help   for this help"+
+                "\n"               
+                )
+                tmp = input("press any key to continue...") or None
+                
             else:
                 self.play_turn(move)
 
             
     def print_board (self):
-        # console_clear()
+        console_clear()
         print(self)
 
     # def turn_aftermath(self, played=True, display_board=True):
@@ -147,7 +172,7 @@ class Quoridor():
     def make_move(self, move):
         # console_clear()   
         status = "Play turn ( {} playing move: {})".format(self.players[self.playerAtMoveIndex].name, move)
-        print(status)
+        # print(status)
         logging.info(status)
         #move in standard notation.
         
@@ -218,8 +243,14 @@ class Quoridor():
         #check for winner
         game_finished = self.players[self.playerAtMoveIndex].get_pawn_on_winning_position()
         if game_finished:
+            self.print_board()
             print("Game won by {}".format(str(self.players[self.playerAtMoveIndex])))
-            print("game should be stopped now.... work with game statusses!")
+            user_input = input("Press any key to exit the game. Press u for undo move.") or "exit"
+            
+            if user_input in ["u", "undo"]:
+                self.undo_turn(as_independent_turn=False)
+            else:
+                sys.exit()
         else:
             self.next_player()
                 
@@ -255,7 +286,7 @@ class Quoridor():
 
         status = "-----------Change player to {}".format(self.players[self.playerAtMoveIndex].name)
         logging.info(status)
-        print(status)
+        # print(status)
 
     def place_wall(self, position_verbose) :
         success = self.players[self.playerAtMoveIndex].place_wall(position_verbose)
@@ -311,7 +342,7 @@ def console_clear():
 def logging_setup():
     # https://docs.python.org/3/howto/logging.html
     # logging.basicConfig(filename='c:/temp/quoridortest.log', level=logging.INFO)
-    logging.basicConfig(filename='quoridortest.log', level=logging.INFO)
+    logging.basicConfig(filename='c:/temp/quoridortest.log', level=logging.INFO)
     formatter = logging.Formatter(fmt='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     logging.info('<<<<<<<<<<<<<<<<<<Start of new logging session.>>>>>>>>>>>>>>>>>>>>')
 
@@ -335,7 +366,7 @@ if __name__ == "__main__":
     game_Brecht_Lode_wall_isolates_part_of_board = {"player_1":"Lode", "player_2":"Brecht", "game":"n s n s 7a"}
     
     # q = Quoridor(game_Brecht_Lode_wall_isolates_part_of_board)
-    q = Quoridor(game_Brecht_Lode_wall_isolates_part_of_board)
+    q = Quoridor(game_Brecht_Lode)
     q.game_user_input()
     # print(str(q))
    

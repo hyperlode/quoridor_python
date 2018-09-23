@@ -1,3 +1,5 @@
+import logging
+
 TYPE_EDGE = 0
 TYPE_PLAYER = 1
 
@@ -28,7 +30,7 @@ class Wall():
         position_lines_orientation = Wall._notation_to_lines_and_orientation(verbose)
         
         if position_lines_orientation is None:
-            print ("failed to interpret wall notation")
+            status.info("INPUT ERROR: failed to interpret wall notation")
             return None, None
         
         nodes =  Wall._position_lines_to_nodes(position_lines_orientation)
@@ -86,7 +88,7 @@ class Wall():
         verbose = verbose.lower()
         
         if len(verbose) != 2:
-            print("notation wrong: {}".format(verbose))
+            logging.info("INPUT ERROR:notation wrong: {}".format(verbose))
             return None
         
         a, b = verbose 
@@ -110,7 +112,7 @@ class Wall():
         
         # check boundaries
         if vert_line<1 or vert_line > 8 or hori_line<1 or hori_line>8:
-            print("outside boundaries. a1 to h8. Submission:letter {} digit".format(letter,digit))
+            logging.info("INPUT ERROR: outside boundaries. a1 to h8. Submission:letter {} digit".format(letter,digit))
             return None
         
         return (hori_line, vert_line, orientation)
@@ -147,7 +149,7 @@ class Wall():
         elif notation == "lines_orientation":
             return self._position_lines_orientation
         else:
-            print("please provide notation")
+            logging.error("wrong notation: please provide notation")
             return None
 
     def reset_position(self, allow_reset_placed_wall = False):
@@ -158,7 +160,7 @@ class Wall():
             self._status = STATUS_NOT_PLACED
             return True
         else:
-            print("once a wall is placed, it cannot be undone")
+            logging.info("once a wall is placed, it cannot be undone")
             return False
             
     def consolidate_position(self):
@@ -166,24 +168,24 @@ class Wall():
             self._status = STATUS_PLACED
             return True
         elif self._status == STATUS_PLACED:
-            print ("already consolidated")
+            logging.info ("already consolidated")
             return True
         elif self._status == STATUS_NOT_PLACED:
-            print ("nothing to consolidate")
+            logging.info ("nothing to consolidate")
             return False
         else:
-            print ("ASSERT ERROR: illegal status")
+            logging.error("ASSERT ERROR: illegal status")
             return False
     def set_position(self, position_verbose, tentative = False):
         #position is verbose.
         
         if self._status != STATUS_NOT_PLACED:
-            print("ASSERT ERROR: wall can only be placed once")
+            logging.info("error: wall can only be placed once")
             return False
         
         nodes, position_lines_orientation = Wall.position_verbose_to_nodes(position_verbose)
         
-        print("nodes: {}".format(nodes))
+        logging.info("nodes: {}".format(nodes))
             
         if nodes is not None:
             self._position_nodes = nodes

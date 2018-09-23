@@ -3,6 +3,8 @@ import pawn
 import wall
 import dijkstra
 
+import logging
+
 BOARD_WIDTH = 9 # 9 is default should be an odd number of squares, for the pawn to be able to start in the middle.
 BOARD_HEIGHT = 9# 9 is default
 
@@ -88,7 +90,7 @@ class Board():
         for pl in self.players:
             node = pl.pawn.position
             okOnBoard = self.pawn_on_node(node)
-            print("player {} at postion {}, ok on board:{} ".format(pl.name, node, okOnBoard))
+            logging.info("player {} at postion {}, ok on board:{} ".format(pl.name, node, okOnBoard))
           
     def move_pawn(self, old, new):
             self.board_graph[new]["pawn"] = self.board_graph[old]["pawn"]
@@ -103,13 +105,13 @@ class Board():
         for pl in self.players:
             for w in pl.walls:
                 if w.get_position("verbose") == position_verbose:
-                    print("wall found")
+                    logging.info("ok, wall found")
 
                     #reconnect nodes
                     for node1, node2 in w.get_position("nodes"):
                         success = self.link_nodes(node1, node2)
                         if not success:
-                            print(
+                            logging.warning(
                                 "connections on the board could not be connected when removing the wall. Board might be corrupt")
                             raise Exception("board potentially corrupt.")
                             return False
@@ -117,7 +119,7 @@ class Board():
                     w.reset_position(allow_reset_placed_wall=True)
                     success = True
         if not success:
-            print("wall not found. check if verbose position is accurate: {}".format(position_verbose))
+             logging.info("error: wall not found. check if verbose position is accurate: {}".format(position_verbose))
 
         return success
 
@@ -134,9 +136,9 @@ class Board():
                     if hori == hori_new and vert ==vert_new :
                         # centerpoint is the same, so for sure a failure. We just have to check what kind of failure:
                         if orientation==orientation_new:
-                            print("attempt to place wall on exactly the same location of another wall.")
+                            logging.info("attempt to place wall on exactly the same location of another wall.")
                         else:
-                            print("attempt to place wall with same centerpoint as other wall (but in another orientation).")
+                            logging.info("attempt to place wall with same centerpoint as other wall (but in another orientation).")
                         return False
 
                     # check for overlapping wall (placed in same direction, on same line, not sharing center point, just half a wall overlap.
@@ -152,16 +154,16 @@ class Board():
                             #check for y at least 2 different.
                             if (vert == vert_new) and abs(hori - hori_new) < 2:
                                 #overlap!
-                                print("north south walls on same line and overlapping")
+                                logging.info("north south walls on same line and overlapping")
                                 return False
                                 
                         elif orientation == wall.EAST_WEST:
                             if (hori == hori_new) and abs(vert - vert_new) < 2:
                                 #overlap!
-                                print("east-west walls are on the same line and overlapping")
+                                logging.info("east-west walls are on the same line and overlapping")
                                 return False
 
-        print("wall can be placed.")
+        logging.info("wall can be placed.")
 
         #unlink nodes that are separated by the wall
         for node1, node2 in new_wall.get_position("nodes"):
@@ -235,7 +237,7 @@ class Board():
                 else:
                     board_winning_nodes_to_pawn[node] = None  # None is +inf
 
-            print("Distances to winning nodes for player {}: {}".format(pl.name, board_winning_nodes_to_pawn))
+            logging.info("Distances to winning nodes for player {}: {}".format(pl.name, board_winning_nodes_to_pawn))
 
             # print("Distances to winning nodes for player {}: from west to east".format(pl.name, board_winning_nodes_to_pawn))
 
@@ -247,13 +249,13 @@ class Board():
         if node2 not in self.board_graph[node1]["edges"]:
             self.board_graph[node1]["edges"].append(node2)
         else:
-            print ("ASSERT ERROR: nodes already connected.")
+            logging.warning("ASSERT ERROR: nodes already connected.")
             return False
 
         if node1 not in self.board_graph[node2]["edges"]:
             self.board_graph[node2]["edges"].append(node1)
         else:
-            print("ASSERT ERROR: nodes already connected")
+            logging.warning("ASSERT ERROR: nodes already connected")
             return False
         return True
 
@@ -262,16 +264,16 @@ class Board():
         #check if wall already placed
         if node2 in self.board_graph[node1]["edges"]:
             if node1 not in self.board_graph[node2]["edges"]:
-                print ("ASSERT ERROR: assymetrical links between two nodes.")
+                logging.warning("ASSERT ERROR: assymetrical links between two nodes.")
                 return False
             
             #now remove edges.
             self.board_graph[node1]["edges"].remove(node2)
             self.board_graph[node2]["edges"].remove(node1)
-            print("wall placed between {} and {}".format(node1, node2))
+            logging.info("wall placed between {} and {}".format(node1, node2))
             return True
         else:
-            print("no link between two nodes. Indicates a placed wall")
+            logging.warning("no link between two nodes. Indicates a placed wall")
             return False
             
     def get_node_content(self, node):
@@ -285,7 +287,7 @@ class Board():
         
         #check if node exists
         if node_neighbour not in list(self.board_graph):
-            print("node not existing: {}".format(node_neighbour))
+            logging.info("node not existing: {}".format(node_neighbour))
             return None
         return node_neighbour
     
@@ -305,7 +307,7 @@ class Board():
     def pawn_on_node(self, node):
         
         # print(self.board_graph[node]["pawn"])
-        print("what is on node({})?: {}".format(node,self.board_graph[node]))
+        logging.debug("what is on node({})?: {}".format(node,self.board_graph[node]))
         if self.board_graph[node]["pawn"] is None:
             return False
         else:
@@ -357,7 +359,7 @@ class Board():
             elif p.direction == player.PLAYER_TO_SOUTH:
                 board_array[row*2 + 1][col*2 + 1] = BOARD_CELL_PLAYER_TO_SOUTH
             else:
-                print("ASSERT ERROR: no correct direction indicated")
+                logging.warning("ASSERT ERROR: no correct direction indicated")
               
             #add walls
             for w in p.walls:
@@ -392,7 +394,7 @@ class Board():
         output = ""
         board = self.board_array()
         # print(board)
-        return "\n".join(["".join(row) for row in board[::-1]])
+        return "\n".join(["          " + "".join(row) for row in board[::-1]])
         
         # # return str(self.board_graph)
         # for y in range(BOARD_HEIGHT):
