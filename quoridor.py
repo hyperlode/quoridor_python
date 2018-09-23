@@ -67,7 +67,8 @@ class Quoridor():
             #game = string with space between every move.
             moves= self.settings["game"].split(" ")
 
-            self.play_sequence(moves, 200)
+            # self.play_sequence(moves, 200)
+            self.play_sequence(moves, None)
 
                 
     def game_user_input(self):
@@ -88,7 +89,9 @@ class Quoridor():
             if move in ["u", "undo"]:
                 self.undo_turn()
             elif move in ["m", "moves"]:
-                 print("move history: {}".format(self.move_history))
+                 # print("move history: {}".format(self.move_history))
+                 print(self.history_as_string())
+                 tmp = input("press any key to continue...") or None
             elif move in ["h", "help"]:
                 print("\n"+
                 "QUORIDOR game\n"+
@@ -116,7 +119,28 @@ class Quoridor():
             else:
                 self.play_turn(move)
 
-            
+    def history_as_string(self):
+        
+        lines = []
+        col_width  = len(self.players[0].name)
+        if len(self.players[0].name) < len(self.players[1].name):
+            col_width = len(self.players[1].name)
+        
+        # lines.append("{:{width}}test".format(width = 10))
+        lines.append("{0:>{w}}| {1:<{w}} | {2:<{w}}".format("", self.players[0].name,self.players[1].name,w = col_width))
+        
+        # split history per two moves (= one turn)
+        turns = []
+        for i in range(0,len(self.move_history),2):
+            turns.append((self.move_history[i], self.move_history[i+1]))
+        # make sure even number of turns
+        if len(turns) != len(self.move_history):
+            turns.append((self.move_history[-1],""))
+        
+        for i, turn in enumerate(turns):
+            lines.append("{0:<{w}}| {1:<{w}} | {2:<{w}}".format(i, turn[0], turn[1], w=col_width))
+        return "\n".join(lines)
+        
     def print_board (self):
         console_clear()
         print(self)
@@ -182,20 +206,21 @@ class Quoridor():
         if move in NOTATION_TO_DIRECTION:
 
             #move pawn
+            # move = move.upper()
             move_made = self.move_pawn(move)
             logging.info("moved made?:{}".format(move_made))
+            self.move_history.append(move)
+            
         elif wall.Wall._notation_to_lines_and_orientation(move) is not None:
             move_made = self.place_wall(move)
-            
+            self.move_history.append(move)
         else:
             status = "Move {} has a wrong notation or is not yet implemented".format(move)
             print(status)
             logging.info("INPUT VIOLATION: "+ status)
 
         #add valid move to history
-        if move_made:
-            self.move_history.append(move)
-        else:
+        if not move_made:
             logging.info("move not made")
         
         return move_made
@@ -363,10 +388,11 @@ if __name__ == "__main__":
    
     game_20180908_Brecht_Lode_0 = {"player_1":"Lode", "player_2":"Brecht", "remarks":"fictional demo game" , "date":"20180908", "game":"n s n s n s n s"}  
     game_Brecht_Lode = {"player_1":"Lode", "player_2":"Brecht"}  
+    game_Joos_Lode = {"player_1":"Joos", "player_2":"Lode", "game":"n s n s n s n 6e 4d 4g e5 6c a6 b6 4b 5a 3a c3 1c 2b 1a 2d 1e 2f 1g 3h h1 sw"}
     game_Brecht_Lode_wall_isolates_part_of_board = {"player_1":"Lode", "player_2":"Brecht", "game":"n s n s 7a"}
     
     # q = Quoridor(game_Brecht_Lode_wall_isolates_part_of_board)
-    q = Quoridor(game_Brecht_Lode)
+    q = Quoridor(game_Joos_Lode)
     q.game_user_input()
     # print(str(q))
    
