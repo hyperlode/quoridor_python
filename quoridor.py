@@ -10,6 +10,19 @@ import time
 import os
 
 NOTATION_TO_DIRECTION = {
+    "N":pawn.NORTH,
+    "E":pawn.EAST,
+    "S":pawn.SOUTH ,
+    "W":pawn.WEST,
+    "NN":pawn.NORTH_NORTH,
+    "SS":pawn.SOUTH_SOUTH,
+    "WW":pawn.WEST_WEST,
+    "EE":pawn.EAST_EAST,
+    "SW":pawn.SOUTH_WEST,
+    "NW":pawn.NORTH_WEST,
+    "SE":pawn.SOUTH_EAST,
+    "NE":pawn.NORTH_EAST,
+    #moves should be in upper case, but for the ease of thing on the input side, lower is allowed. the only ambiguity possible is with "e" E or line e for walls?
     "n":pawn.NORTH,
     "e":pawn.EAST,
     "s":pawn.SOUTH ,
@@ -62,6 +75,7 @@ class Quoridor():
         self.playerAtMoveIndex = 0
         
         self.move_history = []
+        self.distance_history =  [self.gameBoard.distances_to_winning_node()]  # keeps track of pawn to winning square distances per move.
         if "game" in list(self.settings):
             #if game in it, play automatically till end of recording.
             #game = string with space between every move.
@@ -91,7 +105,14 @@ class Quoridor():
             elif move in ["m", "moves"]:
                  # print("move history: {}".format(self.move_history))
                  print(self.history_as_string())
-                 tmp = input("press any key to continue...") or None
+                 self.pause()
+            elif move in ["q", "e", "exit", "quit"]:
+                 user_input = input("Type y if you really want to abort the game.[n]") or "no"
+                 if user_input == "y":
+                    exit()
+            elif move == "test":
+                print(self.distance_history)
+                self.pause()
             elif move in ["h", "help"]:
                 print("\n"+
                 "QUORIDOR game\n"+
@@ -111,34 +132,82 @@ class Quoridor():
                 "GENERAL commands:\n"+
                 "u or undo   for undo last move\n"+
                 "m or moves  for move history\n"+
-                "h or help   for this help"+
+                "h or help   for this help\n"+
+                "q or exit   for exit"+
                 "\n"               
                 )
-                tmp = input("press any key to continue...") or None
+                self.pause()
                 
             else:
                 self.play_turn(move)
-
-    def history_as_string(self):
+                
+    def pause(self):
+        tmp = input("press any key to continue...") or None
         
+    def history_as_string(self, include_distance_history=True):
         lines = []
         col_width  = len(self.players[0].name)
         if len(self.players[0].name) < len(self.players[1].name):
             col_width = len(self.players[1].name)
-        
+        col_width += 3
         # lines.append("{:{width}}test".format(width = 10))
-        lines.append("{0:>{w}}| {1:<{w}} | {2:<{w}}".format("", self.players[0].name,self.players[1].name,w = col_width))
-        
+        lines.append("{0:<{w}} | {1:<{w}} | {2:<{w}} | d{1:<{w}}| d{2:<{w}}".format("", self.players[0].name,self.players[1].name,w = col_width))
         # split history per two moves (= one turn)
-        turns = []
-        for i in range(0,len(self.move_history),2):
-            turns.append((self.move_history[i], self.move_history[i+1]))
-        # make sure even number of turns
-        if len(turns) != len(self.move_history):
-            turns.append((self.move_history[-1],""))
+       
+        # incremental distance history
+        distance_history_incremental = []
+       
+        for i, dist in enumerate(self.distance_history[:-1]):
+            distance_history_incremental.append(( self.distance_history[i+1][0] - dist [0], self.distance_history[i+1][1] - dist[1]))
         
+        distances_output = "incremental per turn"
+        
+        if distances_output=="incremental per turn":
+            
+            # incremental once per complete turn
+            turns = []
+            for i in range(0,len(self.move_history),2):
+                if i >= len(self.move_history)-1:
+                    # make sure there is an even number of turns
+                    turns.append((self.move_history[i], "", distance_history_incremental[i][0] , + distance_history_incremental[i][1]))
+                else:
+                    turns.append((self.move_history[i], self.move_history[i+1], 
+                    distance_history_incremental[i][0] + distance_history_incremental[i+1][0], 
+                    distance_history_incremental[i][1] + distance_history_incremental[i+1][1]))
+        elif distances_output=="incremental":
+            # incremental distances
+            turns = []
+            for i in range(0,len(self.move_history),2):
+                print(i)
+                print(len(self.move_history))
+                if i >= len(self.move_history)-1:
+                    # make sure there is an even number of turns
+                    turns.append((self.move_history[i], "", distance_history_incremental[i], ""))
+                else:
+                    turns.append((self.move_history[i], self.move_history[i+1], 
+                    distance_history_incremental[i], 
+                    distance_history_incremental[i+1]))
+        elif distances_output=="absolute":    
+               
+            # absolute distances
+            turns = []
+            for i in range(0,len(self.move_history),2):
+                if i >= len(self.move_history)-1:
+                    # make sure there is an even number of turns
+                    turns.append((self.move_history[i], "", self.distance_history[i], ""))
+                else:
+                    turns.append((self.move_history[i], self.move_history[i+1], 
+                    self.distance_history[i], 
+                    self.distance_history[i+1]))
+        else:
+            logging.error("ASSERT ERROR: no distances column print option")
+        # create the columns
         for i, turn in enumerate(turns):
-            lines.append("{0:<{w}}| {1:<{w}} | {2:<{w}}".format(i, turn[0], turn[1], w=col_width))
+            if include_distance_history:
+                # print(turn)
+                lines.append("{0:>{w}} | {1:<{w}} | {2:<{w}} | {3:<{w}} | {4:<{w}}".format(i, turn[0], turn[1], str(turn[2]), str(turn[3]), w=col_width))   
+            else:
+                lines.append("{0:>{w}} | {1:<{w}} | {2:<{w}}".format(i, turn[0], turn[1], w=col_width))
         return "\n".join(lines)
         
     def print_board (self):
@@ -160,7 +229,7 @@ class Quoridor():
             return False
 
         # check what the previous move was.
-
+        self.distance_history.pop()
         move_to_undo = self.move_history.pop()
         
         if as_independent_turn:
@@ -194,19 +263,16 @@ class Quoridor():
         pass
 
     def make_move(self, move):
-        # console_clear()   
-        status = "Play turn ( {} playing move: {})".format(self.players[self.playerAtMoveIndex].name, move)
-        # print(status)
-        logging.info(status)
         #move in standard notation.
+        status = "Play turn ( {} playing move: {})".format(self.players[self.playerAtMoveIndex].name, move)
+        logging.info(status)
         
-        move = move.lower()
+        move = move.lower()  # clean up first, the only problem move is E3 vs e3  (pawn move over line three vs wall placement).
         move_made = False
         
         if move in NOTATION_TO_DIRECTION:
-
             #move pawn
-            # move = move.upper()
+            move = move.upper()
             move_made = self.move_pawn(move)
             logging.info("moved made?:{}".format(move_made))
             self.move_history.append(move)
@@ -226,10 +292,7 @@ class Quoridor():
         return move_made
 
     def play_sequence(self, moves, animation_time_ms = None):
-
-
         success = False
-
         for move in moves:
             success = self.play_turn(move)
             if not success:
@@ -237,15 +300,11 @@ class Quoridor():
                     moves, self.move_history)
                 logging.info(status)
                 print(status)
-
                 return False
             elif animation_time_ms is not None:
                 time.sleep(animation_time_ms / 1000)
                 self.print_board()
-
         return True
-
-
 
     def play_turn(self, move):
         
@@ -256,6 +315,8 @@ class Quoridor():
 
         #check validity of board
         distances_to_win = self.gameBoard.distances_to_winning_node()
+        self.distance_history.append(distances_to_win)
+        
         if None in distances_to_win:
             # board invalid(None indicates infinite distance to winning position for pawn), undo turn
             self.undo_turn(as_independent_turn=False)
