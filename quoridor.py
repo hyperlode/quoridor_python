@@ -69,6 +69,8 @@ class Quoridor():
         self.gameBoard.add_player(player1)
         self.gameBoard.add_player(player2)
         
+       
+        
         for pl in self.players:
             pl.set_board(self.gameBoard)
             
@@ -111,6 +113,9 @@ class Quoridor():
                     exit()
             elif move == "test":
                 self.print_message(self.distance_history)
+            
+            elif move == "wide":
+               self.gameBoard.wide_display_toggle()
                 
             elif move in ["h", "help"]:
                 self.print_message("\n"+
@@ -132,7 +137,8 @@ class Quoridor():
                 "u or undo   for undo last move\n"+
                 "m or moves  for move history\n"+
                 "h or help   for this help\n"+
-                "q or exit   for exit"+
+                "wide        to toggle wider board\n"+
+                "q or exit   for exit"
                 "\n"               
                 )
               
