@@ -344,12 +344,13 @@ class Board():
         board_array = []
         
         if self.wide_display:
-            extra_wide = 2
+            # number of extra chars added per square in horizontal direction
+            hori_extra = 2
         else:
-            extra_wide = 0
+            hori_extra = 0
             
         cells_vertical = BOARD_HEIGHT * 2 + 1
-        cells_horizontal = BOARD_WIDTH * (2 + extra_wide) + 1
+        cells_horizontal = BOARD_WIDTH * (2 + hori_extra) + 1
         
         for row in range(cells_vertical):
             line = []
@@ -367,7 +368,7 @@ class Board():
                 elif col == 0 or col == cells_horizontal-1:
                     board_array[row][col] = BOARD_CELL_WALL_BORDER_VERTICAL
                     
-                elif row%2 == 0 and col% (2+extra_wide) == 0:
+                elif row%2 == 0 and col% (2+hori_extra) == 0:
                     board_array[row][col] = BOARD_CELL_LINE_CROSSING
                 
                 elif row%2 == 0:
@@ -376,7 +377,7 @@ class Board():
                 elif col%2 == 0:
                     board_array[row][col] = BOARD_CELL_LINE_VERTICAL
         
-        #special case the corners of the board
+        #corners of the board
         board_array[cells_vertical-1][0] = BOARD_CELL_WALL_BORDER_BOTTOM_LEFT
         board_array[0][0] = BOARD_CELL_WALL_BORDER_TOP_LEFT
         board_array[0][cells_horizontal - 1] = BOARD_CELL_WALL_BORDER_BOTTOM_RIGHT
@@ -389,9 +390,9 @@ class Board():
             # print("pawn pos id: {}: x{}, y{}".format(p.name,x,y))
             col, row = x, y
             if p.direction == player.PLAYER_TO_NORTH:
-                board_array[row*2 + 1][col*(2+extra_wide) + 1 + (extra_wide//2)] = BOARD_CELL_PLAYER_TO_NORTH
+                board_array[row*2 + 1][col*(2+hori_extra) + 1 + (hori_extra//2)] = BOARD_CELL_PLAYER_TO_NORTH
             elif p.direction == player.PLAYER_TO_SOUTH:
-                board_array[row*2 + 1][col*(2+extra_wide) + 1 + (extra_wide//2)] = BOARD_CELL_PLAYER_TO_SOUTH
+                board_array[row*2 + 1][col*(2+hori_extra) + 1 + (hori_extra//2)] = BOARD_CELL_PLAYER_TO_SOUTH
             else:
                 logging.warning("ASSERT ERROR: no correct direction indicated")
               
@@ -402,19 +403,19 @@ class Board():
                     
                     # board_array[hori*2 ][vert*2 ] = BOARD_CELL_WALL_CENTER
                     if orientation == wall.NORTH_SOUTH:
-                        board_array[hori*2 -1 ][vert*(2+extra_wide)] = BOARD_CELL_WALL_VERTICAL
+                        board_array[hori*2 -1 ][vert*(2+hori_extra)] = BOARD_CELL_WALL_VERTICAL
                         # board_array[hori*2 ][vert*2 ] = BOARD_CELL_WALL_VERTICAL  # center
-                        board_array[hori*2 +1][vert*(2+extra_wide)] = BOARD_CELL_WALL_VERTICAL
+                        board_array[hori*2 +1][vert*(2+hori_extra)] = BOARD_CELL_WALL_VERTICAL
 
                     elif orientation == wall.EAST_WEST:
-                        board_array[hori*2][vert*(2+extra_wide) -1 ] = BOARD_CELL_WALL_HORIZONTAL
+                        board_array[hori*2][vert*(2+hori_extra) -1 ] = BOARD_CELL_WALL_HORIZONTAL
                         # board_array[hori*2 ][vert*2 ] = BOARD_CELL_WALL_HORIZONTAL  # center
-                        board_array[hori*2][vert*(2+extra_wide) + 1] = BOARD_CELL_WALL_HORIZONTAL
-                        if (extra_wide == 2):
-                            board_array[hori*2][vert*(2+extra_wide) -2 ] = BOARD_CELL_WALL_HORIZONTAL    
-                            board_array[hori*2][vert*(2+extra_wide) -3 ] = BOARD_CELL_WALL_HORIZONTAL    
-                            board_array[hori*2][vert*(2+extra_wide) +2 ] = BOARD_CELL_WALL_HORIZONTAL    
-                            board_array[hori*2][vert*(2+extra_wide) +3 ] = BOARD_CELL_WALL_HORIZONTAL    
+                        board_array[hori*2][vert*(2+hori_extra) + 1] = BOARD_CELL_WALL_HORIZONTAL
+                        if (hori_extra == 2):
+                            board_array[hori*2][vert*(2+hori_extra) -2 ] = BOARD_CELL_WALL_HORIZONTAL    
+                            board_array[hori*2][vert*(2+hori_extra) -3 ] = BOARD_CELL_WALL_HORIZONTAL    
+                            board_array[hori*2][vert*(2+hori_extra) +2 ] = BOARD_CELL_WALL_HORIZONTAL    
+                            board_array[hori*2][vert*(2+hori_extra) +3 ] = BOARD_CELL_WALL_HORIZONTAL    
 
         # # add indicators        
         # for row in range(1,BOARD_WIDTH):        
@@ -442,10 +443,10 @@ class Board():
         o = cells_border_offset
         for row in range(1,BOARD_HEIGHT):        
             extended_board[row*2 + o][0 + o - 1] = str(row)
-            extended_board[row*2 + o][BOARD_WIDTH * (2+extra_wide) + o + 1] = str(row)
+            extended_board[row*2 + o][BOARD_WIDTH * (2+hori_extra) + o + 1] = str(row)
         for col in range(1,BOARD_WIDTH):        
-            extended_board[0 + o - 1][col*(2+extra_wide) + o] = str(chr(col + 96))
-            extended_board[BOARD_HEIGHT * 2 + o + 1][col*(2+extra_wide) + o] = str(chr(col + 96))
+            extended_board[0 + o - 1][col*(2+hori_extra) + o] = str(chr(col + 96))
+            extended_board[BOARD_HEIGHT * 2 + o + 1][col*(2+hori_extra) + o] = str(chr(col + 96))
 
         return extended_board
         
