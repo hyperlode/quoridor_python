@@ -428,7 +428,7 @@ class Board():
         
         # add row and column indicators
         # extend array 
-        cells_border_offset = 2
+        cells_border_offset = 3
         extended_board = board_array[::]
        
         margin = [EXTENDED_BOARD_EMPTY_SPACE for i in range(cells_border_offset)]
@@ -447,14 +447,32 @@ class Board():
         for col in range(1,BOARD_WIDTH):        
             extended_board[0 + o - 1][col*(2+hori_extra) + o] = str(chr(col + 96))
             extended_board[BOARD_HEIGHT * 2 + o + 1][col*(2+hori_extra) + o] = str(chr(col + 96))
-
+         
         return extended_board
         
     def __str__(self):
         output = ""
         board = self.board_array()
         # print(board)
-        return "\n".join(["          " + "".join(row) for row in board[::-1]])
+        
+        board_rows_for_output= [[EXTENDED_BOARD_EMPTY_SPACE for i in range(6)] + row for row in board[::-1]]
+        x  = 0
+        y = 1
+        board_rows_for_output[y][x+3] = "N"
+        board_rows_for_output[y+1][x+3] = '\u25b2'  # "^"
+        board_rows_for_output[y+2][x+3] = '\u2502'  # "|"
+        board_rows_for_output[y+3][x+3] = '\u253c'  # "+"
+        board_rows_for_output[y+3][x+1] = 'W'  # "+"
+        board_rows_for_output[y+3][x+5] = 'E'  # "+"
+        board_rows_for_output[y+4][x+3] = '\u2502'  # "|"
+        board_rows_for_output[y+5][x+3] = 'S'  
+
+        board_string = "\n".join(["".join(row) for row in board_rows_for_output])
+        
+        #add compass rose
+        
+        
+        return board_string
         
         # # return str(self.board_graph)
         # for y in range(BOARD_HEIGHT):

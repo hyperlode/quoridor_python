@@ -391,7 +391,7 @@ class Quoridor():
         return success
 
     def move_pawn(self, move_verbose):
-
+    
         # check for pawn or wall move
         direction = NOTATION_TO_DIRECTION[move_verbose]
 
