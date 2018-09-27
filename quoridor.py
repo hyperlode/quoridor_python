@@ -22,7 +22,8 @@ NOTATION_TO_DIRECTION = {
     "NW":pawn.NORTH_WEST,
     "SE":pawn.SOUTH_EAST,
     "NE":pawn.NORTH_EAST,
-    #moves should be in upper case, but for the ease of thing on the input side, lower is allowed. the only ambiguity possible is with "e" E or line e for walls?
+    
+    #moves should be in upper case, but for the ease of thing on the input side, lower is allowed. the only ambiguity possible is with "e": E or line e for walls?
     "n":pawn.NORTH,
     "e":pawn.EAST,
     "s":pawn.SOUTH ,
@@ -91,16 +92,12 @@ class Quoridor():
          #ask user for move if not provided.
         success = None
         while success is None:
-            
-            if self.players[self.playerAtMoveIndex].player_direction == 0:
-                symbol = board.BOARD_CELL_PLAYER_TO_NORTH    
-            else:
-                symbol = board.BOARD_CELL_PLAYER_TO_SOUTH    
+            active_player_char = self.gameBoard.get_player_char(self.players[self.playerAtMoveIndex].player_direction, True)
            
             logging.info( "move history: {}".format(self.move_history))
             
             self.print_board()
-            move = input("player {} {} input move(h for help)): ".format(self.players[self.playerAtMoveIndex].name, symbol))
+            move = input("player {} {} input move(h for help)): ".format(self.players[self.playerAtMoveIndex].name, active_player_char))
 
             if move in ["u", "undo"]:
                 self.undo_turn()
@@ -116,6 +113,9 @@ class Quoridor():
             
             elif move == "wide":
                self.gameBoard.wide_display_toggle()
+            
+            elif move in ["r", "rotate"]:
+                self.gameBoard.rotate_board(None)
                 
             elif move in ["h", "help"]:
                 self.print_message("\n"+
@@ -138,7 +138,8 @@ class Quoridor():
                 "m or moves  for move history\n"+
                 "h or help   for this help\n"+
                 "wide        to toggle wider board\n"+
-                "q or exit   for exit"
+                "q or exit   for exit"+
+                "r or rotate      for rotating the board 180DEG"
                 "\n"               
                 )
               
@@ -377,11 +378,16 @@ class Quoridor():
         return previous
 
     def next_player(self):
+        #deactivate current player
+        self.players[self.playerAtMoveIndex].active = False
+                
         #activate next player
         self.playerAtMoveIndex += 1
         if self.playerAtMoveIndex >= len(self.players):
             self.playerAtMoveIndex = 0
-
+        
+        self.players[self.playerAtMoveIndex].active = True
+        
         status = "-----------Change player to {}".format(self.players[self.playerAtMoveIndex].name)
         logging.info(status)
         # self.print_message(status)

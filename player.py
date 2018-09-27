@@ -23,6 +23,9 @@ class Player:
         self.board = None
         self.player_direction = player_direction
         
+        #at_move
+        self._active = False
+        
     def __repr__(self):
         return str("Player {} at position: {}".format(self.name, self.pawn.position))
         
@@ -71,9 +74,13 @@ class Player:
             playWall.consolidate_position()
             return True
         
-    # @property
-    # def pawn(self):
-        # return self.pawn.
+    @property
+    def active(self):
+        return self._active
+    
+    @active.setter
+    def active(self, is_active):
+        self._active = is_active
     
     @property
     def direction(self):

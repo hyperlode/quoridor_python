@@ -11,8 +11,8 @@ BOARD_HEIGHT = 9# 9 is default
 # board output in terminal
 # https://en.wikipedia.org/wiki/Box-drawing_character
 # BOARD_CELL_EMPTY = " "
-# BOARD_CELL_PLAYER_TO_NORTH =  '\u25b2'
-# BOARD_CELL_PLAYER_TO_SOUTH = '\u25bc' 
+# BOARD_CELL_PLAYER_TO_TOP =  '\u25b2'
+# BOARD_CELL_PLAYER_TO_BOTTOM = '\u25bc' 
 # BOARD_CELL_WALL = '+'  # "O"
 # BOARD_CELL_WALL_HORIZONTAL = '\u2550'  # "O"
 # BOARD_CELL_WALL_VERTICAL = '\u2551'  # "O"
@@ -23,8 +23,8 @@ BOARD_HEIGHT = 9# 9 is default
 # BOARD_CELL_LINE_CROSSING =  '\u253c'  # "+"
 
 BOARD_CELL_EMPTY = " "
-BOARD_CELL_PLAYER_TO_NORTH =  '\u25b2'
-BOARD_CELL_PLAYER_TO_SOUTH = '\u25bc' 
+BOARD_CELL_PLAYER_TO_TOP =  '\u25b2'
+BOARD_CELL_PLAYER_TO_BOTTOM = '\u25bc' 
 BOARD_CELL_WALL = '+'  # "O"
 BOARD_CELL_WALL_HORIZONTAL = '\u2500'  # "O"
 BOARD_CELL_WALL_VERTICAL = '\u2502'  # "O"
@@ -47,7 +47,7 @@ PAWN_INIT_POS = [(startPosX, 0), (startPosX, BOARD_HEIGHT-1)]
 
 PAWN_WINNING_POS = [(x,BOARD_HEIGHT-1) for x in range(BOARD_WIDTH)], [(x,0) for x in range(BOARD_WIDTH)]
         
-
+DISPLAY_ORIENTATION = ["player_north_to_top", "player_north_to_bottom"]  # , "active_player_to_top", "active_player_to_bottom"]
         
 class Board():
 
@@ -102,11 +102,45 @@ class Board():
             
         self.players = []
         self.wide_display = True
+        self.display_orientation = DISPLAY_ORIENTATION[1]
     
     def wide_display_toggle(self):
         # output board wide or normal
         self.wide_display = not self.wide_display
-    
+        
+    def rotate_board(self, north_player_to_top=None):
+        if north_player_to_top is None:
+            if self.display_orientation == "player_north_to_top":
+                self.display_orientation = "player_north_to_bottom"
+            else:
+                self.display_orientation = "player_north_to_top"
+            # just rotate 180
+        elif north_player_to_top:
+            # north top
+            self.display_orientation = "player_north_to_top"
+        else:
+            #north is bottom
+            self.display_orientation = "player_north_to_bottom"
+        
+    def get_player_char(self,direction, isActive_player=True):
+        
+        # if self.display_orientation in ["active_player_to_top", "active_player_to_bottom"]:
+            # logging.error("active player board orientation not yet implemented.")
+            # raise Exception
+            
+        if direction == player.PLAYER_TO_NORTH and self.display_orientation == "player_north_to_top":
+            return BOARD_CELL_PLAYER_TO_TOP
+        elif direction == player.PLAYER_TO_NORTH and self.display_orientation == "player_north_to_bottom":
+            return BOARD_CELL_PLAYER_TO_BOTTOM
+        elif direction == player.PLAYER_TO_SOUTH and self.display_orientation == "player_north_to_top":
+            return BOARD_CELL_PLAYER_TO_BOTTOM
+        elif direction == player.PLAYER_TO_SOUTH and self.display_orientation == "player_north_to_bottom":
+            return BOARD_CELL_PLAYER_TO_TOP
+        else:
+            logging.error("troubles in paradise. ")
+            raise Exception 
+            
+            
     def add_player(self, player_instance):
         self.players.append(player_instance)
         self.board_graph[player_instance.pawn.position]["pawn"] = player_instance
@@ -340,7 +374,7 @@ class Board():
         
 
     def board_array(self):
-        #setup
+       
         board_array = []
         
         if self.wide_display:
@@ -348,7 +382,32 @@ class Board():
             hori_extra = 2
         else:
             hori_extra = 0
+       
+        if self.display_orientation == "player_north_to_top":
+            char_player_to_north = BOARD_CELL_PLAYER_TO_TOP
+            char_player_to_south = BOARD_CELL_PLAYER_TO_BOTTOM
             
+            #corners of the board
+            char_edge_corner_south_west = BOARD_CELL_WALL_BORDER_BOTTOM_LEFT
+            char_edge_corner_north_west = BOARD_CELL_WALL_BORDER_TOP_LEFT
+            char_edge_corner_south_east = BOARD_CELL_WALL_BORDER_BOTTOM_RIGHT
+            char_edge_corner_north_east = BOARD_CELL_WALL_BORDER_TOP_RIGHT
+        
+        elif self.display_orientation == "player_north_to_bottom":
+            char_player_to_north = BOARD_CELL_PLAYER_TO_BOTTOM
+            char_player_to_south = BOARD_CELL_PLAYER_TO_TOP
+            
+             #corners of the board
+            char_edge_corner_south_west = BOARD_CELL_WALL_BORDER_TOP_LEFT
+            char_edge_corner_north_west = BOARD_CELL_WALL_BORDER_BOTTOM_LEFT
+            char_edge_corner_south_east = BOARD_CELL_WALL_BORDER_TOP_RIGHT
+            char_edge_corner_north_east = BOARD_CELL_WALL_BORDER_BOTTOM_RIGHT
+        
+        else:
+            logging.log("orientation not implemented")
+        
+            
+       
         cells_vertical = BOARD_HEIGHT * 2 + 1
         cells_horizontal = BOARD_WIDTH * (2 + hori_extra) + 1
         
@@ -378,10 +437,10 @@ class Board():
                     board_array[row][col] = BOARD_CELL_LINE_VERTICAL
         
         #corners of the board
-        board_array[cells_vertical-1][0] = BOARD_CELL_WALL_BORDER_BOTTOM_LEFT
-        board_array[0][0] = BOARD_CELL_WALL_BORDER_TOP_LEFT
-        board_array[0][cells_horizontal - 1] = BOARD_CELL_WALL_BORDER_BOTTOM_RIGHT
-        board_array[cells_vertical-1][cells_horizontal - 1] = BOARD_CELL_WALL_BORDER_TOP_RIGHT
+        board_array[cells_vertical-1][0]                    = char_edge_corner_south_west
+        board_array[0][0]                                   = char_edge_corner_north_west
+        board_array[0][cells_horizontal - 1]                = char_edge_corner_south_east
+        board_array[cells_vertical-1][cells_horizontal - 1] = char_edge_corner_north_east
         
         for p in self.players:
 
@@ -390,9 +449,9 @@ class Board():
             # print("pawn pos id: {}: x{}, y{}".format(p.name,x,y))
             col, row = x, y
             if p.direction == player.PLAYER_TO_NORTH:
-                board_array[row*2 + 1][col*(2+hori_extra) + 1 + (hori_extra//2)] = BOARD_CELL_PLAYER_TO_NORTH
+                board_array[row*2 + 1][col*(2+hori_extra) + 1 + (hori_extra//2)] = char_player_to_north
             elif p.direction == player.PLAYER_TO_SOUTH:
-                board_array[row*2 + 1][col*(2+hori_extra) + 1 + (hori_extra//2)] = BOARD_CELL_PLAYER_TO_SOUTH
+                board_array[row*2 + 1][col*(2+hori_extra) + 1 + (hori_extra//2)] = char_player_to_south
             else:
                 logging.warning("ASSERT ERROR: no correct direction indicated")
               
@@ -449,24 +508,41 @@ class Board():
             extended_board[BOARD_HEIGHT * 2 + o + 1][col*(2+hori_extra) + o] = str(chr(col + 96))
          
         return extended_board
-        
+    
     def __str__(self):
         output = ""
         board = self.board_array()
         # print(board)
         
-        board_rows_for_output= [[EXTENDED_BOARD_EMPTY_SPACE for i in range(6)] + row for row in board[::-1]]
-        x  = 0
-        y = 1
-        board_rows_for_output[y][x+3] = "N"
-        board_rows_for_output[y+1][x+3] = '\u25b2'  # "^"
-        board_rows_for_output[y+2][x+3] = '\u2502'  # "|"
-        board_rows_for_output[y+3][x+3] = '\u253c'  # "+"
-        board_rows_for_output[y+3][x+1] = 'W'  # "+"
-        board_rows_for_output[y+3][x+5] = 'E'  # "+"
-        board_rows_for_output[y+4][x+3] = '\u2502'  # "|"
-        board_rows_for_output[y+5][x+3] = 'S'  
-
+        if self.display_orientation == "player_north_to_top":
+            
+            board_rows_for_output= [[EXTENDED_BOARD_EMPTY_SPACE for i in range(6)] + row for row in board[::-1]]
+            x = 0
+            y = 1
+            board_rows_for_output[y][x+3] = "N"
+            board_rows_for_output[y+1][x+3] = '\u25b2'  # "^"
+            board_rows_for_output[y+2][x+3] = '\u2502'  # "|"
+            board_rows_for_output[y+3][x+3] = '\u253c'  # "+"
+            board_rows_for_output[y+3][x+1] = 'W'  # "+"
+            board_rows_for_output[y+3][x+5] = 'E'  # "+"
+            board_rows_for_output[y+4][x+3] = '\u2502'  # "|"
+            board_rows_for_output[y+5][x+3] = 'S'  
+        elif self.display_orientation == "player_north_to_bottom":
+            board_rows_for_output= [[EXTENDED_BOARD_EMPTY_SPACE for i in range(6)] + row for row in board]
+            x = 0
+            y = 1
+            board_rows_for_output[y][x+3] = "S"
+            
+            board_rows_for_output[y+1][x+3] = '\u2502'  # "|"
+            board_rows_for_output[y+2][x+3] = '\u253c'  # "+"
+            board_rows_for_output[y+2][x+1] = 'E'  # "+"
+            board_rows_for_output[y+2][x+5] = 'W'  # "+"
+            board_rows_for_output[y+3][x+3] = '\u2502'  # "|"
+            board_rows_for_output[y+4][x+3] = '\u25bc'  # "v"
+            board_rows_for_output[y+5][x+3] = 'N'  
+        else:
+            logging.error("unvalid orientation ")
+            return False
         board_string = "\n".join(["".join(row) for row in board_rows_for_output])
         
         #add compass rose
