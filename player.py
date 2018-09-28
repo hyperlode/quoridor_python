@@ -82,14 +82,25 @@ class Player:
             return True
 
     def undo_place_wall(self, position_verbose):
+        return self.remove_wall(position_verbose)
+
+    def remove_wall(self, position_verbose):
         success = False
         for w in self.walls:
-
             if w.get_position("verbose") == position_verbose:
                 logging.info("ok, wall found")
-                print("ok, wall found")
                 success = self.board.remove_wall(w)
+
+                if success:
+                    success = w.reset_position(allow_reset_placed_wall=True)
+                else:
+                    logging.error("wall not removed from board")
+
+                if not success:
+                    logging.error("wall not reset.")
                 break
+        if success:
+            logging.info("wall removed from player")
         return success
 
     @property

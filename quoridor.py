@@ -42,7 +42,7 @@ GAME_STATUS_NOT_STARTED = 0
 GAME_STATUS_PLAYING = 1
 GAME_STATUS_FINISHED = 2
 
-SIDE_BAR_EMPTY_SPACE = "."
+SIDE_BAR_EMPTY_SPACE = " "
 
 
 class Quoridor():
@@ -120,8 +120,16 @@ class Quoridor():
                 self.gameBoard.rotate_board(None)
             
             elif move in [" ", "auto"]:
-                self.print_message(self.auto_pawn_move_suggestion())
-                
+                auto_move_directions = self.auto_pawn_move_suggestion()
+                if len(auto_move_directions) > 1:
+                    execute_input = input("Multiple suggestions. Press space to execute move: {} from: {}. Anything else to retry.".format(auto_move_directions[0], auto_move_directions)) or None
+                    if execute_input == " ":
+                        self.play_turn(auto_move_directions[0])
+                elif len(auto_move_directions) == 1:
+                    self.play_turn(auto_move_directions[0])
+                else:
+                    logging.error("unvalid auto move directions. {}".format(auto_move_directions))
+
             elif move in ["h", "help"]:
                 self.print_message("\n"+
                 "QUORIDOR game\n"+
@@ -302,8 +310,6 @@ class Quoridor():
             logging.info("undo wall move")
             success = self.players[previous_player_index].undo_place_wall(move_to_undo)
 
-            # success = self.gameBoard.remove_wall(move_to_undo)
-
         if success:
             if as_independent_turn:
                 # activate previous player.
@@ -420,31 +426,39 @@ class Quoridor():
         
     def check_all_pawn_moves(self):
         # for active player.
-        
-        # all_directions = {"N": None, "E": None, "S": None, "W": None, "NN": None, "EE": None, "SS": None, "WW": None, "NW": None, "NE": None, "SE": None, "SW": None}
-        all_directions = {"N": None, "E": None, "S": None, "W": None}
+        all_directions = {"N": None, "E": None, "S": None, "W": None, "NN": None, "EE": None, "SS": None, "WW": None, "NW": None, "NE": None, "SE": None, "SW": None}
+        # all_directions = {"N": None, "E": None, "S": None, "W": None}
         # all_directions = {"E": None}
 
         for dir in all_directions.keys():
             #1 simulate pawn move
-            print(dir)
             #1a do move
-            self.move_pawn(dir)
+            success = self.move_pawn(dir)
 
-            #2 check distances 
-            distance = self.gameBoard.distance_to_winning_node(self.players[self.playerAtMoveIndex])
-            print(distance)
-            #3 save shortest distance
+            if not success:
+                distance = None
+            else:
+                #2 check shortest distance
+                distance = self.gameBoard.distance_to_winning_node(self.players[self.playerAtMoveIndex])
+
+                # 1b undo move
+                self.players[self.playerAtMoveIndex].undo_move_pawn()
+
             all_directions[dir] = distance
-            #1b undo move
-            
-            self.undo_turn(as_independent_turn=False, steps=1)
-        print(all_directions)
         return all_directions
     
     def auto_pawn_move_suggestion(self):
         all_directions = self.check_all_pawn_moves()
-        return min(all_directions, key= all_directions.get)  # key for minimum value
+
+        #eliminate infinite (None) distances
+        all_directions = {d: dist for d, dist in all_directions.items() if dist is not None}
+
+        # return min(all_directions, key=all_directions.get)  # key for minimum value
+
+        minimum_dist = min(all_directions.values())
+
+        return [direction for direction in all_directions.keys() if all_directions[direction] == minimum_dist]
+
         
     def place_wall(self, position_verbose) :
         success = self.players[self.playerAtMoveIndex].place_wall(position_verbose)
@@ -520,10 +534,11 @@ if __name__ == "__main__":
     game_20180908_Brecht_Lode_0 = {"player_1":"Lode", "player_2":"Brecht", "remarks":"fictional demo game" , "date":"20180908", "game":"n s n s n s n s"}  
     game_Brecht_Lode = {"player_1":"Lode", "player_2":"Brecht"}  
     game_Joos_Lode = {"player_1":"Joos", "player_2":"Lode", "game":"n s n s n s n 6e 4d 4g e5 6c a6 b6 4b 5a 3a c3 1c 2b 1a 2d 1e 2f 1g 3h h1 sw"}
+    test_auto_move= {"player_1":"Joos", "player_2":"Lode", "game":"1c d2 3d e2 1f"}
     game_Brecht_Lode_wall_isolates_part_of_board = {"player_1":"Lode", "player_2":"Brecht", "game":"n s n s 7a"}
     
     # q = Quoridor(game_Brecht_Lode_wall_isolates_part_of_board)
-    q = Quoridor(game_Brecht_Lode)
+    q = Quoridor(test_auto_move)
     q.game_user_input()
     # print(str(q))
    

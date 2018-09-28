@@ -161,12 +161,6 @@ class Board():
 
         success = False
 
-        # check with placed walls
-        # for pl in self.players:
-        #     for w in pl.walls:
-        #         if w.get_position("verbose") == position_verbose:
-        #             logging.info("ok, wall found")
-
         #reconnect nodes
         for node1, node2 in wall_to_remove.get_position("nodes"):
             success = self.link_nodes(node1, node2)
@@ -176,38 +170,11 @@ class Board():
                 raise Exception("board potentially corrupt.")
                 return False
 
-        success = wall_to_remove.reset_position(allow_reset_placed_wall=True)
-
         if not success:
-            logging.info("error: wall not found. check if verbose position is accurate: {}".format(position_verbose))
-
+            logging.error("error: wall not found. check if verbose position is accurate: {}".format(wall_to_remove.get_position("verbose")))
+        else:
+            logging.info("wall removed from board")
         return success
-    # def remove_wall(self,position_verbose):
-    #     #used for undo or backwards replay.
-    #
-    #     success = False
-    #
-    #     # check with placed walls
-    #     for pl in self.players:
-    #         for w in pl.walls:
-    #             if w.get_position("verbose") == position_verbose:
-    #                 logging.info("ok, wall found")
-    #
-    #                 #reconnect nodes
-    #                 for node1, node2 in w.get_position("nodes"):
-    #                     success = self.link_nodes(node1, node2)
-    #                     if not success:
-    #                         logging.warning(
-    #                             "connections on the board could not be connected when removing the wall. Board might be corrupt")
-    #                         raise Exception("board potentially corrupt.")
-    #                         return False
-    #
-    #                 w.reset_position(allow_reset_placed_wall=True)
-    #                 success = True
-    #     if not success:
-    #          logging.info("error: wall not found. check if verbose position is accurate: {}".format(position_verbose))
-    #
-    #     return success
 
     def place_wall(self, new_wall):
         hori_new,vert_new,orientation_new = new_wall.get_position("lines_orientation")
