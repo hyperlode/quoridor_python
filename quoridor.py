@@ -138,7 +138,7 @@ class Quoridor():
                 "m or moves  for move history\n"+
                 "h or help   for this help\n"+
                 "wide        to toggle wider board\n"+
-                "q or exit   for exit"+
+                "q or exit   for exit\n"+
                 "r or rotate      for rotating the board 180DEG"
                 "\n"               
                 )
@@ -223,13 +223,55 @@ class Quoridor():
     def print_message(self, message):
         print(message)
         self.pause()
+            
+    def __str__(self):
+        return "".join(self.screen_output_lines())
+        
+    def screen_output_lines(self):
+        board_output_lines = self.gameBoard.output_lines()
+        side_bar_stats_lines = []
+        col_width  = len(self.players[0].name)
+        if len(self.players[0].name) < len(self.players[1].name):
+            col_width = len(self.players[1].name)
+        col_width +=0
+        side_bar_stats_lines.append("{0:<{w}} | {1:<{w}} | {2:<{w}}".format(" ", self.players[0].name,self.players[1].name,w = col_width))
+        side_bar_stats_lines.append("{0:<{w}} | {1:<{w}} | {2:<{w}}".format("path", self.distance_history[-1][0], self.distance_history[-1][1], w = col_width))
+        side_bar_stats_lines.append("{0:<{w}} | {1:<{w}} | {2:<{w}}".format("walls", self.players[0].number_of_unplaced_walls(), self.players[1].number_of_unplaced_walls(), w = col_width))
 
-    # def turn_aftermath(self, played=True, display_board=True):
+        side_bar_width = len(max(side_bar_stats_lines, key = lambda x:len(x)))
+        side_bar_whitespace = "{0:<{w}}".format(" ", w = side_bar_width)
 
-        # pass
-        # if display_board:
-            # self.print_board()
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        side_bar_stats_lines.insert(0, side_bar_whitespace)
 
+        while len(side_bar_stats_lines) < len(board_output_lines):
+            side_bar_stats_lines.append(side_bar_whitespace)
+
+        # print(board_output_lines)
+        # print(side_bar_stats_lines)
+
+        combined_lines = [line_bar + " " + line_board + "\n" for line_bar, line_board in zip(side_bar_stats_lines, board_output_lines)]
+        return combined_lines
+            
+        
+        
     def undo_turn(self, as_independent_turn=True, steps=1):
         # undoing a turn. 
         # as_independent_turn  if False --> we assume that we are in the middle of a turn, stays the same player.
@@ -355,21 +397,6 @@ class Quoridor():
                 
         return played
     
-    # def play_turn_animated(self, move, animation_time_ms = 100):
-    #     time.sleep(animation_time_ms/1000)
-    #     self.print_board()
-    #     if self.play_turn(move):
-    #         # self.turn_aftermath()
-    #         return True
-    #     else:
-    #         #no success == no animation
-    #         try:
-    #             tmp = input("wrong move notation, press key to continue.")
-    #         except:
-    #             pass
-    #         return False
-
-
     def get_previous_player_index(self):
         #returns the previous player index.
         previous = self.playerAtMoveIndex - 1
@@ -419,9 +446,6 @@ class Quoridor():
         # json = json.dumps(r) # note i gave it a different name
         # file.write(str(r['rating']))
         # def load_json():
-                
-    def __str__(self):
-        return str(self.gameBoard)
 
 def game_from_archive(gameString):
     pass

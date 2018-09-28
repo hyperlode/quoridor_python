@@ -34,7 +34,14 @@ class Player:
     
     def get_pawn_on_winning_position(self):
         return self.pawn.position in board.PAWN_WINNING_POS[self.player_direction]
-                
+    
+    def number_of_unplaced_walls(self):
+        number = 0
+        for w in self.walls:
+            if w.status == wall.STATUS_NOT_PLACED:
+                number += 1
+        return number
+
     def get_unplaced_wall(self):
         # returns first unused wall.
         # None if all walls are placed.

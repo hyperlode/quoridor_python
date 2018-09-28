@@ -510,9 +510,13 @@ class Board():
         return extended_board
     
     def __str__(self):
+        board_rows_for_output = self.output_lines()
+        board_string = "\n".join(board_rows_for_output)
+        return board_string
+    
+    def output_lines(self):
         output = ""
         board = self.board_array()
-        # print(board)
         
         if self.display_orientation == "player_north_to_top":
             
@@ -543,27 +547,10 @@ class Board():
         else:
             logging.error("unvalid orientation ")
             return False
-        board_string = "\n".join(["".join(row) for row in board_rows_for_output])
-        
-        #add compass rose
-        
-        
-        return board_string
-        
-        # # return str(self.board_graph)
-        # for y in range(BOARD_HEIGHT):
-            # #wall line 
-            # line = ""
-            # for x in range(BOARD_WIDTH):    
-                # if y==0:
-                    # #top row
-                
-                # # line += self.board_graph[(x,y)] 
-                # # output += "{} {} {}\n".format(x,y, str(self.board_graph[(x,y)]))
-                
-             # #pawn line
-        # return output
 
+        return ["".join(row) for row in board_rows_for_output]
+
+        
 if __name__ == "__main__":
     # player1 = player.Player("lode")
     # player2 = player.Player("brecht")
