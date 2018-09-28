@@ -116,6 +116,9 @@ class Quoridor():
             
             elif move in ["r", "rotate"]:
                 self.gameBoard.rotate_board(None)
+            
+            elif move in [" ", "auto"]:
+                self.print_message(self.auto_pawn_move_suggestion())
                 
             elif move in ["h", "help"]:
                 self.print_message("\n"+
@@ -124,23 +127,24 @@ class Quoridor():
                 "\n"+
                 "PAWN movement commands:\n"+
                 "    uses the compass rose notation (i.e. n for north)\n"+
-                "n,e,s,w     for ortho movement\n"+
-                "nn,ee,ss,ww for jumping over pawn\n"+
-                "ne,nw,se,sw for diagonal jumping over pawn\n"+
+                "n,e,s,w       for ortho movement\n"+
+                "nn,ee,ss,ww   for jumping over pawn\n"+
+                "ne,nw,se,sw   for diagonal jumping over pawn\n"+
                 "\n"+
                 "WALL placement commands:\n"+
                 "    letters and digits for each line are indicated on the board\n"+
                 "    first char: indicates line and direction, second char: center point\n"+
-                "[1-8][a-h]  for east-west wall placement (i.e. 2e)\n"+
-                "[a-h][1-8]  for north-south wall placement (i.e h5)\n"+
+                "[1-8][a-h]    for east-west wall placement (i.e. 2e)\n"+
+                "[a-h][1-8]    for north-south wall placement (i.e h5)\n"+
                 "\n"+
                 "GENERAL commands:\n"+
-                "u or undo   for undo last move\n"+
-                "m or moves  for move history\n"+
-                "h or help   for this help\n"+
-                "wide        to toggle wider board\n"+
-                "q or exit   for exit\n"+
-                "r or rotate      for rotating the board 180DEG"
+                "u or undo     for undo last move\n"+
+                "m or moves    for move history\n"+
+                "h or help     for this help\n"+
+                "wide          to toggle wider board\n"+
+                "SPACE or auto to toggle wider board\n"+
+                "q or exit     for exit\n"+
+                "r or rotate   for rotating the board 180DEG"
                 "\n"               
                 )
               
@@ -229,13 +233,18 @@ class Quoridor():
         return "".join(self.screen_output_lines())
         
     def screen_output_lines(self):
+        # side bar statistics and board combined.
+        
         board_output_lines = self.gameBoard.output_lines()
         side_bar_stats_lines = []
+        
         col_width  = len(self.players[0].name)
         if len(self.players[0].name) < len(self.players[1].name):
             col_width = len(self.players[1].name)
+            
         first_col_width = 5
-        # draw statistics box
+        
+        # draw statistics box (https://en.wikipedia.org/wiki/Box-drawing_character)
         side_bar_stats_lines.append(" {0:<{fw}} \u250C\u2500{1:\u2500<{w}}\u2500\u252C\u2500{2:\u2500<{w}}\u2510".format("", "","",w = col_width, fw = first_col_width))
         side_bar_stats_lines.append(" {0:<{fw}} \u2502 {1:<{w}} \u2502 {2:<{w}}\u2502".format(" ", self.players[0].name,self.players[1].name,w = col_width, fw = first_col_width))
         side_bar_stats_lines.append("\u250C{0:\u2500<{fw}}\u2500\u253C\u2500{1:\u2500<{w}}\u2500\u253c\u2500{2:\u2500<{w}}\u2524".format("", "","",w = col_width, fw = first_col_width))
@@ -247,37 +256,18 @@ class Quoridor():
         side_bar_width = len(max(side_bar_stats_lines, key = lambda x:len(x)))
         side_bar_whitespace = "{0:<{w}}".format(" ", w = side_bar_width)
 
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        # side_bar_stats_lines.insert(0, side_bar_whitespace)
-        # side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        # side_bar_stats_lines.insert(0, side_bar_whitespace)
-        # side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        #side bar top space
+        for i in range(15):
+            side_bar_stats_lines.insert(0, side_bar_whitespace)
 
+        #side bar bottom space
         while len(side_bar_stats_lines) < len(board_output_lines)-2:
             side_bar_stats_lines.append(side_bar_whitespace)
 
-        # print(board_output_lines)
-        # print(side_bar_stats_lines)
-
+        #make one line from the two columns
         combined_lines = [line_bar + " " + line_board + "\n" for line_bar, line_board in zip(side_bar_stats_lines, board_output_lines)]
         return combined_lines
             
-        
-        
     def undo_turn(self, as_independent_turn=True, steps=1):
         # undoing a turn. 
         # as_independent_turn  if False --> we assume that we are in the middle of a turn, stays the same player.
@@ -424,7 +414,30 @@ class Quoridor():
         status = "-----------Change player to {}".format(self.players[self.playerAtMoveIndex].name)
         logging.info(status)
         # self.print_message(status)
-
+        
+    def check_all_pawn_moves(self):
+        #for active player.
+        
+        all_directions = {"N":None, "E":None, "S":None, "W":None, "NN":None, "EE":None, "SS":None, "WW":None, "NW":None, "NE":None, "SE":None, "SW":None}
+        
+        for dir in all_directions.keys():
+            #1 simulate pawn move
+            #1a do move
+            self.move_pawn(dir)
+            #2 check distances 
+            distance = self.gameBoard.distance_to_winning_node(self.players[self.playerAtMoveIndex])
+            #3 save shortest distance
+            all_directions[dir] = distance
+            #1b undo move
+            
+            self.undo_turn(as_independent_turn=False, steps=1)
+        print(all_directions)
+        return all_directions
+    
+    def auto_pawn_move_suggestion(self):
+        all_directions = self.check_all_pawn_moves()
+        return min(all_directions, key= all_directions.get)  # key for minimum value
+        
     def place_wall(self, position_verbose) :
         success = self.players[self.playerAtMoveIndex].place_wall(position_verbose)
         return success
