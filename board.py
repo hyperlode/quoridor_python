@@ -40,6 +40,7 @@ BOARD_CELL_LINE_CROSSING =  '\u253c'  # "+"
 
 EXTENDED_BOARD_EMPTY_SPACE = " "
 
+
 startPosX = BOARD_WIDTH // 2   # for width 9 --> 4  
 
 PAWN_INIT_POS = [(startPosX, 0), (startPosX, BOARD_HEIGHT-1)] 

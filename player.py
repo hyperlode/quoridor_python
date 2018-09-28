@@ -19,11 +19,11 @@ class Player:
         self.walls = [wall.Wall(wall.TYPE_PLAYER, i) for i in range(NUMBER_OF_WALLS)]
         
         # create pawn
-        self.pawn = pawn.Pawn( board.PAWN_INIT_POS[player_direction])
+        self.pawn = pawn.Pawn(board.PAWN_INIT_POS[player_direction])
         self.board = None
         self.player_direction = player_direction
         
-        #at_move
+        # at_move
         self._active = False
         
     def __repr__(self):
@@ -80,7 +80,7 @@ class Player:
         else:
             playWall.consolidate_position()
             return True
-        
+
     @property
     def active(self):
         return self._active
