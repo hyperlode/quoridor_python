@@ -102,7 +102,7 @@ class Board():
             
         self.players = []
         self.wide_display = True
-        self.display_orientation = DISPLAY_ORIENTATION[1]
+        self.display_orientation = DISPLAY_ORIENTATION[0]
     
     def wide_display_toggle(self):
         # output board wide or normal

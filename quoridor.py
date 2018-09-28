@@ -129,7 +129,8 @@ class Quoridor():
                 "ne,nw,se,sw for diagonal jumping over pawn\n"+
                 "\n"+
                 "WALL placement commands:\n"+
-                "    letters and digits are written on the board\n"+
+                "    letters and digits for each line are indicated on the board\n"+
+                "    first char: indicates line and direction, second char: center point\n"+
                 "[1-8][a-h]  for east-west wall placement (i.e. 2e)\n"+
                 "[a-h][1-8]  for north-south wall placement (i.e h5)\n"+
                 "\n"+
@@ -233,11 +234,16 @@ class Quoridor():
         col_width  = len(self.players[0].name)
         if len(self.players[0].name) < len(self.players[1].name):
             col_width = len(self.players[1].name)
-        col_width +=0
-        side_bar_stats_lines.append("{0:<{w}} | {1:<{w}} | {2:<{w}}".format(" ", self.players[0].name,self.players[1].name,w = col_width))
-        side_bar_stats_lines.append("{0:<{w}} | {1:<{w}} | {2:<{w}}".format("path", self.distance_history[-1][0], self.distance_history[-1][1], w = col_width))
-        side_bar_stats_lines.append("{0:<{w}} | {1:<{w}} | {2:<{w}}".format("walls", self.players[0].number_of_unplaced_walls(), self.players[1].number_of_unplaced_walls(), w = col_width))
-
+        first_col_width = 5
+        # draw statistics box
+        side_bar_stats_lines.append(" {0:<{fw}} \u250C\u2500{1:\u2500<{w}}\u2500\u252C\u2500{2:\u2500<{w}}\u2510".format("", "","",w = col_width, fw = first_col_width))
+        side_bar_stats_lines.append(" {0:<{fw}} \u2502 {1:<{w}} \u2502 {2:<{w}}\u2502".format(" ", self.players[0].name,self.players[1].name,w = col_width, fw = first_col_width))
+        side_bar_stats_lines.append("\u250C{0:\u2500<{fw}}\u2500\u253C\u2500{1:\u2500<{w}}\u2500\u253c\u2500{2:\u2500<{w}}\u2524".format("", "","",w = col_width, fw = first_col_width))
+        side_bar_stats_lines.append("\u2502{0:<{fw}} \u2502 {1:<{w}} \u2502 {2:<{w}}\u2502".format("Pawn", self.gameBoard.get_player_char(0, True), self.gameBoard.get_player_char(1, True),  w = col_width, fw = first_col_width))
+        side_bar_stats_lines.append("\u2502{0:<{fw}} \u2502 {1:<{w}} \u2502 {2:<{w}}\u2502".format("Path", self.distance_history[-1][0], self.distance_history[-1][1], w = col_width, fw = first_col_width))
+        side_bar_stats_lines.append("\u2502{0:<{fw}} \u2502 {1:<{w}} \u2502 {2:<{w}}\u2502".format("Walls", self.players[0].number_of_unplaced_walls(), self.players[1].number_of_unplaced_walls(), w = col_width, fw = first_col_width))
+        side_bar_stats_lines.append("\u2514{0:\u2500<{fw}}\u2500\u2534\u2500{1:\u2500<{w}}\u2500\u2534\u2500{2:\u2500<{w}}\u2518".format("", "","",w = col_width, fw = first_col_width))
+        
         side_bar_width = len(max(side_bar_stats_lines, key = lambda x:len(x)))
         side_bar_whitespace = "{0:<{w}}".format(" ", w = side_bar_width)
 
@@ -246,6 +252,8 @@ class Quoridor():
         side_bar_stats_lines.insert(0, side_bar_whitespace)
         side_bar_stats_lines.insert(0, side_bar_whitespace)
         side_bar_stats_lines.insert(0, side_bar_whitespace)
+        # side_bar_stats_lines.insert(0, side_bar_whitespace)
+        # side_bar_stats_lines.insert(0, side_bar_whitespace)
         side_bar_stats_lines.insert(0, side_bar_whitespace)
         side_bar_stats_lines.insert(0, side_bar_whitespace)
         side_bar_stats_lines.insert(0, side_bar_whitespace)
@@ -254,14 +262,12 @@ class Quoridor():
         side_bar_stats_lines.insert(0, side_bar_whitespace)
         side_bar_stats_lines.insert(0, side_bar_whitespace)
         side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
-        side_bar_stats_lines.insert(0, side_bar_whitespace)
+        # side_bar_stats_lines.insert(0, side_bar_whitespace)
+        # side_bar_stats_lines.insert(0, side_bar_whitespace)
         side_bar_stats_lines.insert(0, side_bar_whitespace)
         side_bar_stats_lines.insert(0, side_bar_whitespace)
 
-        while len(side_bar_stats_lines) < len(board_output_lines):
+        while len(side_bar_stats_lines) < len(board_output_lines)-2:
             side_bar_stats_lines.append(side_bar_whitespace)
 
         # print(board_output_lines)
