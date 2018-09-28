@@ -17,7 +17,7 @@ class Player:
         
         # create walls
         self.walls = [wall.Wall(wall.TYPE_PLAYER, i) for i in range(NUMBER_OF_WALLS)]
-        
+
         # create pawn
         self.pawn = pawn.Pawn(board.PAWN_INIT_POS[player_direction])
         self.board = None
@@ -81,6 +81,17 @@ class Player:
             playWall.consolidate_position()
             return True
 
+    def undo_place_wall(self, position_verbose):
+        success = False
+        for w in self.walls:
+
+            if w.get_position("verbose") == position_verbose:
+                logging.info("ok, wall found")
+                print("ok, wall found")
+                success = self.board.remove_wall(w)
+                break
+        return success
+
     @property
     def active(self):
         return self._active
@@ -107,16 +118,6 @@ class Player:
         # self.board.direction_to_node(self.pawn.position, pawn.WEST)
         print("not yet implemented")
         pass
-
-    def undo_move_pawn(self):
-
-        current_pos = self.pawn.position
-        # print("hsitore: {}".format(self.pawn.positions_history))
-        move_back_pos = self.pawn.positions_history[-2]
-        self.board.move_pawn(current_pos, move_back_pos)
-        self.pawn.previous_position()
-        return True
-
 
     def move_pawn(self, direction):
     
@@ -191,7 +192,6 @@ class Player:
             # print("jump valid")    
             
         elif direction in pawn.DIRECTIONS_DIAGONAL_JUMP:
-        
             #there are two routes for this one move to be completed. If one is not working, the other one needs to be tested
             
             # get neighbour node
@@ -208,8 +208,7 @@ class Player:
             if None in [neighbour_node, first_node_direction]:
                 logging.info("ASSERT ERROR: No adjacent squares contain neighbour, no jumping allowed...... ")
                 return False
-            
-                
+
             # check for pawn on neighbour node
             if not self.board.pawn_on_node(neighbour_node):
                 # self.board.check_pawn_positions()
@@ -255,6 +254,15 @@ class Player:
         logging.info("move from: {}  to:{}".format(self.pawn.position, new_position))
         self.board.move_pawn(self.pawn.position, new_position)
         self.pawn.position = new_position
+        return True
+
+    def undo_move_pawn(self):
+
+        current_pos = self.pawn.position
+        # print("hsitore: {}".format(self.pawn.positions_history))
+        move_back_pos = self.pawn.positions_history[-2]
+        self.board.move_pawn(current_pos, move_back_pos)
+        self.pawn.previous_position()
         return True
 
 

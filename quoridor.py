@@ -300,7 +300,9 @@ class Quoridor():
         else:
             # if wall : remove wall
             logging.info("undo wall move")
-            success = self.gameBoard.remove_wall(move_to_undo)
+            success = self.players[previous_player_index].undo_place_wall(move_to_undo)
+
+            # success = self.gameBoard.remove_wall(move_to_undo)
 
         if success:
             if as_independent_turn:
@@ -502,7 +504,8 @@ def logging_setup():
     # self.logger = logging.getLogger()    
     # handler = logging.StreamHandler()
     # formatter = logging.Formatter(
-            # '%(asctime)s %(name)-12s %(levelname)-8s %(message)s')
+            # '%(asctime)s %n
+    # (name)-12s %(levelname)-8s %(message)s')
     # handler.setFormatter(formatter)
     # self.logger.addHandler(handler)
     # self.logger.setLevel(logging.DEBUG)
