@@ -102,7 +102,7 @@ class Quoridor():
                 self.human_turn()
 
     def auto_turn(self):
-        time.sleep(0.5)
+        # time.sleep(0.5)
         positions, delta = self.auto_wall_place_suggestion()
        
         if len(positions) > 0 and (delta < 0 ):
@@ -143,7 +143,7 @@ class Quoridor():
         elif move in ["r", "rotate"]:
             self.gameBoard.rotate_board(None)
 
-        elif move in ["ww"]:
+        elif move in ["wall"]:
             positions, delta = self.auto_wall_place_suggestion()
             print(
                 "path length difference change (neg is in active player's advantage): {} by placing a wall on : {}".format(
@@ -185,7 +185,7 @@ class Quoridor():
                                "h or help     for this help\n" +
                                "wide          to toggle wider board\n" +
                                "SPACE or auto to auto move pawn\n" +
-                               "ww            to suggest wall placement "
+                               "wall          to suggest wall placement\n" +
                                "q or exit     for exit\n" +
                                "r or rotate   for rotating the board 180DEG"
                                "\n"

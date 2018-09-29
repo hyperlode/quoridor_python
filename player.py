@@ -28,7 +28,35 @@ class Player:
         
     def __repr__(self):
         return str("Player {} at position: {}".format(self.name, self.pawn.position))
+      
+    @property
+    def active(self):
+        #player at move?
+        return self._active
+    
+    @active.setter
+    def active(self, is_active):
+        self._active = is_active
+    
+    @property
+    def direction(self):
+        return self.player_direction
         
+    def get_possible_pawn_moves(self):
+        # list up all possible directions.
+        
+        # ortho
+        # self.board_instance.
+        
+        # jump
+        
+        # diagonal
+        
+        # print("direction to node:")
+        # self.board.direction_to_node(self.pawn.position, pawn.WEST)
+        print("not yet implemented")
+        pass
+    
     def set_board(self, board_instance):
         self.board = board_instance
     
@@ -54,7 +82,7 @@ class Player:
             else:
                 index += 1
         return None 
-        
+    
     def place_wall(self, verbose_position):
         playWall = self.get_unplaced_wall()
         if playWall is None:
@@ -102,36 +130,8 @@ class Player:
         if success:
             logging.info("wall removed from player")
         return success
-
-    @property
-    def active(self):
-        return self._active
     
-    @active.setter
-    def active(self, is_active):
-        self._active = is_active
-    
-    @property
-    def direction(self):
-        return self.player_direction
-        
-    def get_possible_pawn_moves(self):
-        # list up all possible directions.
-        
-        # ortho
-        # self.board_instance.
-        
-        # jump
-        
-        # diagonal
-        
-        # print("direction to node:")
-        # self.board.direction_to_node(self.pawn.position, pawn.WEST)
-        print("not yet implemented")
-        pass
-
     def move_pawn(self, direction):
-    
         # direction i.e. pawn.NORTH
         if direction in pawn.DIRECTIONS_ORTHO:
             new_position = self.board.direction_to_node(self.pawn.position, direction)
