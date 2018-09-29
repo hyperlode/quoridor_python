@@ -60,7 +60,7 @@ class Player:
         if playWall is None:
             status = "Error: no free walls for this player available"
             logging.info(status)
-            print(status)
+            # print(status)
             return False
        
         # temporarily set wall
@@ -270,9 +270,16 @@ class Player:
     def undo_move_pawn(self):
 
         current_pos = self.pawn.position
-        # print("hsitore: {}".format(self.pawn.positions_history))
+        history = "pawn move history: {}".format(self.pawn.positions_history)
+        logging.info(history)
+        logging.info("pawn history: {}".format(history))
         move_back_pos = self.pawn.positions_history[-2]
-        self.board.move_pawn(current_pos, move_back_pos)
+        success = self.board.move_pawn(current_pos, move_back_pos)
+
+        if not success:
+            logging.error("undo pawn fail at board move.")
+            return False
+
         self.pawn.previous_position()
         return True
 

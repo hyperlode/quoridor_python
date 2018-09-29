@@ -6,7 +6,7 @@ import dijkstra
 import logging
 
 BOARD_WIDTH = 9 # 9 is default should be an odd number of squares, for the pawn to be able to start in the middle.
-BOARD_HEIGHT = 9# 9 is default
+BOARD_HEIGHT = 9 # 9 is default
 
 # board output in terminal
 # https://en.wikipedia.org/wiki/Box-drawing_character
@@ -49,7 +49,11 @@ PAWN_INIT_POS = [(startPosX, 0), (startPosX, BOARD_HEIGHT-1)]
 PAWN_WINNING_POS = [(x,BOARD_HEIGHT-1) for x in range(BOARD_WIDTH)], [(x,0) for x in range(BOARD_WIDTH)]
         
 DISPLAY_ORIENTATION = ["player_north_to_top", "player_north_to_bottom"]  # , "active_player_to_top", "active_player_to_bottom"]
-        
+
+NOTATION_VERBOSE_WALL_POSITIONS_NORTH_SOUTH = ["{}{}".format(chr(line + 96), midpoint)  for midpoint in range(1, BOARD_HEIGHT) for line in range(1, BOARD_WIDTH)]
+NOTATION_VERBOSE_WALL_POSITIONS_EAST_WEST = ["{}{}".format(line, chr(midpoint + 96)) for midpoint in range(1, BOARD_WIDTH) for line in range(1, BOARD_HEIGHT)]
+NOTATION_VERBOSE_WALL_POSITIONS = NOTATION_VERBOSE_WALL_POSITIONS_NORTH_SOUTH + NOTATION_VERBOSE_WALL_POSITIONS_EAST_WEST
+
 class Board():
 
     #pawn cells for 
@@ -155,6 +159,7 @@ class Board():
     def move_pawn(self, old, new):
             self.board_graph[new]["pawn"] = self.board_graph[old]["pawn"]
             self.board_graph[old]["pawn"] = None
+            return True
 
     def remove_wall(self, wall_to_remove):
         #used for undo or backwards replay.
@@ -250,8 +255,8 @@ class Board():
         closest_winning_node = None     
         dist_to_win = None  # None is +inf
         # check for shortest distance
-        for node,dist in distances.items():
-            if dist_to_win is None or dist_to_win > dist:
+        for node, dist in distances.items():
+            if dist is not None and (dist_to_win is None or dist_to_win > dist):
                 dist_to_win  = dist
                 closest_winning_node = node
          
