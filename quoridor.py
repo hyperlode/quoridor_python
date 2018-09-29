@@ -3,8 +3,9 @@ import board
 import pawn
 import wall
 
-import logging
 
+import logging
+import random
 import sys
 import time
 import os
@@ -103,18 +104,17 @@ class Quoridor():
     def auto_turn(self):
         time.sleep(0.5)
         positions, delta = self.auto_wall_place_suggestion()
-        # print(positions)
-        print(delta)
-
+       
         if len(positions) > 0 and (delta < 0 ):
             # worth placing a wall
-            move = positions[0]
+            index = random.randint(0, len(positions)-1)
+            move = positions[index]
         else:
-            move = self.auto_pawn_move_suggestion()[0]
-
+            suggestions = self.auto_pawn_move_suggestion()
+            index = random.randint(0, len(suggestions)-1)
+            move = suggestions[index]
         self.play_turn(move)
-        # self.pause()
-
+      
 
     def human_turn(self):
 
@@ -618,10 +618,12 @@ if __name__ == "__main__":
     game_Joos_Lode = {"player_1":"Joos", "player_2":"Lode", "game":"n s n s n s n 6e 4d 4g e5 6c a6 b6 4b 5a 3a c3 1c 2b 1a 2d 1e 2f 1g 3h h1 sw"}
     test_auto_move= {"player_1":"Joos", "player_2":"Lode", "game":"1c d2 3d e2 1f"}
     # q = Quoridor({"player_1":"Lode", "player_2":"Brecht", "game":"n s n s 7a"})
-    # q = Quoridor({"player_1": "Lode", "player_2": "auto"})
-
     q = Quoridor({"player_1": "auto", "player_2": "auto"})
+    # q = Quoridor({"player_1": "auto", "player_2": "auto"})
 
+    # q = Quoridor({"player_1": "auto", "player_2": "auto"})
+    # q = Quoridor()
+    
 
     q.game_loop()
 
