@@ -154,8 +154,8 @@ def logging_setup():
     
 if __name__ == "__main__":
     logging_setup()
-    l = Quoridor_local_game()
-    # l = Quoridor_local_game(None, "auto")
+    # l = Quoridor_local_game()
+    l = Quoridor_local_game(None, "auto")
     # l = Quoridor_local_game("auto", "auto")
     
     

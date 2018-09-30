@@ -1,5 +1,6 @@
 
 def dijkstra_graph(graph, start_node):
+    #graph = {node:{neighbour1:dist, neigh2:dist,...}, node2:{neighbournode1:dist,...}}
     unvisited = {node: None for node in list(graph)} #using None as +inf
     visited = {}
     current = start_node
@@ -30,37 +31,10 @@ def dijkstra_graph(graph, start_node):
         print("current: {}".format(current))
         
     return visited
-# def dijkstra_graphxxx(graph, start_node):
-#     print("orginal from internet")
-#     unvisited = {node: None for node in list(graph)} #using None as +inf
-#     visited = {}
-#     current = start_node
-#     currentDistance = 0
-#     unvisited[current] = currentDistance
-#
-#     while True:
-#         for neighbour, distance in graph[current].items():
-#             if neighbour in unvisited:
-#                 newDistance = currentDistance + distance
-#                 if unvisited[neighbour] is None or unvisited[neighbour] > newDistance:
-#                     unvisited[neighbour] = newDistance
-#                     visited[current] = currentDistance
-#
-#         del unvisited[current]
-#         if not unvisited:
-#             break
-#
-#         candidates = [node for node in unvisited.items() if node[1]]
-#         # print(candidates)
-#         # current, currentDistance = sorted(candidates, key = lambda x: x[1])[0]
-#         if len(candidates)>0:
-#             current, currentDistance = sorted(candidates, key = lambda x: x[1])[0]
-#         else:
-#             break  # no more candidates (if there are nodes isolated, not all nodes will be visited. Their distance remains None (inf).
-#
-#     return visited
-#
+
+    
 def dijkstra_graph_isolated_nodes_enabled(graph, start_node):
+    #graph = {node:{neighbour1:dist, neigh2:dist,...}, node2:{neighbournode1:dist,...}}
     unvisited = {node: None for node in list(graph)} #using None as +inf
     visited = {}
     current = start_node
@@ -69,7 +43,6 @@ def dijkstra_graph_isolated_nodes_enabled(graph, start_node):
     toBeVisited = [current]
     
     while len(toBeVisited) > 0:
-        # print(toBeVisited)
         #visit current node
         for neighbour, distance in graph[current].items():  # go over all neighbours of current node.
             
@@ -83,18 +56,48 @@ def dijkstra_graph_isolated_nodes_enabled(graph, start_node):
         
         toBeVisited.remove(current)
         del unvisited[current]
-        # if not unvisited: 
-            # break
          
         candidates = [node for node in unvisited.items() if node[1]]  # if node is not None (infinite), add it to candidates.
-        
               
-        # print(candidates)
         if len(candidates)>0:
             current, currentDistance = sorted(candidates, key = lambda x: x[1])[0]
         else:
             break
     return visited    
+
+def dijkstra_graph_isolated_nodes_enabled_unweighted(graph, start_node):
+    #all distances considered 1
+    #graph = {node:[neighbour1, neigh2,...], node2:[neighbournode1,...]}
+    unvisited = {node: None for node in list(graph)} #using None as +inf
+    visited = {}
+    current = start_node
+    currentDistance = 0
+    unvisited[current] = currentDistance
+    toBeVisited = [current]
+    
+    while len(toBeVisited) > 0:
+        #visit current node
+        for neighbour in graph[current]:  # go over all neighbours of current node.
+            
+            if neighbour in unvisited: 
+                toBeVisited.append(neighbour)
+                
+                newDistance = currentDistance + 1  # check distance
+                if unvisited[neighbour] is None or unvisited[neighbour] > newDistance:  # if new distance less, apply!
+                    unvisited[neighbour] = newDistance
+        visited[current] = currentDistance #was erroneously tabbed!
+        
+        toBeVisited.remove(current)
+        del unvisited[current]
+         
+        candidates = [node for node in unvisited.items() if node[1]]  # if node is not None (infinite), add it to candidates.
+              
+        if len(candidates)>0:
+            current, currentDistance = sorted(candidates, key = lambda x: x[1])[0]
+        else:
+            break
+    return visited 
+    
 # def dijkstra_graph_unweighted(graph, start_node):
 #     #graph = {node:[neighbour1, neigh2,...], node2:[neighbournode1,...]}
 #     unvisited = {node: None for node in list(graph)} #using None as +inf

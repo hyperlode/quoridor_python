@@ -174,7 +174,7 @@ class Board():
             shortest_path[player.player_direction]= dist_to_win
 
         return shortest_path
-        
+           
     def distance_to_winning_node(self, player):
     
         distances = self.distances_to_all_winning_nodes(player)  # dict node: distance
@@ -188,11 +188,10 @@ class Board():
                 closest_winning_node = node
          
         return dist_to_win
-         
+    
     def distances_to_all_winning_nodes(self, player):
         #get proper weighted graph
-        board_graph_weighted = {node: {n:1 for n in self.board_graph[node]["edges"] } for node in list(self.board_graph)}
-   
+        board_graph_unweighted = {node:self.board_graph[node]["edges"] for node in list(self.board_graph)}
         # sort nodes (is this needed?)
         # nodes_sorted = sorted( list(board_graph_weighted), key = lambda pos: 10*pos[0]+pos[1])
     
@@ -200,7 +199,7 @@ class Board():
         pawn_position = player.pawn.position
 
         # distance from all reachable nodes to pawn position
-        board_node_distances_to_pawn = dijkstra.dijkstra_graph_isolated_nodes_enabled(board_graph_weighted, pawn_position)
+        board_node_distances_to_pawn = dijkstra.dijkstra_graph_isolated_nodes_enabled_unweighted(board_graph_unweighted, pawn_position)
 
         # distance from winning nodes to pawn
         board_winning_nodes_to_pawn = {}
@@ -212,14 +211,14 @@ class Board():
             else:
                 board_winning_nodes_to_pawn[node] = None  # None is +inf
 
-        logging.info("Distances to winning nodes for player {}: {}".format(player.name, board_winning_nodes_to_pawn))
+        # logging.info("Distances to winning nodes for player {}: {}".format(player.name, board_winning_nodes_to_pawn))
         return board_winning_nodes_to_pawn
         
     # ACTION      
     def move_pawn(self, old, new):
-            self.board_graph[new]["pawn"] = self.board_graph[old]["pawn"]
-            self.board_graph[old]["pawn"] = None
-            return True
+        self.board_graph[new]["pawn"] = self.board_graph[old]["pawn"]
+        self.board_graph[old]["pawn"] = None
+        return True
 
     def remove_wall(self, wall_to_remove):
         #used for undo or backwards replay.
@@ -322,11 +321,7 @@ class Board():
         else:
             logging.warning("no link between two nodes. Indicates a placed wall")
             return False
-            
-    # def get_node_content(self, node):
-        # return self.board_graph[node]
-        # pass
-        
+         
     def direction_to_node(self, node, direction):
         #direction i.e. pawn.NORTH
         #returns None if board edge reached.
@@ -353,12 +348,9 @@ class Board():
         return self.nodes_directly_connected(node, node_neigh)
     
     def pawn_on_node(self, node):
-        # check if pawn on node (in graph)
-        logging.debug("what is on node({})?: {}".format(node,self.board_graph[node]))
-        if self.board_graph[node]["pawn"] is None:
-            return False
-        else:
-            return True
+        # check if a pawn is on the provided node (in graph)
+        # logging.debug("what is on node({})?: {}".format(node,self.board_graph[node]))
+        return self.board_graph[node]["pawn"] is not None
     
     # DISPLAY BOARD
     

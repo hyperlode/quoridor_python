@@ -140,23 +140,18 @@ class Player:
                 status = "Pawn cannot move outside board"
                 logging.info("ASSERT ERROR: checked neighbour node is not valid. Most probably pawn hits edge.")
                 logging.info(status)
-                # print(status)
                 return False
             
             if self.board.pawn_on_node(new_position):
-                
                 status ="pawn on neighbour."
                 # print("Error: " + status)
                 logging.info("RULE VIOLATION: " + status)
                 return False 
                 
             if not self.board.nodes_directly_connected(self.pawn.position, new_position):
-                
                 status ="No move possible through wall."
                 # print("Error:" + status)
                 logging.info("RULE VIOLATION: " +status)
-                
-                
                 return False
         
         elif direction in pawn.DIRECTIONS_ORTHO_JUMP:
