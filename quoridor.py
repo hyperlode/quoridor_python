@@ -40,9 +40,9 @@ NOTATION_TO_DIRECTION = {
 }
 
 
-GAME_STATUS_NOT_STARTED = 0
-GAME_STATUS_PLAYING = 1
-GAME_STATUS_FINISHED = 2
+GAME_STATE_NOT_STARTED = 0
+GAME_STATE_PLAYING = 1
+GAME_STATE_FINISHED = 2
 
 SIDE_BAR_EMPTY_SPACE = " "
 
@@ -50,7 +50,10 @@ SIDE_BAR_EMPTY_SPACE = " "
 class Quoridor():
     
     def __init__(self, settings = None):
-        # settings = dict. 
+        
+        self.game_state = GAME_STATE_NOT_STARTED
+        self.status_message = ""
+            
         logging.info("Init Quoridor game ")
         if settings is None:
             # start from scratch
@@ -80,6 +83,7 @@ class Quoridor():
         
         self.move_history = []
         self.distance_history =  [self.gameBoard.distances_to_winning_node()]  # keeps track of pawn to winning square distances per move.
+        self.game_state = GAME_STATE_PLAYING 
         if "game" in list(self.settings):
             #if game in it, play automatically till end of recording.
             #game = string with space between every move.
@@ -88,19 +92,94 @@ class Quoridor():
             # self.play_sequence(moves, 200)
             self.play_sequence(moves, None)
 
-                
-    def game_loop(self):
-         #ask user for move if not provided.
-        playing = True
-        while playing:
-            # display the board
-            self.print_board()
-            # get user input move
-            if self.players[self.playerAtMoveIndex].name == "auto":
-                self.auto_turn()
-            else:
-                self.human_turn()
+    # ADMINISTRATION
+    
+    def get_state(self):
+        return self.game_state
+        # if self.game_state == GAME_STATE_FINISHED:
+     
+    def set_status(self, message):
+        self.status_message += message
+    
+    def get_status_message(self, erase_after_reading=True):
+        tmp = self.status_message
+        self.status_message = ""
+        return tmp
+        
+    def active_player(self):
+        # return active player object
+        return self.players[self.playerAtMoveIndex]
+        
+    # ACTION
+    
+    def execute_command (self, move):
+        # move can be a valid move or a commmand.
+       
+        # process input
+        if move == "undo":
+            steps = len(['a' for player in self.players if player.name=="auto"]) + 1
+            self.undo_turn(steps = steps)
+            
+        elif move == "history":
+            return self.history_as_string()
+        
+        elif move in ["new", "restart"]:
+            #restart game.
+            pass
+            
+        elif move == "wide":
+            self.gameBoard.wide_display_toggle()
 
+        elif move == "rotate":
+            self.gameBoard.rotate_board(None)
+
+        elif move == "wall_suggest":
+            positions, delta = self.auto_wall_place_suggestion()
+            return "path length difference change (neg is in active player's advantage): {} by placing a wall on : {}".format(
+                    delta, positions)
+
+        elif move == "automove":
+            auto_move_directions = self.auto_pawn_move_suggestion()
+            if len(auto_move_directions) > 1:
+                return auto_move_directions
+                
+            elif len(auto_move_directions) == 1:
+                return self.play_turn(auto_move_directions[0])
+            else:
+                logging.error("unvalid auto move directions. {}".format(auto_move_directions))
+
+        elif move in ["help"]:
+            return ("\n" +
+                    "QUORIDOR game\n" +
+                    "    see ameije.com for rules\n" +
+                    "\n" +
+                    "PAWN movement commands:\n" +
+                    "    uses the compass rose notation (i.e. n for north)\n" +
+                    "n,e,s,w       for ortho movement\n" +
+                    "nn,ee,ss,ww   for jumping over pawn\n" +
+                    "ne,nw,se,sw   for diagonal jumping over pawn\n" +
+                    "\n" +
+                    "WALL placement commands:\n" +
+                    "    letters and digits for each line are indicated on the board\n" +
+                    "    first char: indicates line and direction, second char: center point\n" +
+                    "[1-8][a-h]    for east-west wall placement (i.e. 2e)\n" +
+                    "[a-h][1-8]    for north-south wall placement (i.e h5)\n" +
+                    "\n" +
+                    "GENERAL commands:\n" +
+                    "u or undo     for undo last move\n" +
+                    "m or moves    for move history\n" +
+                    "h or help     for this help\n" +
+                    "wide          to toggle wider board\n" +
+                    "SPACE or auto to auto move pawn\n" +
+                    "wall          to suggest wall placement\n" +
+                    "q or exit     for exit\n" +
+                    "r or rotate   for rotating the board 180DEG"
+                    "\n"
+                    )
+
+        else:
+            self.play_turn(move)
+ 
     def auto_turn(self):
         # time.sleep(0.5)
         positions, delta = self.auto_wall_place_suggestion()
@@ -116,87 +195,7 @@ class Quoridor():
         self.play_turn(move)
       
 
-    def human_turn(self):
-
-        active_player_char = self.gameBoard.get_player_char(self.players[self.playerAtMoveIndex].player_direction, True)
-        logging.info("move history: {}".format(self.move_history))
-
-        move = input("player {} {} input move(h for help)): ".format(self.players[self.playerAtMoveIndex].name,
-                                                                     active_player_char))
-
-        # process input
-        if move in ["u", "undo"]:
-            self.undo_turn()
-        elif move in ["m", "moves"]:
-            # self.print_message("move history: {}".format(self.move_history))
-            self.print_message(self.history_as_string())
-        elif move in ["q", "exit", "quit"]:
-            user_input = input("Type y if you really want to abort the game.[n]") or "no"
-            if user_input == "y":
-                exit()
-        elif move == "test":
-            self.print_message(self.distance_history)
-
-        elif move == "wide":
-            self.gameBoard.wide_display_toggle()
-
-        elif move in ["r", "rotate"]:
-            self.gameBoard.rotate_board(None)
-
-        elif move in ["wall"]:
-            positions, delta = self.auto_wall_place_suggestion()
-            print(
-                "path length difference change (neg is in active player's advantage): {} by placing a wall on : {}".format(
-                    delta, positions))
-
-        elif move in [" ", "auto"]:
-            auto_move_directions = self.auto_pawn_move_suggestion()
-            if len(auto_move_directions) > 1:
-                execute_input = input(
-                    "Multiple suggestions. Press space to execute move: {} from: {}. Anything else to retry.".format(
-                        auto_move_directions[0], auto_move_directions)) or None
-                if execute_input == " ":
-                    self.play_turn(auto_move_directions[0])
-            elif len(auto_move_directions) == 1:
-                self.play_turn(auto_move_directions[0])
-            else:
-                logging.error("unvalid auto move directions. {}".format(auto_move_directions))
-
-        elif move in ["h", "help"]:
-            self.print_message("\n" +
-                               "QUORIDOR game\n" +
-                               "    see ameije.com for rules\n" +
-                               "\n" +
-                               "PAWN movement commands:\n" +
-                               "    uses the compass rose notation (i.e. n for north)\n" +
-                               "n,e,s,w       for ortho movement\n" +
-                               "nn,ee,ss,ww   for jumping over pawn\n" +
-                               "ne,nw,se,sw   for diagonal jumping over pawn\n" +
-                               "\n" +
-                               "WALL placement commands:\n" +
-                               "    letters and digits for each line are indicated on the board\n" +
-                               "    first char: indicates line and direction, second char: center point\n" +
-                               "[1-8][a-h]    for east-west wall placement (i.e. 2e)\n" +
-                               "[a-h][1-8]    for north-south wall placement (i.e h5)\n" +
-                               "\n" +
-                               "GENERAL commands:\n" +
-                               "u or undo     for undo last move\n" +
-                               "m or moves    for move history\n" +
-                               "h or help     for this help\n" +
-                               "wide          to toggle wider board\n" +
-                               "SPACE or auto to auto move pawn\n" +
-                               "wall          to suggest wall placement\n" +
-                               "q or exit     for exit\n" +
-                               "r or rotate   for rotating the board 180DEG"
-                               "\n"
-                               )
-
-        else:
-            self.play_turn(move)
-
-    def pause(self):
-        tmp = input("press any key to continue...") or None
-        
+   
     def history_as_string(self, include_distance_history=True):
         lines = []
         col_width  = len(self.players[0].name)
@@ -263,14 +262,9 @@ class Quoridor():
                 lines.append("{0:>{w}} | {1:<{w}} | {2:<{w}}".format(i, turn[0], turn[1], w=col_width))
         return "\n".join(lines)
         
-    def print_board (self):
-        console_clear()
-        print(self)
-    
-    def print_message(self, message):
-        print(message)
-        self.pause()
-            
+    def board_as_string (self):
+        return(str(self))
+          
     def __str__(self):
         return "".join(self.screen_output_lines())
         
@@ -284,6 +278,8 @@ class Quoridor():
         col_width  = len(self.players[0].name)
         if len(self.players[0].name) < len(self.players[1].name):
             col_width = len(self.players[1].name)
+        if col_width < 5:
+            col_width = 5
             
         first_col_width = 5
         
@@ -314,50 +310,45 @@ class Quoridor():
     def undo_turn(self, as_independent_turn=True, steps=1):
         # undoing a turn. 
         # as_independent_turn  if False --> we assume that we are in the middle of a turn, stays the same player.
-
-        if steps != 1:
-            logging.error("more than one step undo not implemented.")
-
-        if len(self.move_history) == 0:
-            logging.info("nothing to undo")
-            return False
-
-        # check what the previous move was.
-        self.distance_history.pop()
-        move_to_undo = self.move_history.pop()
         
-        if as_independent_turn:
-            previous_player_index = self.get_previous_player_index()
-        else:
-            previous_player_index = self.playerAtMoveIndex
+        for step in range(steps):
+            if len(self.move_history) == 0:
+                logging.info("nothing to undo")
+                return False
+
+            # check what the previous move was.
+            self.distance_history.pop()
+            move_to_undo = self.move_history.pop()
             
-        logging.info("undo previous move:{} by {}".format(move_to_undo, self.players[previous_player_index].name))
-        if move_to_undo in NOTATION_TO_DIRECTION:
-            # move pawn
-            logging.info("undo pawn move")
-            success = self.players[previous_player_index].undo_move_pawn()
-
-        else:
-            # if wall : remove wall
-            logging.info("undo wall move")
-            success = self.players[previous_player_index].undo_place_wall(move_to_undo)
-
-        if success:
             if as_independent_turn:
-                # activate previous player.
-                self.playerAtMoveIndex = previous_player_index
+                previous_player_index = self.get_previous_player_index()
             else:
-                pass
+                previous_player_index = self.playerAtMoveIndex
+                
+            logging.info("undo previous move:{} by {}".format(move_to_undo, self.players[previous_player_index].name))
+            if move_to_undo in NOTATION_TO_DIRECTION:
+                # move pawn
+                logging.info("undo pawn move")
+                success = self.players[previous_player_index].undo_move_pawn()
 
-        else:
-            logging.error("undo unsuccessful")
-            raise Exception("Big troubles at undoing.")
-        # remake the previous statistics
-        pass
+            else:
+                # if wall : remove wall
+                logging.info("undo wall move")
+                success = self.players[previous_player_index].undo_place_wall(move_to_undo)
+
+            if success:
+                if as_independent_turn:
+                    # activate previous player.
+                    self.playerAtMoveIndex = previous_player_index
+                else:
+                    pass
+            else:
+                logging.error("undo unsuccessful")
+                raise Exception("Big troubles at undoing.")
 
     def make_move(self, move):
         # move in standard notation.
-        status = "Play turn ( {} playing move: {})".format(self.players[self.playerAtMoveIndex].name, move)
+        status = "Play turn ( {} playing move: {})".format(self.active_player().name, move)
         logging.info(status)
         
         move = move.lower()  # clean up first, the only problem move is E3 vs e3  (pawn move over line three vs wall placement).
@@ -373,14 +364,14 @@ class Quoridor():
             move_made = self.place_wall(move)
         else:
             status = "Move {} has a wrong notation or is not yet implemented".format(move)
-            self.print_message(status)
+            self.set_status(status)
             logging.info("INPUT VIOLATION: "+ status)
 
         # add valid move to history
         if not move_made:
             status = "move not made"
             logging.info(status)
-            self.print_message(status)
+            self.set_status(status)
         else:
             self.move_history.append(move)
         
@@ -393,7 +384,7 @@ class Quoridor():
                 status = "Illegal move in sequence! Aborting auto play. Provided sequence:{}. Played moves: {}".format(
                     moves, self.move_history)
                 logging.info(status)
-                self.print_message(status)
+                self.set_status(status)
                 return False
             elif animation_time_ms is not None:
                 time.sleep(animation_time_ms / 1000)
@@ -415,21 +406,14 @@ class Quoridor():
             self.undo_turn(as_independent_turn=False)
             played = False
             status = "ERROR: move not executed. There always must be a path to at least one of the winning squares for all players."
-            self.print_message(status)
+            self.setStatus(status)
             logging.info("RULE VIOLATION: no winning path for both players. (dist pl1,dist pl2)(None = no path): {}".format(distances_to_win))
             return False
 
         # check for winner
-        game_finished = self.players[self.playerAtMoveIndex].get_pawn_on_winning_position()
+        game_finished = self.active_player().get_pawn_on_winning_position()
         if game_finished:
-            self.print_board()
-            self.print_message("Game won by {}".format(str(self.players[self.playerAtMoveIndex])))
-            user_input = input("Press any key to exit the game. Press u for undo move.") or "exit"
-
-            if user_input in ["u", "undo"]:
-                self.undo_turn(as_independent_turn=False)
-            else:
-                sys.exit()
+           self.game_state = GAME_STATE_FINISHED
         else:
             self.next_player()
 
@@ -444,17 +428,16 @@ class Quoridor():
 
     def next_player(self):
         # deactivate current player
-        self.players[self.playerAtMoveIndex].active = False
+        self.active_player().active = False
                 
         # activate next player
         self.playerAtMoveIndex += 1
         if self.playerAtMoveIndex >= len(self.players):
             self.playerAtMoveIndex = 0
         
-        self.players[self.playerAtMoveIndex].active = True
-        status = "-----------Change player to {}".format(self.players[self.playerAtMoveIndex].name)
+        self.active_player().active = True
+        status = "-----------Change player to {}".format(self.active_player().name)
         logging.info(status)
-        # self.print_message(status)
 
     def check_all_wall_placements(self):
         wall_placements_effect = {}
@@ -468,7 +451,7 @@ class Quoridor():
                 # 2 check shortest distance
                 distances = self.gameBoard.distances_to_winning_node()
                 # 1b undo move
-                success = self.players[self.playerAtMoveIndex].undo_place_wall(pos)
+                success = self.active_player().undo_place_wall(pos)
                 if not success:
                     logging.error("ASSERT ERROR undo wall during all wall placements for testing failed.")
                     raise Exception
@@ -486,7 +469,7 @@ class Quoridor():
         positions_with_relative_path_length_change = {}
         for pos, (p1, p2) in positions_with_length.items():
             # print("{}:({},{})".format(pos, p1, p2))
-            if player.PLAYER_TO_NORTH == self.players[self.playerAtMoveIndex].direction:
+            if player.PLAYER_TO_NORTH == self.active_player().direction:
                 positions_with_relative_path_length_change[pos] = (c2 - c1) - (p2 - p1)
             else:
                 positions_with_relative_path_length_change[pos] = (c1 - c2) - (p1 - p2)
@@ -520,10 +503,10 @@ class Quoridor():
                 distance = None
             else:
                 #2 check shortest distance
-                distance = self.gameBoard.distance_to_winning_node(self.players[self.playerAtMoveIndex])
+                distance = self.gameBoard.distance_to_winning_node(self.active_player())
 
                 # 1b undo move
-                self.players[self.playerAtMoveIndex].undo_move_pawn()
+                self.active_player().undo_move_pawn()
 
             all_directions[dir] = distance
         return all_directions
@@ -543,7 +526,7 @@ class Quoridor():
 
         
     def place_wall(self, position_verbose) :
-        success = self.players[self.playerAtMoveIndex].place_wall(position_verbose)
+        success = self.active_player().place_wall(position_verbose)
         return success
 
     def move_pawn(self, move_verbose):
@@ -552,7 +535,7 @@ class Quoridor():
         direction = NOTATION_TO_DIRECTION[move_verbose]
 
         # move pawn
-        success = self.players[self.playerAtMoveIndex].move_pawn(direction)
+        success = self.active_player().move_pawn(direction)
         if success:
             logging.info("pawn moved.")
         else:
@@ -582,14 +565,7 @@ def game_from_json(json):
 def game_to_json(game):
     pass
         
-def console_clear():
-    '''
-    Clears the terminal screen and scroll back to present
-    the user with a nice clean, new screen. Useful for managing
-    menu screens in terminal applications.
-    '''
-    os.system('cls' if os.name == 'nt' else 'echo -e \\\\033c')
-    
+
 def logging_setup():
     # https://docs.python.org/3/howto/logging.html
     # logging.basicConfig(filename='c:/temp/quoridortest.log', level=logging.INFO)
@@ -610,21 +586,26 @@ def logging_setup():
     
     
 if __name__ == "__main__":
-    logging_setup()
-    # q.game_user_input()
-   
-    game_20180908_Brecht_Lode_0 = {"player_1":"Lode", "player_2":"Brecht", "remarks":"fictional demo game" , "date":"20180908", "game":"n s n s n s n s"}  
-    game_Brecht_Lode = {"player_1":"Lode", "player_2":"Brecht"}  
-    game_Joos_Lode = {"player_1":"Joos", "player_2":"Lode", "game":"n s n s n s n 6e 4d 4g e5 6c a6 b6 4b 5a 3a c3 1c 2b 1a 2d 1e 2f 1g 3h h1 sw"}
-    test_auto_move= {"player_1":"Joos", "player_2":"Lode", "game":"1c d2 3d e2 1f"}
+    # logging_setup()
+    
+    # preloaded game
+    # q = Quoridor({"player_1":"Lode", "player_2":"Brecht", "remarks":"fictional demo game" , "date":"20180908", "game":"n s n s n s n s"})
+    # q = Quoridor({"player_1":"Lode", "player_2":"Brecht"} )
+    # q = Quoridor({"player_1":"Joos", "player_2":"Lode", "game":"n s n s n s n 6e 4d 4g e5 6c a6 b6 4b 5a 3a c3 1c 2b 1a 2d 1e 2f 1g 3h h1 sw"})
+    # q = Quoridor{("player_1":"Joos", "player_2":"Lode", "game":"1c d2 3d e2 1f"})
     # q = Quoridor({"player_1":"Lode", "player_2":"Brecht", "game":"n s n s 7a"})
+    
+    # two computers game
     q = Quoridor({"player_1": "auto", "player_2": "auto"})
-    # q = Quoridor({"player_1": "auto", "player_2": "auto"})
-
-    # q = Quoridor({"player_1": "auto", "player_2": "auto"})
+    
+    # computer against lode game
+    # q = Quoridor({"player_1": "Lode", "player_2": "auto"})
+    
+    # fresh from scratch game
     # q = Quoridor()
+   
     
 
-    q.game_loop()
-
+    # q.game_loop()
+    pass
    
