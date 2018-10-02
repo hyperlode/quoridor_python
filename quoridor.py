@@ -251,7 +251,7 @@ class Quoridor():
              
              
             # check distances
-            deltas_2 = self.calculate_delta_improvement(current_distances, second_level_deep_with_distances, self.active_player().direction)
+            deltas_2 = self.calculate_delta_improvement(current_distances, second_level_deep_with_distances, self.inactive_player().direction)
                    
             # undo move
             if pos_level_1 in NOTATION_TO_DIRECTION:
