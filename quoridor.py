@@ -39,6 +39,8 @@ NOTATION_TO_DIRECTION = {
     "ne":pawn.NORTH_EAST
 }
 
+ALL_PAWN_DIRECTIONS = ["N","E","S","W","NN","EE","SS","WW","NE","SE","NW","SW"]
+
 
 GAME_STATE_NOT_STARTED = 0
 GAME_STATE_PLAYING = 1
@@ -147,7 +149,9 @@ class Quoridor():
                 return self.play_turn(auto_move_directions[0])
             else:
                 logging.error("unvalid auto move directions. {}".format(auto_move_directions))
-
+        elif move == "test":
+            return self.analyse_level()
+            
         elif move in ["help"]:
             return ("\n" +
                     "QUORIDOR game\n" +
@@ -180,22 +184,83 @@ class Quoridor():
         else:
             self.play_turn(move)
  
-    def auto_turn(self):
-        # time.sleep(0.5)
-        positions, delta = self.auto_wall_place_suggestion()
+    # def auto_turn(self):
+        # # time.sleep(0.5)
+        # positions, delta = self.auto_wall_place_suggestion()
        
-        if len(positions) > 0 and (delta < 0 ):
-            # worth placing a wall
-            index = random.randint(0, len(positions)-1)
-            move = positions[index]
-        else:
-            suggestions = self.auto_pawn_move_suggestion()
-            index = random.randint(0, len(suggestions)-1)
-            move = suggestions[index]
-        self.play_turn(move)
+        # if len(positions) > 0 and (delta < 0 ):
+            # # worth placing a wall
+            # index = random.randint(0, len(positions)-1)
+            # move = positions[index]
+        # else:
+            # suggestions = self.auto_pawn_move_suggestion()
+            # index = random.randint(0, len(suggestions)-1)
+            # move = suggestions[index]
+        # self.play_turn(move)
       
-
-   
+    def auto_turn(self):
+        
+        deltas = self.analyse_level()
+        best = min(deltas.values())
+        suggestions = [move for move,dist in deltas.items() if dist == best]
+        index = random.randint(0, len(suggestions)-1)
+        self.play_turn(suggestions[index])
+        
+        
+    def auto_deep(self):
+        
+        deltas = self.analyse_level()
+        # best = min(deltas.values())
+        # suggestions = [move for move,dist in deltas.items() if dist == best]
+        # index = random.randint(0, len(suggestions)-1)
+        
+        all_moves = {}  # for multiple levels: a move is a list of the next moves as key. value is the delta 
+        
+        for pos, dist in deltas:
+            # make move
+            
+            # check distances
+            
+            # undo move
+            
+            # write down
+            
+        #from the big list of 
+        
+        self.play_turn(suggestions[index])
+        
+    # def auto_move_deep(self, levels = 1):
+        # move = self.investigate_level()
+        
+        
+        #create set off all wall combinations (don't look at pawns) for n-levels deep.
+            
+        #check those boards for ideal long term strategy
+        
+        #apply strategy
+        
+        
+    def analyse_level(self):
+        # return all possible moves and their delta.
+        one_level_deep_with_distances = self.check_all_moves()
+        current_distances = self.gameBoard.distances_to_winning_node()
+        deltas = self.calculate_delta_improvement(current_distances, one_level_deep_with_distances, self.active_player().direction)
+        return deltas
+    
+    def analyse_levels(self):
+        # positions, delta = self.auto_wall_place_suggestion()
+       
+        # if len(positions) > 0 and (delta < 0 ):
+            # # worth placing a wall
+            # index = random.randint(0, len(positions)-1)
+            # move = positions[index]
+        # else:
+            # suggestions = self.auto_pawn_move_suggestion()
+            # index = random.randint(0, len(suggestions)-1)
+            # move = suggestions[index]
+        # return move    
+        pass      
+        
     def history_as_string(self, include_distance_history=True):
         lines = []
         col_width  = len(self.players[0].name)
@@ -348,9 +413,7 @@ class Quoridor():
 
     def make_move(self, move):
         # move in standard notation.
-        status = "Play turn ( {} playing move: {})".format(self.active_player().name, move)
-        logging.info(status)
-        
+       
         move = move.lower()  # clean up first, the only problem move is E3 vs e3  (pawn move over line three vs wall placement).
         move_made = False
         
@@ -366,15 +429,6 @@ class Quoridor():
             status = "Move {} has a wrong notation or is not yet implemented".format(move)
             self.set_status(status)
             logging.info("INPUT VIOLATION: "+ status)
-
-        # add valid move to history
-        if not move_made:
-            status = "move not made"
-            logging.info(status)
-            self.set_status(status)
-        else:
-            self.move_history.append(move)
-        
         return move_made
 
     def play_sequence(self, moves, animation_time_ms = None):
@@ -392,11 +446,22 @@ class Quoridor():
         return True
 
     def play_turn(self, move):
+        status = "Play turn ( {} playing move: {})".format(self.active_player().name, move)
+        logging.info(status)
+        
         played = self.make_move(move)
 
+        
+       # add valid move to history
         if not played:
+            status = "move not made"
+            logging.info(status)
+            self.set_status(status)
             return False
-
+        else:
+            self.move_history.append(move)
+        
+       
         # check validity of board
         distances_to_win = self.gameBoard.distances_to_winning_node()
         self.distance_history.append(distances_to_win)
@@ -439,15 +504,19 @@ class Quoridor():
         status = "-----------Change player to {}".format(self.active_player().name)
         logging.info(status)
 
+        
+    def check_all_moves(self):
+        # all possible moves and their distances.
+        
+        # merge two dicts: https://stackoverflow.com/questions/38987/how-to-merge-two-dictionaries-in-a-single-expression
+        return {**self.check_all_wall_placements(), **self.check_all_pawn_moves()}
+    
     def check_all_wall_placements(self):
         wall_placements_effect = {}
         for pos in board.NOTATION_VERBOSE_WALL_POSITIONS:
             success = self.place_wall(pos)
 
-            if not success:
-                # distances = None
-                pass
-            else:
+            if success:
                 # 2 check shortest distance
                 distances = self.gameBoard.distances_to_winning_node()
                 # 1b undo move
@@ -455,31 +524,82 @@ class Quoridor():
                 if not success:
                     logging.error("ASSERT ERROR undo wall during all wall placements for testing failed.")
                     raise Exception
-
+                    
+                # check if end node is reachable
                 if distances[0] is not None and distances[1] is not None:
                     wall_placements_effect[pos] = distances
         return wall_placements_effect
+        
+    def check_all_pawn_moves(self):
+        # return all possible pawn moves with their distance to end  as dictionary. 
+    
+        valid_directions = {}
+        for dir in ALL_PAWN_DIRECTIONS:
+            #1 simulate pawn move
+            #1a do move
+            success = self.move_pawn(dir)
 
+            if success:
+                #2 check shortest distance
+                distances = self.gameBoard.distances_to_winning_node()
+                
+                
+                # 1b undo move
+                self.active_player().undo_move_pawn()
+                
+                #save
+                valid_directions[dir] = distances
+                
+        return valid_directions
+    
+    def calculate_delta_improvement(self, reference_distances, distances_dict, player_direction):
+        # takes in list with distances, and generates delta (difference in distance)  negative: player_to_check got a short
+        
+        # negative is "improved" situation for player to North 
+        
+        # i.e.   ref: (8, 9)   ---> (5,7)    8-9 = -1 (advantage player north) , 5 - 7= -2 (two steps advantage player north)    -2 - (-1) = -1  (-1 overall delta improvement means advantage for player to north)
+        # i.e.   ref: (7, 9)   ---> (8,7)    7-9 = -2 (2 advantage player north) , 8 - 7= 1 (one steps advantage player south)    1 - (-2) = 3  (3 overall delta improvement means advantage for player to south)
+        
+        # inverter swaps all around. this way, deltas can be normalized for the provided player.
+        
+        inverter = 1
+        if player_direction == player.PLAYER_TO_SOUTH:
+            inverter = -1
+        
+        d01, d02 = reference_distances
+        deltas = {}
+        delta0 = d01 - d02
+        for pos, (d11, d12) in distances_dict.items():
+            deltas[pos] = inverter * ( (d11 - d12) -  delta0 ) 
+        
+        return deltas
+    
     def auto_wall_place_suggestion(self):
-        # list of all wall suggestions with equal netto path gain. (longer path for opponent, not so long for active player).
+        # list of all wall suggestions with equal net path gain. (longer path for opponent, not so long for active player).
         positions_with_length = self.check_all_wall_placements()
-
-        c1, c2 = self.gameBoard.distances_to_winning_node()
-
-        positions_with_relative_path_length_change = {}
-        for pos, (p1, p2) in positions_with_length.items():
-            # print("{}:({},{})".format(pos, p1, p2))
-            if player.PLAYER_TO_NORTH == self.active_player().direction:
-                positions_with_relative_path_length_change[pos] = (c2 - c1) - (p2 - p1)
-            else:
-                positions_with_relative_path_length_change[pos] = (c1 - c2) - (p1 - p2)
-
-            # print("rel {}:{}".format(pos, positions_with_relative_path_length_change[pos]))
-
-        # get most impacted path (negative is shorter, pos is longer for active player)
-
-        if len(positions_with_relative_path_length_change) == 0:
+        
+        # if no walls can be placed
+        if len(positions_with_length) == 0:
             return [], 0
+        
+        current_distances = self.gameBoard.distances_to_winning_node()
+        
+        
+        positions_with_relative_path_length_change = self.calculate_delta_improvement(current_distances, positions_with_length, self.active_player().direction)
+        
+        # c1, c2 = self.gameBoard.distances_to_winning_node()
+
+        # positions_with_relative_path_length_change = {}
+        # for pos, (p1, p2) in positions_with_length.items():
+            # # print("{}:({},{})".format(pos, p1, p2))
+            # if player.PLAYER_TO_NORTH == self.active_player().direction:
+                # positions_with_relative_path_length_change[pos] = (c2 - c1) - (p2 - p1)
+            # else:
+                # positions_with_relative_path_length_change[pos] = (c1 - c2) - (p1 - p2)
+
+
+        # get most impacted path (negative is shorter, pos is longer )
+       
 
         # return equal path lengthening positions
         best = min(positions_with_relative_path_length_change.values())
@@ -488,37 +608,10 @@ class Quoridor():
         # print(pos_best_of)
         return pos_best_of, best
 
-    def check_all_pawn_moves(self):
-        # for active player.
-        all_directions = {"N": None, "E": None, "S": None, "W": None, "NN": None, "EE": None, "SS": None, "WW": None, "NW": None, "NE": None, "SE": None, "SW": None}
-        # all_directions = {"N": None, "E": None, "S": None, "W": None}
-        # all_directions = {"E": None}
-
-        for dir in all_directions.keys():
-            #1 simulate pawn move
-            #1a do move
-            success = self.move_pawn(dir)
-
-            if not success:
-                distance = None
-            else:
-                #2 check shortest distance
-                distance = self.gameBoard.distance_to_winning_node(self.active_player())
-
-                # 1b undo move
-                self.active_player().undo_move_pawn()
-
-            all_directions[dir] = distance
-        return all_directions
-
+   
     def auto_pawn_move_suggestion(self):
         # list of all pawn directions with equal (minimum) distance to a winning square.
         all_directions = self.check_all_pawn_moves()
-
-        #eliminate infinite (None) distances
-        all_directions = {d: dist for d, dist in all_directions.items() if dist is not None}
-
-        # return min(all_directions, key=all_directions.get)  # key for minimum value
 
         minimum_dist = min(all_directions.values())
 

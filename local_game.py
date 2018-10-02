@@ -78,6 +78,9 @@ class Quoridor_local_game():
         # process input
         if move in ["u", "undo"]:
             self.q.execute_command("undo")
+        
+        elif move == "test":
+            self.print_message(self.q.execute_command("test"))
             
         elif move in ["m", "moves"]:
             self.print_message(self.q.execute_command("history"))

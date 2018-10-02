@@ -50,6 +50,7 @@ PAWN_WINNING_POS = [(x,BOARD_HEIGHT-1) for x in range(BOARD_WIDTH)], [(x,0) for 
         
 DISPLAY_ORIENTATION = ["player_north_to_top", "player_north_to_bottom"]  # , "active_player_to_top", "active_player_to_bottom"]
 
+# all possible verbose wall positions
 NOTATION_VERBOSE_WALL_POSITIONS_NORTH_SOUTH = ["{}{}".format(chr(line + 96), midpoint)  for midpoint in range(1, BOARD_HEIGHT) for line in range(1, BOARD_WIDTH)]
 NOTATION_VERBOSE_WALL_POSITIONS_EAST_WEST = ["{}{}".format(line, chr(midpoint + 96)) for midpoint in range(1, BOARD_WIDTH) for line in range(1, BOARD_HEIGHT)]
 NOTATION_VERBOSE_WALL_POSITIONS = NOTATION_VERBOSE_WALL_POSITIONS_NORTH_SOUTH + NOTATION_VERBOSE_WALL_POSITIONS_EAST_WEST
