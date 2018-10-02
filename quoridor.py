@@ -270,7 +270,7 @@ class Quoridor():
         # tmp = input("press to continauueiae") or None
         # print(suggestions)
         index = random.randint(0, len(suggestions)-1)
-        self.play_turn(suggestions[index])
+        self.play_turn(suggestions[index][0])
         
     # def auto_move_deep(self, levels = 1):
         # move = self.investigate_level()

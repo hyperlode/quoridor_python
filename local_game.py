@@ -133,7 +133,7 @@ def console_clear():
 def logging_setup():
     # https://docs.python.org/3/howto/logging.html
     # logging.basicConfig(filename='c:/temp/quoridortest.log', level=logging.INFO)
-    logging.basicConfig(filename='{}{}'.format(LOG_PATH, LOG_FILENAME), level=logging.INFO)
+    logging.basicConfig(filename='{}{}'.format(LOG_PATH, LOG_FILENAME), level=logging.ERROR)
     formatter = logging.Formatter(fmt='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     logging.info('<<<<<<<<<<<<<<<<<<Start of new logging session.>>>>>>>>>>>>>>>>>>>>')
 
