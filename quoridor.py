@@ -188,28 +188,21 @@ class Quoridor():
         else:
             self.play_turn(move)
  
-    # def auto_turn(self):
-        # # time.sleep(0.5)
-        # positions, delta = self.auto_wall_place_suggestion()
-       
-        # if len(positions) > 0 and (delta < 0 ):
-            # # worth placing a wall
-            # index = random.randint(0, len(positions)-1)
-            # move = positions[index]
-        # else:
-            # suggestions = self.auto_pawn_move_suggestion()
-            # index = random.randint(0, len(suggestions)-1)
-            # move = suggestions[index]
-        # self.play_turn(move)
-      
+   
     def auto_turn(self):
+   
+        levels = 2
         
-        deltas = self.analyse_level()
-        best = min(deltas.values())
-        suggestions = [move for move,dist in deltas.items() if dist == best]
-        index = random.randint(0, len(suggestions)-1)
-        self.play_turn(suggestions[index])
-        
+        if levels == 1:
+
+       
+            deltas = self.analyse_level()
+            best = min(deltas.values())
+            suggestions = [move for move,dist in deltas.items() if dist == best]
+            index = random.randint(0, len(suggestions)-1)
+            self.play_turn(suggestions[index])
+        elif levels == 2:
+            self.auto_deep()
         
     def auto_deep(self):
         
@@ -251,7 +244,8 @@ class Quoridor():
              
              
             # check distances
-            deltas_2 = self.calculate_delta_improvement(current_distances, second_level_deep_with_distances, self.inactive_player().direction)
+            current_distances_level_2 = self.gameBoard.distances_to_winning_node()
+            deltas_2 = self.calculate_delta_improvement(current_distances_level_2, second_level_deep_with_distances, self.active_player().direction, offset = dist)
                    
             # undo move
             if pos_level_1 in NOTATION_TO_DIRECTION:
@@ -271,11 +265,12 @@ class Quoridor():
         best = min(all_moves_level_2.values())
         
         suggestions = [move for move,dist in all_moves_level_2.items() if dist == best]
-        print(len(suggestions))
-        print(suggestions[0])
-        tmp = input("press to continauueiae") or None
-        print(suggestions)
-        # self.play_turn(suggestions[index])
+        # print(len(suggestions))
+        # print(suggestions[0])
+        # tmp = input("press to continauueiae") or None
+        # print(suggestions)
+        index = random.randint(0, len(suggestions)-1)
+        self.play_turn(suggestions[index])
         
     # def auto_move_deep(self, levels = 1):
         # move = self.investigate_level()
@@ -603,10 +598,11 @@ class Quoridor():
                 
         return valid_directions
     
-    def calculate_delta_improvement(self, reference_distances, distances_dict, player_direction):
+    def calculate_delta_improvement(self, reference_distances, distances_dict, player_direction, offset = 0):
         # takes in list with distances, and generates delta (difference in distance)  negative: player_to_check got a short
         
         # negative is "improved" situation for player to North 
+        # offset is a previous distance that will be added to the result delta . i.e. searching two levels deep, previous level got an -3 delta --> will be added.
         
         # i.e.   ref: (8, 9)   ---> (5,7)    8-9 = -1 (advantage player north) , 5 - 7= -2 (two steps advantage player north)    -2 - (-1) = -1  (-1 overall delta improvement means advantage for player to north)
         # i.e.   ref: (7, 9)   ---> (8,7)    7-9 = -2 (2 advantage player north) , 8 - 7= 1 (one steps advantage player south)    1 - (-2) = 3  (3 overall delta improvement means advantage for player to south)
@@ -621,7 +617,7 @@ class Quoridor():
         deltas = {}
         delta0 = d01 - d02
         for pos, (d11, d12) in distances_dict.items():
-            deltas[pos] = inverter * ( (d11 - d12) -  delta0 ) 
+            deltas[pos] = inverter * ( (d11 - d12) -  delta0 ) + offset
         
         return deltas
     

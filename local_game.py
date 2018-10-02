@@ -17,14 +17,7 @@ class Quoridor_local_game():
         # q = Quoridor{("player_1":"Joos", "player_2":"Lode", "game":"1c d2 3d e2 1f"})
         # q = Quoridor({"player_1":"Lode", "player_2":"Brecht", "game":"n s n s 7a"})
 
-        # two computers game
-        # q = Quoridor({"player_1": "auto", "player_2": "auto"})
-
-        # computer against lode game
-        # q = Quoridor({"player_1": "Lode", "player_2": "auto"})
-
-        # fresh from scratch game
-        # q = Quoridor()
+      
         player_names = [player_1_name, player_2_name]
         
         for i, name in enumerate(player_names):
@@ -158,7 +151,7 @@ def logging_setup():
 if __name__ == "__main__":
     logging_setup()
     # l = Quoridor_local_game()
-    l = Quoridor_local_game(None, "auto")
-    # l = Quoridor_local_game("auto", "auto")
+    # l = Quoridor_local_game(None, "auto")
+    l = Quoridor_local_game("auto", "auto")
     
     
