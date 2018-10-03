@@ -158,7 +158,13 @@ class Quoridor():
             positions, delta = self.auto_wall_place_suggestion()
             return "path length difference change (neg is in active player's advantage): {} by placing a wall on : {}".format(
                     delta, positions)
-
+                    
+        elif move == "suggest_level_2":
+            return self.auto_level_2(True)
+        
+        elif move == "suggest_level_1":
+            return self.auto_level_1(True)
+            
         elif move == "automove":
             auto_move_directions = self.auto_pawn_move_suggestion()
             if len(auto_move_directions) > 1:
@@ -170,7 +176,7 @@ class Quoridor():
                 logging.error("unvalid auto move directions. {}".format(auto_move_directions))
         elif move == "test":
             # return self.analyse_level()
-            return self.auto_deep()
+            return self.auto_level_2(True)
             
         elif move in ["help"]:
             return ("\n" +
@@ -192,6 +198,8 @@ class Quoridor():
                     "GENERAL commands:\n" +
                     "u or undo     for undo last move\n" +
                     "m or moves    for move history\n" +
+                    "lev1          level 1 auto suggestions\n" +
+                    "lev2          level 2 auto suggestions\n" +
                     "stats         for complete game statistics\n" +
                     "h or help     for this help\n" +
                     "wide          to toggle wider board\n" +
@@ -206,45 +214,46 @@ class Quoridor():
             self.play_turn(move)
  
    
-    def auto_turn(self, depth=1):
+    def auto_turn(self, depth=1, simulate=False):
    
         if depth == 1:
-
-       
-            deltas = self.analyse_level()
-            best = min(deltas.values())
-            suggestions = [move for move,dist in deltas.items() if dist == best]
-            index = random.randint(0, len(suggestions)-1)
-            self.play_turn(suggestions[index])
+            return self.auto_level_1(simulate)
         elif depth == 2:
-            self.auto_deep()
+            return self.auto_level_2(simulate)
         else:
             logging.error("auto_turn parameter not correct. ")
             
+    def auto_level_1(self, simulate=False):
+        # brute force one move
         
-
+        deltas = self.analyse_level()
+        best = min(deltas.values())
+        suggestions = [move for move,dist in deltas.items() if dist == best]
+        if simulate:
+            return suggestions
+        else:
+            index = random.randint(0, len(suggestions)-1)
+            self.play_turn(suggestions[index])
         
-    def auto_deep(self):
+    def auto_level_2(self, simulate=False):
+        # brute force two moves 
+        # simulate: only return list of equal distance suggestions.
         
         deltas = self.analyse_level()
         
-        
+        # level 1
         one_level_deep_with_distances = self.check_all_moves()
         current_distances = self.gameBoard.distances_to_winning_node()
         deltas = self.calculate_delta_improvement(current_distances, one_level_deep_with_distances, self.active_player().direction)
         
-        # best = min(deltas.values())
-        # suggestions = [move for move,dist in deltas.items() if dist == best]
-        # index = random.randint(0, len(suggestions)-1)
-        
         all_moves_level_2 = {}  # for multiple levels: a move is a list of the next moves as key. value is the delta 
-        
         opponent = self.inactive_player().direction
         
+        # level 2
         for i, (pos_level_1, dist) in enumerate(deltas.items()):
             drawProgressBar(i/len(deltas.items()))
             
-            # make move
+            # make level 1 move
             success = self.make_move(pos_level_1)
             
             #change the player
@@ -264,12 +273,11 @@ class Quoridor():
                 self.playerAtMoveIndex = 0
             self.active_player().active = True 
              
-             
             # check distances
             current_distances_level_2 = self.gameBoard.distances_to_winning_node()
             deltas_2 = self.calculate_delta_improvement(current_distances_level_2, second_level_deep_with_distances, self.active_player().direction, offset = dist)
                    
-            # undo move
+            # undo level 1 move
             if pos_level_1 in NOTATION_TO_DIRECTION:
                 # move pawn
                 success = self.active_player().undo_move_pawn()
@@ -277,32 +285,22 @@ class Quoridor():
                 # if wall : remove wall
                 success = self.active_player().undo_place_wall(pos_level_1)
             
-            
             # save
             for pos_level_2, total_delta in deltas_2.items():
                 all_moves_level_2[ (pos_level_1, pos_level_2) ] = total_delta
             
-        #from the big list of 
+        #from the list of options, check what cause 
         
         best = min(all_moves_level_2.values())
         
         suggestions = [move for move,dist in all_moves_level_2.items() if dist == best]
-        # print(len(suggestions))
-        # print(suggestions[0])
-        # tmp = input("press to continauueiae") or None
-        # print(suggestions)
-        index = random.randint(0, len(suggestions)-1)
-        self.play_turn(suggestions[index][0])
         
-    # def auto_move_deep(self, levels = 1):
-        # move = self.investigate_level()
-        
-        
-        #create set off all wall combinations (don't look at pawns) for n-levels deep.
-            
-        #check those boards for ideal long term strategy
-        
-        #apply strategy
+        if simulate:
+            return suggestions
+        else:
+            index = random.randint(0, len(suggestions)-1)
+            self.play_turn(suggestions[index][0])
+            return suggestions[index][0]
         
         
     def analyse_level(self):
