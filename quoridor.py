@@ -45,6 +45,7 @@ ALL_PAWN_DIRECTIONS = ["N","E","S","W","NN","EE","SS","WW","NE","SE","NW","SW"]
 GAME_STATE_NOT_STARTED = 0
 GAME_STATE_PLAYING = 1
 GAME_STATE_FINISHED = 2
+GAMES_STATES = [GAME_STATE_FINISHED, GAME_STATE_NOT_STARTED, GAME_STATE_PLAYING]
 
 SIDE_BAR_EMPTY_SPACE = " "
 
@@ -88,17 +89,30 @@ class Quoridor():
         self.game_state = GAME_STATE_PLAYING 
         if "game" in list(self.settings):
             #if game in it, play automatically till end of recording.
-            #game = string with space between every move.
-            moves= self.settings["game"].split(" ")
-
+            data = self.settings["game"]
+            if data is None:
+                pass
+            if type(data) is str:
+                #game = string with space between every move.
+                moves= data.split(" ")
+                self.play_sequence(moves, 500)
+            elif type(data) is list:
+                moves = data
             # self.play_sequence(moves, 200)
-            self.play_sequence(moves, None)
+                self.play_sequence(moves, 500)
 
     # ADMINISTRATION
     
     def get_state(self):
         return self.game_state
         # if self.game_state == GAME_STATE_FINISHED:
+        
+    def set_state(self, state):
+        if state in GAMES_STATES:
+            self.game_state = state
+            return True
+        else:
+            return False
      
     def set_status(self, message):
         self.status_message += message
@@ -126,8 +140,11 @@ class Quoridor():
             self.undo_turn(steps = steps)
             
         elif move == "history":
+            return self.move_history
+            
+        elif move == "history_nice":
             return self.history_as_string()
-        
+            
         elif move in ["new", "restart"]:
             #restart game.
             pass
@@ -176,6 +193,7 @@ class Quoridor():
                     "GENERAL commands:\n" +
                     "u or undo     for undo last move\n" +
                     "m or moves    for move history\n" +
+                    "s or stats    for complete game statistics\n" +
                     "h or help     for this help\n" +
                     "wide          to toggle wider board\n" +
                     "SPACE or auto to auto move pawn\n" +
@@ -189,11 +207,9 @@ class Quoridor():
             self.play_turn(move)
  
    
-    def auto_turn(self):
+    def auto_turn(self, depth=1):
    
-        levels = 2
-        
-        if levels == 1:
+        if depth == 1:
 
        
             deltas = self.analyse_level()
@@ -201,8 +217,11 @@ class Quoridor():
             suggestions = [move for move,dist in deltas.items() if dist == best]
             index = random.randint(0, len(suggestions)-1)
             self.play_turn(suggestions[index])
-        elif levels == 2:
+        elif depth == 2:
             self.auto_deep()
+        else:
+            logging.error("auto_turn parameter not correct. ")
+            
         
     def auto_deep(self):
         
@@ -320,11 +339,12 @@ class Quoridor():
         for i, dist in enumerate(self.distance_history[:-1]):
             distance_history_incremental.append(( self.distance_history[i+1][0] - dist [0], self.distance_history[i+1][1] - dist[1]))
         
-        distances_output = "incremental per turn"
+        # distances_output = "incremental per turn"
+        distances_output = "absolute"
         
         if distances_output=="incremental per turn":
             
-            # incremental once per complete turn
+            # incremental once per complete turn (that's the two players each playing once)
             turns = []
             for i in range(0,len(self.move_history),2):
                 if i >= len(self.move_history)-1:
@@ -335,6 +355,7 @@ class Quoridor():
                     distance_history_incremental[i][0] + distance_history_incremental[i+1][0], 
                     distance_history_incremental[i][1] + distance_history_incremental[i+1][1]))
         elif distances_output=="incremental":
+        
             # incremental distances
             turns = []
             for i in range(0,len(self.move_history),2):
@@ -486,7 +507,10 @@ class Quoridor():
                 return False
             elif animation_time_ms is not None:
                 time.sleep(animation_time_ms / 1000)
-                self.print_board()
+                board_string = self.board_as_string() 
+                print(board_string)
+        if animation_time_ms is not None:
+            tmp = input("animated sequence done. Press any key to continu.")
         return True
 
     def play_turn(self, move):

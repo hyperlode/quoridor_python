@@ -8,7 +8,7 @@ LOG_PATH = "c:/temp/"
 LOG_FILENAME= "quoridor_local_games.log"
 class Quoridor_local_game():
     
-    def __init__(self, player_1_name=None, player_2_name=None):
+    def __init__(self, player_1_name=None, player_2_name=None, moves=None):
     
         # preloaded game
         # q = Quoridor({"player_1":"Lode", "player_2":"Brecht", "remarks":"fictional demo game" , "date":"20180908", "game":"n s n s n s n s"})
@@ -27,7 +27,7 @@ class Quoridor_local_game():
                 
         # {"player_1": player_1_name, "player_2": player_2_name}
         
-        self.q = quoridor.Quoridor({"player_1": player_names[0], "player_2": player_names[1]})
+        self.q = quoridor.Quoridor({"player_1": player_names[0], "player_2": player_names[1], "game":moves})
         self.game_loop()   
     
     def game_loop(self):
@@ -38,12 +38,36 @@ class Quoridor_local_game():
             self.print_board()
             self.check_state()
             
-            # get user input move
-            if self.q.players[self.q.playerAtMoveIndex].name == "auto":
-                self.q.auto_turn()
+            if self.q.get_state() == quoridor.GAME_STATE_PLAYING:
+                # get user input move
+                if "auto" in self.q.players[self.q.playerAtMoveIndex].name:
+                    name = self.q.players[self.q.playerAtMoveIndex].name
+                    if name == "auto_1":
+                        self.q.auto_turn(depth=1)
+                    elif name == "auto_2":
+                        self.q.auto_turn(depth=2)
+                    else:
+                        self.q.auto_turn()
+                else:
+                    self.human_turn()    
+                    
+            elif self.q.get_state() == quoridor.GAME_STATE_NOT_STARTED:
+                pass
+                # # get user input move
+                # if auto in self.q.players[self.q.playerAtMoveIndex].name:
+                    # self.q.auto_turn(depth=1)
+                # else:
+                    # self.human_turn()    
+
+            elif self.q.get_state() == quoridor.GAME_STATE_FINISHED:
+                self.command("m")
+                command = input("game finished. Please enter command.(h for help, enter for exit)") or "exit"
+                test = self.command(command)
+
             else:
-                self.human_turn()    
-            
+                logging.error("wrong game state.juilk")
+                print("eoije")
+                
             feedback_message = self.q.get_status_message()
             if feedback_message != "":
                 self.print_message(feedback_message)
@@ -51,14 +75,15 @@ class Quoridor_local_game():
     def check_state(self):
         state = self.q.get_state()
         
-        if state == quoridor.GAME_STATE_FINISHED:
-            self.print_message("Game won by {}".format(str(self.q.active_player())))
-            user_input = input("Press any key to exit the game. Press u for undo move.") or "exit"
+        # if state == quoridor.GAME_STATE_FINISHED:
+            # self.print_message("Game wooon by {}".format(str(self.q.active_player())))
+            # user_input = input("Press any key to exit the game. Press m for menu options.") or "exit"
 
-            if user_input in ["u", "undo"]:
-                self.q.execute_command("undo")
-            else:
-                sys.exit()
+            # if user_input in ["m"]:
+                # # self.q.set_state(quoridor.GAME_STATE_PLAYING)
+                # self.q.execute_command("help")
+            # else:
+                # sys.exit()
         
     def human_turn(self):
 
@@ -67,34 +92,41 @@ class Quoridor_local_game():
 
         move = input("player {} {} input move(h for help)): ".format(self.q.active_player().name,
                                                                      active_player_char))
-
-        # process input
-        if move in ["u", "undo"]:
+        success = self.command(move, True)
+       
+    
+    def command(self, command, allow_moves = True):
+       
+       # process input
+        if command in ["u", "undo"]:
             self.q.execute_command("undo")
         
-        elif move == "test":
+        elif command == "test":
             self.print_message(self.q.execute_command("test"))
             
-        elif move in ["m", "moves"]:
+        elif command in ["m", "moves"]:
             self.print_message(self.q.execute_command("history"))
             
-        elif move in ["q", "exit", "quit"]:
+        elif command in ["s", "stats"]:
+            self.print_message(self.q.execute_command("history_nice"))
+            
+        elif command in ["q", "exit", "quit"]:
             user_input = input("Type y if you really want to abort the game.[n]") or "no"
             if user_input == "y":
                 exit()
         
-        elif move == "wide":
+        elif command == "wide":
             self.q.execute_command("wide")
 
-        elif move in ["r", "rotate"]:
+        elif command in ["r", "rotate"]:
             self.q.execute_command("rotate")
 
-        elif move == ["wall"]:
+        elif command == ["wall"]:
             positions, delta = self.q.auto_wall_place_suggestion()
             self.print_message("Path length difference change (neg is in active player's advantage): {} by placing a wall on : {}".format(
                     delta, positions))
 
-        elif move in [" ", "auto"]:
+        elif command in [" ", "auto"]:
             result = self.q.execute_command("automove")
             
             if type(result) is list:
@@ -104,12 +136,15 @@ class Quoridor_local_game():
                 if execute_input is None:
                     self.q.execute_command(result[0])
 
-        elif move in ["h", "help"]:
+        elif command in ["h", "help"]:
             self.print_message(self.q.execute_command("help"))
 
         else:
-            self.q.play_turn(move)
-            
+            return self.q.play_turn(command)
+        
+        
+        
+    
     def pause(self):
           tmp = input("press any key to continue...") or None
                 
@@ -129,7 +164,7 @@ def console_clear():
     menu screens in terminal applications.
     '''
     os.system('cls' if os.name == 'nt' else 'echo -e \\\\033c')
-    
+ 
 def logging_setup():
     # https://docs.python.org/3/howto/logging.html
     # logging.basicConfig(filename='c:/temp/quoridortest.log', level=logging.INFO)
@@ -152,6 +187,6 @@ if __name__ == "__main__":
     logging_setup()
     # l = Quoridor_local_game()
     # l = Quoridor_local_game(None, "auto")
-    l = Quoridor_local_game("auto", "auto")
-    
-    
+    # l = Quoridor_local_game("auto_1", "auto_2")
+    # l = Quoridor_local_game("fromAI1", "fromAI2", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's', '8b', 'e', 'w', 'b7', 'e', 'e', 's', 'e', 'w', '6c', 'e', 'c5', 's', 'e', 's', 'e', 's', 'e', 'e', 'e', 'e', 'n', 'e', 'w', 's', 'h1', 'n', '3a', 'n', '7e', 'w', 'w', 'w', 'n', 'w', 'e', 'n', 'n', 'n', 'w', 'e', 'w', 'e', 'n', 'n', 'w', 'n', 'n', 'w', 'e', 'w', 'n', 'w', 'e', 'w', 'n', 'w', 'n'])
+    l = Quoridor_local_game("fromAI1", "fromAI2", ['n', 's', 'n', 's', '2d', '7e', '3e', 'd3', 'e', 's', 'e', 'h2', 'n', '7g', 'e', 'g3', 'e', '2g', '3c', '4h', 's', '4f', 's', '7a', 's', 'f3', 'd5', 'n', 'd7', 'e', 'f6', 's', '5f', 'w', '6h', 's', 'w', 'e', 'w', 'e', '2a', 'e', '1b', 'n', 'n', 'w', 'w', 'n', 'w', 'e', 'w', 'e', 'w', 'n', 'n', 'w', 'w', 'w', 'n', 'w', 'n', 'w', 'n', 'n', 'n', 'w', 'e', 's', 'n', 's', 'n'])
