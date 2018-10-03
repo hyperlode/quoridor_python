@@ -9,15 +9,12 @@ LOG_FILENAME= "quoridor_local_games.log"
 class Quoridor_local_game():
     
     def __init__(self, player_1_name=None, player_2_name=None, moves=None, loop = False):
+        # loop for automatic restart after game end.
+        # name will be asked when player names None 
+        # for computer player: auto_1 --> 1 level deep brute force
+        # for computer player: auto_2 --> 2 level deep brute force
+        # moves: list or array with sequence of verbose moves as game starting point.
     
-        # preloaded game
-        # q = Quoridor({"player_1":"Lode", "player_2":"Brecht", "remarks":"fictional demo game" , "date":"20180908", "game":"n s n s n s n s"})
-        # q = Quoridor({"player_1":"Lode", "player_2":"Brecht"} )
-        # q = Quoridor({"player_1":"Joos", "player_2":"Lode", "game":"n s n s n s n 6e 4d 4g e5 6c a6 b6 4b 5a 3a c3 1c 2b 1a 2d 1e 2f 1g 3h h1 sw"})
-        # q = Quoridor{("player_1":"Joos", "player_2":"Lode", "game":"1c d2 3d e2 1f"})
-        # q = Quoridor({"player_1":"Lode", "player_2":"Brecht", "game":"n s n s 7a"})
-
-        
         self.player_names = [player_1_name, player_2_name]
         
         for i, name in enumerate(self.player_names):
@@ -25,11 +22,10 @@ class Quoridor_local_game():
                 name = input("Name for player {} going {}. auto for automatic [player{}]".format(i+1, ["north", "south"][i], i+1)) or "player{}".format(i+1)
                 self.player_names[i] = name
                 
-        # {"player_1": player_1_name, "player_2": player_2_name}
+        # loop is mainly used to let computers fight each other.
         self.loop = loop
         if self.loop:
             self.pause_enabled = False
-           
         else:
             self.pause_enabled = True
         
@@ -110,7 +106,6 @@ class Quoridor_local_game():
         move = input("player {} {} input move(h for help)): ".format(self.q.active_player().name,
                                                                      active_player_char))
         success = self.command(move, True)
-       
     
     def command(self, command, allow_moves = True):
        
@@ -169,10 +164,6 @@ class Quoridor_local_game():
 
         else:
             return self.q.play_turn(command)
-        
-        
-        
-    
     def pause(self):
         if self.pause_enabled:
           tmp = input("press any key to continue...") or None
@@ -215,7 +206,8 @@ def logging_setup():
 if __name__ == "__main__":
     logging_setup()
     # l = Quoridor_local_game()
-    l = Quoridor_local_game(None, "auto")
+    # l = Quoridor_local_game(None, "auto")
+    l = Quoridor_local_game(None, "auto_2")
     # l = Quoridor_local_game("auto_1", "auto_2")
     # l = Quoridor_local_game("auto_1", "auto_1", loop = True)
     # l = Quoridor_local_game("auto_2", "auto_2", loop = True)

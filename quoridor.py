@@ -209,10 +209,8 @@ class Quoridor():
                     "r or rotate   for rotating the board 180DEG"
                     "\n"
                     )
-
         else:
             self.play_turn(move)
- 
    
     def auto_turn(self, depth=1, simulate=False):
    
@@ -224,14 +222,17 @@ class Quoridor():
             logging.error("auto_turn parameter not correct. ")
             
     def auto_level_1(self, simulate=False):
-        # brute force one move
+        # brute force one move 
+        # simulate returns all (move,pathdelta) pairs with best delta (is most path shortening).
         
         deltas = self.analyse_level()
         best = min(deltas.values())
-        suggestions = [move for move,dist in deltas.items() if dist == best]
+        
         if simulate:
+            suggestions = {move:dist for move,dist in deltas.items() if dist == best}
             return suggestions
         else:
+            suggestions = [move for move,dist in deltas.items() if dist == best]
             index = random.randint(0, len(suggestions)-1)
             self.play_turn(suggestions[index])
         
@@ -242,41 +243,45 @@ class Quoridor():
         deltas = self.analyse_level()
         
         # level 1
-        one_level_deep_with_distances = self.check_all_moves()
-        current_distances = self.gameBoard.distances_to_winning_node()
-        deltas = self.calculate_delta_improvement(current_distances, one_level_deep_with_distances, self.active_player().direction)
-        
+        all_level_2_moves_with_delta = {}
         all_moves_level_2 = {}  # for multiple levels: a move is a list of the next moves as key. value is the delta 
         opponent = self.inactive_player().direction
         
         # level 2
-        for i, (pos_level_1, dist) in enumerate(deltas.items()):
+        for i, (pos_level_1, delta) in enumerate(deltas.items()):
             drawProgressBar(i/len(deltas.items()))
             
             # make level 1 move
             success = self.make_move(pos_level_1)
             
-            #change the player
+            #change the player to opponent
             self.active_player().active = False
             self.playerAtMoveIndex += 1
             if self.playerAtMoveIndex >= len(self.players):
                 self.playerAtMoveIndex = 0
             self.active_player().active = True
             
-            # check all distances
-            second_level_deep_with_distances = self.check_all_moves()
-             
-            #change the player
+            # obtain all realistic level 2 moves
+             # as this is only to level 2, select the best moves this player will make. (if deeper levels would be considered, we would keep all moves).
+            # get most likely opponent moves (moves that shorten opponents path most).
+            best_opponent_moves_with_deltas = self.auto_level_1(simulate=True)
+            
+            #change the player to current
             self.active_player().active = False
             self.playerAtMoveIndex += 1
             if self.playerAtMoveIndex >= len(self.players):
                 self.playerAtMoveIndex = 0
             self.active_player().active = True 
-             
-            # check distances
-            current_distances_level_2 = self.gameBoard.distances_to_winning_node()
-            deltas_2 = self.calculate_delta_improvement(current_distances_level_2, second_level_deep_with_distances, self.active_player().direction, offset = dist)
-                   
+
+            # inverted to reflect deltas for current player.
+            best_opponent_moves_with_deltas_inverted = {m:-d for m,d in best_opponent_moves_with_deltas.items()}
+            
+            # added moves with total delta.
+            level_2_moves_with_delta = {(pos_level_1, m): delta + d for m,d in best_opponent_moves_with_deltas_inverted.items()}
+            
+            # add to the dict.
+            all_level_2_moves_with_delta.update(level_2_moves_with_delta)
+            
             # undo level 1 move
             if pos_level_1 in NOTATION_TO_DIRECTION:
                 # move pawn
@@ -284,16 +289,10 @@ class Quoridor():
             else:
                 # if wall : remove wall
                 success = self.active_player().undo_place_wall(pos_level_1)
-            
-            # save
-            for pos_level_2, total_delta in deltas_2.items():
-                all_moves_level_2[ (pos_level_1, pos_level_2) ] = total_delta
-            
+                       
         #from the list of options, check what cause 
-        
-        best = min(all_moves_level_2.values())
-        
-        suggestions = [move for move,dist in all_moves_level_2.items() if dist == best]
+        best = min(all_level_2_moves_with_delta.values())
+        suggestions = [move for move,dist in all_level_2_moves_with_delta.items() if dist == best]
         
         if simulate:
             return suggestions
@@ -301,7 +300,6 @@ class Quoridor():
             index = random.randint(0, len(suggestions)-1)
             self.play_turn(suggestions[index][0])
             return suggestions[index][0]
-        
         
     def analyse_level(self):
         # return all possible moves and their delta.
