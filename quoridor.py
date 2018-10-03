@@ -92,14 +92,13 @@ class Quoridor():
             data = self.settings["game"]
             if data is None:
                 pass
-            if type(data) is str:
+            elif type(data) is str:
                 #game = string with space between every move.
                 moves= data.split(" ")
-                self.play_sequence(moves, 500)
+                self.play_sequence(moves, 50)
             elif type(data) is list:
                 moves = data
-            # self.play_sequence(moves, 200)
-                self.play_sequence(moves, 500)
+                self.play_sequence(moves, 50)
 
     # ADMINISTRATION
     
@@ -193,7 +192,7 @@ class Quoridor():
                     "GENERAL commands:\n" +
                     "u or undo     for undo last move\n" +
                     "m or moves    for move history\n" +
-                    "s or stats    for complete game statistics\n" +
+                    "stats         for complete game statistics\n" +
                     "h or help     for this help\n" +
                     "wide          to toggle wider board\n" +
                     "SPACE or auto to auto move pawn\n" +
@@ -513,8 +512,6 @@ class Quoridor():
                 time.sleep(animation_time_ms / 1000)
                 board_string = self.board_as_string() 
                 print(board_string)
-        if animation_time_ms is not None:
-            tmp = input("animated sequence done. Press any key to continu.")
         return True
 
     def play_turn(self, move):

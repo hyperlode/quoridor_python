@@ -8,7 +8,7 @@ LOG_PATH = "c:/temp/"
 LOG_FILENAME= "quoridor_local_games.log"
 class Quoridor_local_game():
     
-    def __init__(self, player_1_name=None, player_2_name=None, moves=None):
+    def __init__(self, player_1_name=None, player_2_name=None, moves=None, loop = False):
     
         # preloaded game
         # q = Quoridor({"player_1":"Lode", "player_2":"Brecht", "remarks":"fictional demo game" , "date":"20180908", "game":"n s n s n s n s"})
@@ -17,19 +17,32 @@ class Quoridor_local_game():
         # q = Quoridor{("player_1":"Joos", "player_2":"Lode", "game":"1c d2 3d e2 1f"})
         # q = Quoridor({"player_1":"Lode", "player_2":"Brecht", "game":"n s n s 7a"})
 
-      
-        player_names = [player_1_name, player_2_name]
         
-        for i, name in enumerate(player_names):
+        self.player_names = [player_1_name, player_2_name]
+        
+        for i, name in enumerate(self.player_names):
             if name is None:
                 name = input("Name for player {} going {}. auto for automatic [player{}]".format(i+1, ["north", "south"][i], i+1)) or "player{}".format(i+1)
-                player_names[i] = name
+                self.player_names[i] = name
                 
         # {"player_1": player_1_name, "player_2": player_2_name}
+        self.loop = loop
+        if self.loop:
+            self.pause_enabled = False
+           
+        else:
+            self.pause_enabled = True
         
-        self.q = quoridor.Quoridor({"player_1": player_names[0], "player_2": player_names[1], "game":moves})
+        self.init_dict = {"player_1": self.player_names[0], "player_2": self.player_names[1], "game":moves}
+        self.pause()
+        self.q = quoridor.Quoridor(self.init_dict)
         self.game_loop()   
-    
+        
+    def save_to_stats_file(self, stats):
+        stats_file = open("c:/temp/{}_{}.txt".format(self.player_names[0],self.player_names[1]),"a") 
+        stats_file.write(stats)
+        stats_file.close()
+        
     def game_loop(self):
         # ask user for move if not provided.
         playing = True
@@ -60,10 +73,14 @@ class Quoridor_local_game():
                     # self.human_turn()    
 
             elif self.q.get_state() == quoridor.GAME_STATE_FINISHED:
-                self.command("m")
-                command = input("game finished. Please enter command.(h for help, enter for exit)") or "exit"
-                test = self.command(command)
-
+                if not self.loop:
+                    self.command("m")
+                    command = input("game finished. Please enter command.(h for help, enter for exit)") or "exit"
+                    test = self.command(command)
+                else:
+                    # restart game.
+                    self.command("save_stats")
+                    self.q = quoridor.Quoridor(self.init_dict)
             else:
                 logging.error("wrong game state.juilk")
                 print("eoije")
@@ -106,8 +123,11 @@ class Quoridor_local_game():
             
         elif command in ["m", "moves"]:
             self.print_message(self.q.execute_command("history"))
+        
+        elif command in ["save_stats"]:
+            self.save_to_stats_file(str(self.q.execute_command("history")))
             
-        elif command in ["s", "stats"]:
+        elif command in ["stats"]:
             self.print_message(self.q.execute_command("history_nice"))
             
         elif command in ["q", "exit", "quit"]:
@@ -146,6 +166,7 @@ class Quoridor_local_game():
         
     
     def pause(self):
+        if self.pause_enabled:
           tmp = input("press any key to continue...") or None
                 
     def print_board(self):
@@ -187,6 +208,9 @@ if __name__ == "__main__":
     logging_setup()
     # l = Quoridor_local_game()
     # l = Quoridor_local_game(None, "auto")
-    l = Quoridor_local_game("auto_1", "auto_2")
+    # l = Quoridor_local_game("auto_1", "auto_2")
+    l = Quoridor_local_game("auto_2", "auto_2")
     # l = Quoridor_local_game("fromAI1", "fromAI2", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's', '8b', 'e', 'w', 'b7', 'e', 'e', 's', 'e', 'w', '6c', 'e', 'c5', 's', 'e', 's', 'e', 's', 'e', 'e', 'e', 'e', 'n', 'e', 'w', 's', 'h1', 'n', '3a', 'n', '7e', 'w', 'w', 'w', 'n', 'w', 'e', 'n', 'n', 'n', 'w', 'e', 'w', 'e', 'n', 'n', 'w', 'n', 'n', 'w', 'e', 'w', 'n', 'w', 'e', 'w', 'n', 'w', 'n'])
+    # l = Quoridor_local_game("fromAI1", "fromAI2", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's', '8b', 'e', 'w', 'b7', 'e', 'e', 's', 'e', 'w', '6c', 'e', 'c5'])
+    # l = Quoridor_local_game("auto_1", "auto_1", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's'], loop=True)
     # l = Quoridor_local_game("fromAI1", "fromAI2", ['n', 's', 'n', 's', '2d', '7e', '3e', 'd3', 'e', 's', 'e', 'h2', 'n', '7g', 'e', 'g3', 'e', '2g', '3c', '4h', 's', '4f', 's', '7a', 's', 'f3', 'd5', 'n', 'd7', 'e', 'f6', 's', '5f', 'w', '6h', 's', 'w', 'e', 'w', 'e', '2a', 'e', '1b', 'n', 'n', 'w', 'w', 'n', 'w', 'e', 'w', 'e', 'w', 'n', 'n', 'w', 'w', 'w', 'n', 'w', 'n', 'w', 'n', 'n', 'n', 'w', 'e', 's', 'n', 's', 'n'])
