@@ -223,6 +223,8 @@ class Quoridor():
             logging.error("auto_turn parameter not correct. ")
             
         
+
+        
     def auto_deep(self):
         
         deltas = self.analyse_level()
@@ -240,7 +242,9 @@ class Quoridor():
         
         opponent = self.inactive_player().direction
         
-        for pos_level_1, dist in deltas.items():
+        for i, (pos_level_1, dist) in enumerate(deltas.items()):
+            drawProgressBar(i/len(deltas.items()))
+            
             # make move
             success = self.make_move(pos_level_1)
             
@@ -274,7 +278,7 @@ class Quoridor():
                 # if wall : remove wall
                 success = self.active_player().undo_place_wall(pos_level_1)
             
-            print (pos_level_1)
+            
             # save
             for pos_level_2, total_delta in deltas_2.items():
                 all_moves_level_2[ (pos_level_1, pos_level_2) ] = total_delta
@@ -728,7 +732,15 @@ def game_from_json(json):
     
 def game_to_json(game):
     pass
-        
+
+def drawProgressBar(percent, barLen = 20):
+    # https://stackoverflow.com/questions/3002085/python-to-print-out-status-bar-and-percentage/15801617#15801617
+    # percent float from 0 to 1. 
+    sys.stdout.write("\r")
+    progress = ""
+    sys.stdout.write("[{:<{}}] {:.0f}%".format("=" * int(barLen * percent), barLen, percent * 100))
+    sys.stdout.flush()
+    
 
 def logging_setup():
     # https://docs.python.org/3/howto/logging.html
