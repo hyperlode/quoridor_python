@@ -135,7 +135,7 @@ class Quoridor():
        
         # process input
         if move == "undo":
-            steps = len(['a' for player in self.players if player.name=="auto"]) + 1
+            steps = len(['a' for player in self.players if "auto" in player.name]) + 1
             self.undo_turn(steps = steps)
             
         elif move == "history":
@@ -765,7 +765,7 @@ if __name__ == "__main__":
     # q = Quoridor({"player_1":"Lode", "player_2":"Brecht", "game":"n s n s 7a"})
     
     # two computers game
-    q = Quoridor({"player_1": "auto", "player_2": "auto"})
+    # q = Quoridor({"player_1": "auto_1", "player_2": "auto_2"})
     
     # computer against lode game
     # q = Quoridor({"player_1": "Lode", "player_2": "auto"})

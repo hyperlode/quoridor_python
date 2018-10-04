@@ -36,7 +36,7 @@ class Quoridor_local_game():
         
     def save_to_stats_file(self, stats):
         stats_file = open("c:/temp/{}_{}.txt".format(self.player_names[0],self.player_names[1]),"a") 
-        stats_file.write(stats)
+        stats_file.write("{}\n".format(stats))
         stats_file.close()
         
     def game_loop(self):
@@ -50,13 +50,7 @@ class Quoridor_local_game():
             if self.q.get_state() == quoridor.GAME_STATE_PLAYING:
                 # get user input move
                 if "auto" in self.q.players[self.q.playerAtMoveIndex].name:
-                    name = self.q.players[self.q.playerAtMoveIndex].name
-                    if name == "auto_1":
-                        self.q.auto_turn(depth=1)
-                    elif name == "auto_2":
-                        self.q.auto_turn(depth=2)
-                    else:
-                        self.q.auto_turn()
+                    self.auto_turn()
                 else:
                     self.human_turn()    
                     
@@ -78,7 +72,7 @@ class Quoridor_local_game():
                     self.command("save_stats")
                     self.q = quoridor.Quoridor(self.init_dict)
             else:
-                logging.error("wrong game state.juilk")
+                logging.error("wrong game state: {}".format(self.q.get_state()))
                 print("eoije")
                 
             feedback_message = self.q.get_status_message()
@@ -98,6 +92,15 @@ class Quoridor_local_game():
             # else:
                 # sys.exit()
         
+    def auto_turn(self):
+        name = self.q.players[self.q.playerAtMoveIndex].name
+        if name == "auto_1":
+            self.q.auto_turn(depth=1)
+        elif name == "auto_2":
+            self.q.auto_turn(depth=2)
+        else:
+            self.q.auto_turn()
+    
     def human_turn(self):
 
         active_player_char = self.q.gameBoard.get_player_char(self.q.active_player().player_direction, True)
@@ -158,6 +161,8 @@ class Quoridor_local_game():
                         result[0], result)) or None
                 if execute_input is None:
                     self.q.execute_command(result[0])
+                else:
+                    self.q.execute_command(execute_input)
 
         elif command in ["h", "help"]:
             self.print_message(self.q.execute_command("help"))
@@ -207,10 +212,11 @@ if __name__ == "__main__":
     logging_setup()
     # l = Quoridor_local_game()
     # l = Quoridor_local_game(None, "auto")
-    l = Quoridor_local_game(None, "auto_2")
-    # l = Quoridor_local_game("auto_1", "auto_2")
-    # l = Quoridor_local_game("auto_1", "auto_1", loop = True)
-    # l = Quoridor_local_game("auto_2", "auto_2", loop = True)
+    # l = Quoridor_local_game(None, "auto_2")
+    # l = Quoridor_local_game("auto_1", "auto_1", loop=True)
+    # l = Quoridor_local_game("auto_1", "auto_2", loop=True)
+    # l = Quoridor_local_game("auto_2", "auto_2", loop=True)
+    l = Quoridor_local_game("a", "b", ['n', 's', '1e', '3e', 'n', '8c', '4d', 'e', '2f', '4f', '3g', '7b', 'w', 's', 'n', 's', 'w', 's', 'n', '2c', '1h', 'c7', '1a', 'b5', 'n', '5a', '6f', 'h6', 'g4', 'd6', 'c5', 'w', '4h', 'n', 'n', 'n', 'w', 'n', 'w', 'n', 'n', 'w', 'n'])
     # l = Quoridor_local_game("fromAI1", "fromAI2", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's', '8b', 'e', 'w', 'b7', 'e', 'e', 's', 'e', 'w', '6c', 'e', 'c5', 's', 'e', 's', 'e', 's', 'e', 'e', 'e', 'e', 'n', 'e', 'w', 's', 'h1', 'n', '3a', 'n', '7e', 'w', 'w', 'w', 'n', 'w', 'e', 'n', 'n', 'n', 'w', 'e', 'w', 'e', 'n', 'n', 'w', 'n', 'n', 'w', 'e', 'w', 'n', 'w', 'e', 'w', 'n', 'w', 'n'])
     # l = Quoridor_local_game("fromAI1", "fromAI2", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's', '8b', 'e', 'w', 'b7', 'e', 'e', 's', 'e', 'w', '6c', 'e', 'c5'])
     # l = Quoridor_local_game("auto_1", "auto_1", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's'], loop=True)
