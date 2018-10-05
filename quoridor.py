@@ -95,10 +95,10 @@ class Quoridor():
             elif type(data) is str:
                 #game = string with space between every move.
                 moves= data.split(" ")
-                self.play_sequence(moves, 50)
+                self.play_sequence(moves, None)
             elif type(data) is list:
                 moves = data
-                self.play_sequence(moves, 50)
+                self.play_sequence(moves, None)
 
     # ADMINISTRATION
     
@@ -392,7 +392,12 @@ class Quoridor():
         
     def board_as_string (self):
         return(str(self))
-          
+        
+    def board_as_html (self):
+        plain = str(self)
+        html = "<p style=\"font-family:courier;\">" + plain.replace("\n","<br>").replace(" ", "&nbsp") + "</p>"
+        return html
+    
     def __str__(self):
         return "".join(self.screen_output_lines())
         
@@ -760,7 +765,7 @@ if __name__ == "__main__":
     # preloaded game
     # q = Quoridor({"player_1":"Lode", "player_2":"Brecht", "remarks":"fictional demo game" , "date":"20180908", "game":"n s n s n s n s"})
     # q = Quoridor({"player_1":"Lode", "player_2":"Brecht"} )
-    # q = Quoridor({"player_1":"Joos", "player_2":"Lode", "game":"n s n s n s n 6e 4d 4g e5 6c a6 b6 4b 5a 3a c3 1c 2b 1a 2d 1e 2f 1g 3h h1 sw"})
+    q = Quoridor({"player_1":"Joos", "player_2":"Lode", "game":"n s n s n s n 6e 4d 4g e5 6c a6 b6 4b 5a 3a c3 1c 2b 1a 2d 1e 2f 1g 3h h1 sw"})
     # q = Quoridor{("player_1":"Joos", "player_2":"Lode", "game":"1c d2 3d e2 1f"})
     # q = Quoridor({"player_1":"Lode", "player_2":"Brecht", "game":"n s n s 7a"})
     
@@ -773,6 +778,7 @@ if __name__ == "__main__":
     # fresh from scratch game
     # q = Quoridor()
    
+    print(q.board_as_string())
     
 
     # q.game_loop()
