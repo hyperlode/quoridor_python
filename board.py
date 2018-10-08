@@ -2,6 +2,7 @@ import player
 import pawn
 import wall
 import dijkstra
+import dijkstra_fast
 
 import logging
 
@@ -164,43 +165,37 @@ class Board():
         pass
         
     def distances_to_winning_node(self):
-        #returns tuple with shortest winning distance for both players
+        #returns tuple with shortest distance to a winning node for both players (distance_player_to_north, distance_player_to_south) i.e.  (17,4)
        
         # returns tuple with distances for each player to nearest winning square. None if not reachable
         shortest_path = [None, None]
 
         #solve dijkstra for board graph
         for player in self.players:
-            dist_to_win = self.distance_to_winning_node(player)
-            shortest_path[player.player_direction]= dist_to_win
-
-        return shortest_path
+            shortest_path[player.player_direction] = self.shortest_distances_to_winning_node(player)  # empty list when no winning nodes reachable --> None as +inf distance
            
-    def distance_to_winning_node(self, player):
-    
-        distances = self.distances_to_all_winning_nodes(player)  # dict node: distance
+        return shortest_path
+          
+    def shortest_distances_to_winning_node(self, player):
+        # return shortest to reachable winning nodes for a given player or None for unreachable.
         
-        closest_winning_node = None     
-        dist_to_win = None  # None is +inf
-        # check for shortest distance
-        for node, dist in distances.items():
-            if dist is not None and (dist_to_win is None or dist_to_win > dist):
-                dist_to_win  = dist
-                closest_winning_node = node
-         
-        return dist_to_win
-    
-    def distances_to_all_winning_nodes(self, player):
         #get proper weighted graph
         board_graph_unweighted = {node:self.board_graph[node]["edges"] for node in list(self.board_graph)}
-        # sort nodes (is this needed?)
-        # nodes_sorted = sorted( list(board_graph_weighted), key = lambda pos: 10*pos[0]+pos[1])
-    
-         # print("situation for player {}".format(pl.name))
-        pawn_position = player.pawn.position
-
+       
         # distance from all reachable nodes to pawn position
-        board_node_distances_to_pawn = dijkstra.dijkstra_graph_isolated_nodes_enabled_unweighted(board_graph_unweighted, pawn_position)
+        board_node_distances_to_pawn = dijkstra.dijkstra_graph_isolated_nodes_enabled_unweighted(board_graph_unweighted, player.pawn.position)
+
+        # distance from winning node to pawn
+        return min([dist for node,dist in board_node_distances_to_pawn.items() if node in PAWN_WINNING_POS[player.player_direction]], default=None)
+        
+    def distances_to_all_winning_nodes_include_unreachables(self, player):
+        # return dict node:dist of distances to winning nodes for a given player. None for +inf. aka unreachable.
+        
+        #get proper weighted graph
+        board_graph_unweighted = {node:self.board_graph[node]["edges"] for node in list(self.board_graph)}
+    
+        # distance from all reachable nodes to pawn position
+        board_node_distances_to_pawn = dijkstra.dijkstra_graph_isolated_nodes_enabled_unweighted(board_graph_unweighted, player.pawn.position)
 
         # distance from winning nodes to pawn
         board_winning_nodes_to_pawn = {}

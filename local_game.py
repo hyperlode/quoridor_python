@@ -189,7 +189,7 @@ def console_clear():
     menu screens in terminal applications.
     '''
     os.system('cls' if os.name == 'nt' else 'echo -e \\\\033c')
- 
+
 def logging_setup():
     # https://docs.python.org/3/howto/logging.html
     # logging.basicConfig(filename='c:/temp/quoridortest.log', level=logging.INFO)
@@ -213,7 +213,7 @@ if __name__ == "__main__":
     logging_setup()
     # l = Quoridor_local_game()
     # l = Quoridor_local_game(None, "auto")
-    l = Quoridor_local_game("None", "auto_2")
+    l = Quoridor_local_game(None, "auto_1")
     # l = Quoridor_local_game("auto_1", "auto_1", loop=True)
     # l = Quoridor_local_game("auto_1", "auto_2", loop=True)
     # l = Quoridor_local_game("auto_2", "auto_2", loop=True)

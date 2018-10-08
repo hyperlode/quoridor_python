@@ -543,7 +543,7 @@ class Quoridor():
             self.undo_turn(as_independent_turn=False)
             played = False
             status = "ERROR: move not executed. There always must be a path to at least one of the winning squares for all players."
-            self.setStatus(status)
+            self.set_status(status)
             logging.info("RULE VIOLATION: no winning path for both players. (dist pl1,dist pl2)(None = no path): {}".format(distances_to_win))
             return False
 
