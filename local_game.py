@@ -3,6 +3,7 @@ import quoridor
 import logging
 import sys
 import os
+import time
 
 LOG_PATH = "c:/temp/"
 LOG_FILENAME= "quoridor_local_games.log"
@@ -53,6 +54,8 @@ class Quoridor_local_game():
                     self.auto_turn()
                 else:
                     self.human_turn()    
+                
+                self.print_message("___end of turn____")
                     
             elif self.q.get_state() == quoridor.GAME_STATE_NOT_STARTED:
                 pass
@@ -134,12 +137,18 @@ class Quoridor_local_game():
                 exit()
         
         elif command == "lev1":
-            self.print_message(self.q.execute_command("suggest_level_1"))
-            pass
+            start_millis = int(round(time.time() * 1000))
+            suggestions = self.q.execute_command("suggest_level_1")
+            calc_time =int(round(time.time() * 1000)) -  start_millis 
+            print("calc time = {} millis".format(calc_time))
+            self.print_message(suggestions)
             
         elif command == "lev2":
-            self.print_message(self.q.execute_command("suggest_level_2"))
-            pass
+            start_millis = int(round(time.time() * 1000))
+            suggestions = self.q.execute_command("suggest_level_2")
+            calc_time =int(round(time.time() * 1000)) -  start_millis 
+            print("calc time = {} millis".format(calc_time))
+            self.print_message(suggestions)
             
         elif command == "wide":
             self.q.execute_command("wide")

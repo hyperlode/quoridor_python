@@ -5,6 +5,7 @@ import dijkstra
 import dijkstra_fast
 
 import logging
+import time
 
 BOARD_WIDTH = 9 # 9 is default should be an odd number of squares, for the pawn to be able to start in the middle.
 BOARD_HEIGHT = 9 # 9 is default
@@ -169,22 +170,22 @@ class Board():
        
         # returns tuple with distances for each player to nearest winning square. None if not reachable
         shortest_path = [None, None]
-
+        # print("before dijkstra: {}".format(int(round(time.time() * 1000))))
         #solve dijkstra for board graph
         for player in self.players:
             shortest_path[player.player_direction] = self.shortest_distances_to_winning_node(player)  # empty list when no winning nodes reachable --> None as +inf distance
-           
+            print("after pl dijk: {}".format(int(round(time.time() * 1000))))
         return shortest_path
           
     def shortest_distances_to_winning_node(self, player):
         # return shortest to reachable winning nodes for a given player or None for unreachable.
         
         #get proper weighted graph
-        board_graph_unweighted = {node:self.board_graph[node]["edges"] for node in list(self.board_graph)}
-       
+        board_graph_unweighted = {node:value["edges"] for node, value in self.board_graph.items()}
+        # print("before dijk: {}".format(int(round(time.time() * 1000))))
         # distance from all reachable nodes to pawn position
         board_node_distances_to_pawn = dijkstra.dijkstra_graph_isolated_nodes_enabled_unweighted(board_graph_unweighted, player.pawn.position)
-
+        # print("after dijk: {}".format(int(round(time.time() * 1000))))
         # distance from winning node to pawn
         return min([dist for node,dist in board_node_distances_to_pawn.items() if node in PAWN_WINNING_POS[player.player_direction]], default=None)
         
@@ -192,8 +193,8 @@ class Board():
         # return dict node:dist of distances to winning nodes for a given player. None for +inf. aka unreachable.
         
         #get proper weighted graph
-        board_graph_unweighted = {node:self.board_graph[node]["edges"] for node in list(self.board_graph)}
-    
+        board_graph_unweighted = {node:value["edges"] for node, value in self.board_graph.items()}
+       
         # distance from all reachable nodes to pawn position
         board_node_distances_to_pawn = dijkstra.dijkstra_graph_isolated_nodes_enabled_unweighted(board_graph_unweighted, player.pawn.position)
 
