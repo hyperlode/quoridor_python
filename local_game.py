@@ -31,7 +31,7 @@ class Quoridor_local_game():
             self.pause_enabled = True
         
         self.init_dict = {"player_1": self.player_names[0], "player_2": self.player_names[1], "game":moves}
-        self.pause()
+        # self.pause()
         self.q = quoridor.Quoridor(self.init_dict)
         self.game_loop()   
         
@@ -55,7 +55,7 @@ class Quoridor_local_game():
                 else:
                     self.human_turn()    
                 
-                self.print_message("___end of turn____")
+                # self.print_message("___end of turn____")
                     
             elif self.q.get_state() == quoridor.GAME_STATE_NOT_STARTED:
                 pass
@@ -127,6 +127,10 @@ class Quoridor_local_game():
         
         elif command in ["save_stats"]:
             self.save_to_stats_file(str(self.q.execute_command("history")))
+            
+        elif command in ["df"]:
+            self.q.execute_command("dijkstra fast")
+            self.pause()
             
         elif command in ["stats"]:
             self.print_message(self.q.execute_command("history_nice"))
@@ -222,7 +226,7 @@ if __name__ == "__main__":
     logging_setup()
     # l = Quoridor_local_game()
     # l = Quoridor_local_game(None, "auto")
-    l = Quoridor_local_game(None, "auto_1")
+    l = Quoridor_local_game("Umesh", "auto_1", ['d8', '7c', '7a'] )
     # l = Quoridor_local_game("auto_1", "auto_1", loop=True)
     # l = Quoridor_local_game("auto_1", "auto_2", loop=True)
     # l = Quoridor_local_game("auto_2", "auto_2", loop=True)

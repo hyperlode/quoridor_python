@@ -2,7 +2,7 @@ import player
 import pawn
 import wall
 import dijkstra
-import dijkstra_fast
+# import dijkstra_fast
 
 import logging
 import time
@@ -48,8 +48,7 @@ startPosX = BOARD_WIDTH // 2   # for width 9 --> 4
 PAWN_INIT_POS = [(startPosX, 0), (startPosX, BOARD_HEIGHT-1)] 
 # = (PAWN_INIT_POS_X, 0), (PAWN_INIT_POS_X, BOARD_HEIGHT-1)
 
-PAWN_WINNING_POS = [(x,BOARD_HEIGHT-1) for x in range(BOARD_WIDTH)], [(x,0) for x in range(BOARD_WIDTH)]
-        
+
 DISPLAY_ORIENTATION = ["player_north_to_top", "player_north_to_bottom"]  # , "active_player_to_top", "active_player_to_bottom"]
 
 # all possible verbose wall positions
@@ -57,6 +56,17 @@ NOTATION_VERBOSE_WALL_POSITIONS_NORTH_SOUTH = ["{}{}".format(chr(line + 96), mid
 NOTATION_VERBOSE_WALL_POSITIONS_EAST_WEST = ["{}{}".format(line, chr(midpoint + 96)) for midpoint in range(1, BOARD_WIDTH) for line in range(1, BOARD_HEIGHT)]
 NOTATION_VERBOSE_WALL_POSITIONS = NOTATION_VERBOSE_WALL_POSITIONS_NORTH_SOUTH + NOTATION_VERBOSE_WALL_POSITIONS_EAST_WEST
 
+def node_to_index( node):
+    #used in sparse matrix where there is one identifier for each node.
+    return BOARD_WIDTH*node[0] + node[1]
+
+def index_to_node( index):
+    return (index//BOARD_WIDTH, index%BOARD_WIDTH)
+    
+PAWN_WINNING_POS = [(x,BOARD_HEIGHT-1) for x in range(BOARD_WIDTH)], [(x,0) for x in range(BOARD_WIDTH)]
+PAWN_WINNING_POS_INDECES =[[node_to_index(pos) for pos in PAWN_WINNING_POS[x]] for x in range(2)  ]
+
+        
 class Board():
 
     #pawn cells for 
@@ -156,6 +166,8 @@ class Board():
     
     # CHECKING BOARD
     
+    
+    
     def check_pawn_positions(self):
         for pl in self.players:
             node = pl.pawn.position
@@ -165,22 +177,58 @@ class Board():
     def check_wall_valid(self, new_wall):
         pass
         
+         
+    # def distances_to_winning_node_fast(self):
     def distances_to_winning_node(self):
-        #returns tuple with shortest distance to a winning node for both players (distance_player_to_north, distance_player_to_south) i.e.  (17,4)
+        # get proper weighted graph
+        board_graph_unweighted = {node:value["edges"] for node, value in self.board_graph.items()}
+        board_matrix_sparse = [[0 for x in range(BOARD_WIDTH*BOARD_HEIGHT)] for y in range(BOARD_WIDTH*BOARD_HEIGHT)]
+        
+        #non directed, non weigthed. all nodes on x and y axis, for connected nodes, the value is set to 1. 
+        
+        for node, value in self.board_graph.items():
+            # print(node)
+            x_index = node_to_index(node)
+            # print(value)
+            for edge in value["edges"]:
+                # if x_index == 80:
+                    # print(y_index)
+                y_index = node_to_index(edge)
+                board_matrix_sparse[x_index][y_index] = 1
+                
+        
+        # perform dijkstra        
+        distances_per_player = dijkstra.dijstra_fast(board_matrix_sparse, [ node_to_index(self.players[0].pawn.position), node_to_index(self.players[1].pawn.position)])
+        
+        #get distances to winnning nodes
+        # winning_pos_indeces = [self.node_to_index(pos) for pos in PAWN_WINNING_POS[player.PLAYER_TO_NORTH]]
+        shortest_dists = [None, None]
+        for player in self.players:
+            # print(player)
+            dist_to_winning_pos = [ distances_per_player[player.player_direction][i] for i in PAWN_WINNING_POS_INDECES[player.player_direction] ]
+            shortest = min(dist_to_winning_pos)
+            if shortest != float("inf"):
+                shortest_dists[player.player_direction] = shortest
+            
+        return shortest_dists 
+        
+    
+    def distances_to_winning_node_OLD(self):
+        # returns tuple with shortest distance to a winning node for both players (distance_player_to_north, distance_player_to_south) i.e.  (17,4)
        
         # returns tuple with distances for each player to nearest winning square. None if not reachable
         shortest_path = [None, None]
         # print("before dijkstra: {}".format(int(round(time.time() * 1000))))
-        #solve dijkstra for board graph
+        # solve dijkstra for board graph
         for player in self.players:
             shortest_path[player.player_direction] = self.shortest_distances_to_winning_node(player)  # empty list when no winning nodes reachable --> None as +inf distance
-            print("after pl dijk: {}".format(int(round(time.time() * 1000))))
+            # print("after pl dijk: {}".format(int(round(time.time() * 1000))))
         return shortest_path
           
     def shortest_distances_to_winning_node(self, player):
         # return shortest to reachable winning nodes for a given player or None for unreachable.
         
-        #get proper weighted graph
+        # get proper weighted graph
         board_graph_unweighted = {node:value["edges"] for node, value in self.board_graph.items()}
         # print("before dijk: {}".format(int(round(time.time() * 1000))))
         # distance from all reachable nodes to pawn position

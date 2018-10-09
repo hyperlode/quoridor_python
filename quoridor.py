@@ -158,7 +158,9 @@ class Quoridor():
             positions, delta = self.auto_wall_place_suggestion()
             return "path length difference change (neg is in active player's advantage): {} by placing a wall on : {}".format(
                     delta, positions)
-                    
+        elif move == "dijkstra fast":
+            self.gameBoard.distances_to_winning_node_fast()
+            
         elif move == "suggest_level_2":
             return self.auto_level_2(True)
         

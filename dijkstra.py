@@ -1,3 +1,20 @@
+from scipy.sparse import csr_matrix
+from scipy.sparse.csgraph import dijkstra
+
+def dijstra_fast(matrix, start_nodes):
+    #matrix is a list of lists: default value is zero. all nodes on x axis, all nodes on y axis. When nodes connected, on x and y axis, node crossing, set it to 1.
+    # unweighted, undirected.
+    # for row in matrix:
+    # print(matrix[80])
+    Matrix_sparse = csr_matrix(matrix)
+    # run Dijkstra's algorithm, starting at index 0
+    distances, predecessors = dijkstra(Matrix_sparse, directed=False, unweighted=True, indices=start_nodes ,return_predecessors=True)
+
+    # print(distances)
+    # print(predecessors)
+    return (distances)
+    # print out the distance to END_NODE
+    # print("distance to {} = {}".format(genes[END_NODE], distances[END_NODE]))
 
 def dijkstra_graph(graph, start_node):
     #graph = {node:{neighbour1:dist, neigh2:dist,...}, node2:{neighbournode1:dist,...}}
