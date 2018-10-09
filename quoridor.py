@@ -307,6 +307,10 @@ class Quoridor():
         # return all possible moves and their delta.
         one_level_deep_with_distances = self.check_all_moves()
         current_distances = self.gameBoard.distances_to_winning_node()
+        # current_distances_checkcheck = self.gameBoard.distances_to_winning_node_fast()
+        # print("first norm, then new fast:")
+        # print(current_distances)
+        # print(current_distances_checkcheck )
         deltas = self.calculate_delta_improvement(current_distances, one_level_deep_with_distances, self.active_player().direction)
         return deltas
     

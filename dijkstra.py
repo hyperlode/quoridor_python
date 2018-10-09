@@ -1,6 +1,13 @@
-from scipy.sparse import csr_matrix
-from scipy.sparse.csgraph import dijkstra
+import logging
 
+try:
+    from scipy.sparse import csr_matrix
+    from scipy.sparse.csgraph import dijkstra
+    USE_SCIPY = True
+except ImportError:
+    USE_SCIPY = False
+    logging.error("Module scipy not found. Install for faster computer player....")
+    
 def dijstra_fast(matrix, start_nodes):
     #matrix is a list of lists: default value is zero. all nodes on x axis, all nodes on y axis. When nodes connected, on x and y axis, node crossing, set it to 1.
     # unweighted, undirected.
@@ -8,7 +15,8 @@ def dijstra_fast(matrix, start_nodes):
     # print(matrix[80])
     Matrix_sparse = csr_matrix(matrix)
     # run Dijkstra's algorithm, starting at index 0
-    distances, predecessors = dijkstra(Matrix_sparse, directed=False, unweighted=True, indices=start_nodes ,return_predecessors=True)
+    # distances, predecessors = dijkstra(Matrix_sparse, directed=False, unweighted=True, indices=start_nodes ,return_predecessors=True)
+    distances = dijkstra(Matrix_sparse, directed=False, unweighted=True, indices=start_nodes ,return_predecessors=False)
 
     # print(distances)
     # print(predecessors)

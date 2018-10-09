@@ -36,9 +36,11 @@ class Quoridor_local_game():
         self.game_loop()   
         
     def save_to_stats_file(self, stats):
-        stats_file = open("c:/temp/{}_{}.txt".format(self.player_names[0],self.player_names[1]),"a") 
+        path = "{}{}_{}.txt".format(LOG_PATH,self.player_names[0],self.player_names[1])
+        stats_file = open(path,"a") 
         stats_file.write("{}\n".format(stats))
         stats_file.close()
+        self.print_message("History appended to file: {} ".format(path))
         
     def game_loop(self):
         # ask user for move if not provided.
@@ -68,8 +70,10 @@ class Quoridor_local_game():
             elif self.q.get_state() == quoridor.GAME_STATE_FINISHED:
                 if not self.loop:
                     self.command("m")
+                    self.command("save_stats")
                     command = input("game finished. Please enter command.(h for help, enter for exit)") or "exit"
                     test = self.command(command)
+                    
                 else:
                     # restart game.
                     self.command("save_stats")
@@ -128,9 +132,9 @@ class Quoridor_local_game():
         elif command in ["save_stats"]:
             self.save_to_stats_file(str(self.q.execute_command("history")))
             
-        elif command in ["df"]:
-            self.q.execute_command("dijkstra fast")
-            self.pause()
+        # elif command in ["df"]:
+            # self.q.execute_command("dijkstra fast")
+            # self.pause()
             
         elif command in ["stats"]:
             self.print_message(self.q.execute_command("history_nice"))
@@ -138,6 +142,7 @@ class Quoridor_local_game():
         elif command in ["q", "exit", "quit"]:
             user_input = input("Type y if you really want to abort the game.[n]") or "no"
             if user_input == "y":
+                self.command("save_stats")
                 exit()
         
         elif command == "lev1":
@@ -225,11 +230,14 @@ if __name__ == "__main__":
 
     logging_setup()
     # l = Quoridor_local_game()
-    # l = Quoridor_local_game(None, "auto")
-    l = Quoridor_local_game("Umesh", "auto_1", ['d8', '7c', '7a'] )
+    l = Quoridor_local_game(None, "auto_1")
+    # l = Quoridor_local_game(None, "auto_2")
     # l = Quoridor_local_game("auto_1", "auto_1", loop=True)
     # l = Quoridor_local_game("auto_1", "auto_2", loop=True)
     # l = Quoridor_local_game("auto_2", "auto_2", loop=True)
+    
+    ## test cases
+    # l = Quoridor_local_game("Umesh", "auto_1", ['d8', '7c', '7a', '5e'] )
     # l = Quoridor_local_game("a", "b", ['n', 's', 'n', 's', 'n', '7f', 'n', '8c', '1d', '7d', 'e', '7h', 'n', 'e6', '6d', 'f4', 'b7', '5f', '6b', 'g5'])
     # l = Quoridor_local_game("fromAI1", "fromAI2", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's', '8b', 'e', 'w', 'b7', 'e', 'e', 's', 'e', 'w', '6c', 'e', 'c5', 's', 'e', 's', 'e', 's', 'e', 'e', 'e', 'e', 'n', 'e', 'w', 's', 'h1', 'n', '3a', 'n', '7e', 'w', 'w', 'w', 'n', 'w', 'e', 'n', 'n', 'n', 'w', 'e', 'w', 'e', 'n', 'n', 'w', 'n', 'n', 'w', 'e', 'w', 'n', 'w', 'e', 'w', 'n', 'w', 'n'])
     # l = Quoridor_local_game("fromAI1", "fromAI2", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's', '8b', 'e', 'w', 'b7', 'e', 'e', 's', 'e', 'w', '6c', 'e', 'c5'])
