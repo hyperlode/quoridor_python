@@ -37,6 +37,7 @@ class Quoridor_local_game():
         
     def save_to_stats_file(self, stats):
         path = "{}{}_{}.txt".format(LOG_PATH,self.player_names[0],self.player_names[1])
+        os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
         stats_file = open(path,"a") 
         stats_file.write("{}\n".format(stats))
         stats_file.close()
@@ -211,6 +212,7 @@ def console_clear():
 def logging_setup():
     # https://docs.python.org/3/howto/logging.html
     # logging.basicConfig(filename='c:/temp/quoridortest.log', level=logging.INFO)
+    os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
     logging.basicConfig(filename='{}{}'.format(LOG_PATH, LOG_FILENAME), level=logging.ERROR)
     formatter = logging.Formatter(fmt='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     logging.info('<<<<<<<<<<<<<<<<<<Start of new logging session.>>>>>>>>>>>>>>>>>>>>')
