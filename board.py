@@ -52,6 +52,7 @@ PAWN_INIT_POS = [(startPosX, 0), (startPosX, BOARD_HEIGHT-1)]
 DISPLAY_ORIENTATION = ["player_north_to_top", "player_north_to_bottom"]  # , "active_player_to_top", "active_player_to_bottom"]
 
 # all possible verbose wall positions
+WINNING_ROWS = [BOARD_HEIGHT-1, 0]
 NOTATION_VERBOSE_WALL_POSITIONS_NORTH_SOUTH = ["{}{}".format(chr(line + 96), midpoint)  for midpoint in range(1, BOARD_HEIGHT) for line in range(1, BOARD_WIDTH)]
 NOTATION_VERBOSE_WALL_POSITIONS_EAST_WEST = ["{}{}".format(line, chr(midpoint + 96)) for midpoint in range(1, BOARD_WIDTH) for line in range(1, BOARD_HEIGHT)]
 NOTATION_VERBOSE_WALL_POSITIONS = NOTATION_VERBOSE_WALL_POSITIONS_NORTH_SOUTH + NOTATION_VERBOSE_WALL_POSITIONS_EAST_WEST
@@ -193,11 +194,11 @@ class Board():
         board_graph_unweighted = {node:value["edges"] for node, value in self.board_graph.items()}
         
         dists = [None,None]
-        dists[player.PLAYER_TO_NORTH] = dijkstra.dijkstra_distance_to_target(board_graph_unweighted, self.players[player.PLAYER_TO_NORTH].pawn.position,PAWN_WINNING_POS[player.PLAYER_TO_NORTH])
+        dists[player.PLAYER_TO_NORTH] = dijkstra.dijkstra_quoridor(board_graph_unweighted, self.players[player.PLAYER_TO_NORTH].pawn.position,WINNING_ROWS[player.PLAYER_TO_NORTH])
         if dists[player.PLAYER_TO_NORTH] is None:
             return [None,None]
         
-        dists[player.PLAYER_TO_SOUTH] = dijkstra.dijkstra_distance_to_target(board_graph_unweighted, self.players[player.PLAYER_TO_SOUTH].pawn.position,PAWN_WINNING_POS[player.PLAYER_TO_SOUTH])
+        dists[player.PLAYER_TO_SOUTH] = dijkstra.dijkstra_quoridor(board_graph_unweighted, self.players[player.PLAYER_TO_SOUTH].pawn.position,WINNING_ROWS[player.PLAYER_TO_SOUTH])
         return dists
         
     def distances_to_winning_node_with_import(self):

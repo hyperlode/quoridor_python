@@ -8,6 +8,52 @@ except ImportError:
     USE_SCIPY = False
     logging.error("Module scipy not found. Install for faster computer player....")
 
+    
+def dijkstra_quoridor(graph, start_node, winning_row):
+    # lode optimized for quoridor
+    # will perform algorithm, until one of the target nodes is reached.
+    # in unweigthed graphs, the first reached target node is the closest node to start_node
+    
+    # print("target nodes: {}".format(target_nodes))
+    # print("\n".join([ "{}:{}".format(key, value) for key, value in graph.items()]))
+    unvisited = {}
+    visited = {}
+    current = start_node
+    currentDistance = 0
+    unvisited[current] = currentDistance
+   
+    unvisited_shortest_dist_node = None
+    unvisited_shortest_dist = 10000
+    while True:
+        #visit current node
+        for neighbour in graph[current]:  # go over all neighbours of current node.
+            if neighbour[1] == winning_row:
+                # this is the optimization. When target node found, return right away!
+                return currentDistance + 1
+            if neighbour not in visited: 
+                newDistance = currentDistance + 1  # check distance
+                if neighbour not in unvisited or unvisited[neighbour] > newDistance:  # if new distance less, apply!
+                    unvisited[neighbour] = newDistance
+                    if newDistance < unvisited_shortest_dist:
+                        unvisited_shortest_dist_node = neighbour
+                    
+        visited[current] = currentDistance
+        
+        del unvisited[current]
+       
+        # pick next node as current. (always the one with shortest path length! This makes the algorithm work)
+        if unvisited:  # length > 0
+            if (unvisited_shortest_dist == 10000):
+                # a lot of hassle to try to avoid the sorted algorithm (results in minor time savings).
+                current, currentDistance = sorted(unvisited.items(), key = lambda x: x[1])[0]
+            else:
+                current = unvisited_shortest_dist_node
+                currentDistance = unvisited_shortest_dist
+                unvisited_shortest_dist = 10000
+        else:
+            return None #at a given point when locked, there in no unvisited left.
+    
+    
 def dijkstra_distance_to_target(graph, start_node, target_nodes):
     # lode optimized for quoridor
     # will perform algorithm, until one of the target nodes is reached.
