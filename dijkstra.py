@@ -15,35 +15,42 @@ def dijkstra_distance_to_target(graph, start_node, target_nodes):
     
     # print("target nodes: {}".format(target_nodes))
     # print("\n".join([ "{}:{}".format(key, value) for key, value in graph.items()]))
-    #unvisited = {node: None for node in graph.keys()} #using None as +inf
     unvisited = {}
     visited = {}
     current = start_node
     currentDistance = 0
     unvisited[current] = currentDistance
-
-    candidates = {}
+   
+    unvisited_shortest_dist_node = None
+    unvisited_shortest_dist = 10000000000000
     while True:
         #visit current node
         for neighbour in graph[current]:  # go over all neighbours of current node.
             if neighbour in target_nodes:
+                # this is the optimization. When target node found, return right away!
                 return currentDistance + 1
             if neighbour not in visited: 
                 newDistance = currentDistance + 1  # check distance
                 if neighbour not in unvisited or unvisited[neighbour] > newDistance:  # if new distance less, apply!
                     unvisited[neighbour] = newDistance
-                    
+                    if newDistance < unvisited_shortest_dist:
+                        unvisited_shortest_dist_node = neighbour
                     
         visited[current] = currentDistance
         
         del unvisited[current]
-        # candidates = [node for node in unvisited.items() if node[1]]  # if node is not None (infinite), add it to candidates.
        
         # pick next node as current. (always the one with shortest path length! This makes the algorithm work)
         if unvisited:  # length > 0
-            current, currentDistance = sorted(unvisited.items(), key = lambda x: x[1])[0]
+            if (unvisited_shortest_dist == 1000000000000000):
+                # a lot of hassle to try to avoid the sorted algorithm (results in minor time savings).
+                current, currentDistance = sorted(unvisited.items(), key = lambda x: x[1])[0]
+            else:
+                current = unvisited_shortest_dist_node
+                currentDistance = unvisited_shortest_dist
+                unvisited_shortest_dist = 1000000000000000
         else:
-            return None # no candidates at a given point when locked in.
+            return None #at a given point when locked, there in no unvisited left.
     
 # def dijkstra_distance_to_target(graph, start_node, target_nodes):
     # # lode optimized for quoridor
