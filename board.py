@@ -199,7 +199,7 @@ class Board():
                 board_matrix_sparse[row_index][col_index] = 1
         
         # perform dijkstra     
-        distances_per_player = dijkstra.dijstra_fast(board_matrix_sparse, [ node_to_index(self.players[0].pawn.position), node_to_index(self.players[1].pawn.position)])
+        distances_per_player = dijkstra.dijkstra_fast(board_matrix_sparse, [ node_to_index(self.players[0].pawn.position), node_to_index(self.players[1].pawn.position)])
         
         #get distances to winnning nodes
         shortest_dists = [None, None]

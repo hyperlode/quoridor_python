@@ -7,8 +7,46 @@ try:
 except ImportError:
     USE_SCIPY = False
     logging.error("Module scipy not found. Install for faster computer player....")
+
+def dijkstra_distance_to_target(graph, start_node, target_nodes):
+    # lode optimized for quoridor
+    # will perform algorithm, until one of the target nodes is reached.
+    # in unweigthed graphs, the first reached target node is the closest node to start_node
+    unvisited = {node: None for node in list(graph)} #using None as +inf
+    visited = {}
+    current = start_node
+    currentDistance = 0
+    unvisited[current] = currentDistance
+    toBeVisited = [current]
     
-def dijstra_fast(matrix, start_nodes):
+    while len(toBeVisited) > 0:
+        #visit current node
+        for neighbour in graph[current]:  # go over all neighbours of current node.
+            if neighbour in target_nodes:
+                return currentDistance + 1
+            if neighbour in unvisited: 
+                toBeVisited.append(neighbour)
+                
+                newDistance = currentDistance + 1  # check distance
+                if unvisited[neighbour] is None or unvisited[neighbour] > newDistance:  # if new distance less, apply!
+                    unvisited[neighbour] = newDistance
+                    
+        visited[current] = currentDistance #was erroneously tabbed!
+        
+        toBeVisited.remove(current)
+        del unvisited[current]
+         
+        candidates = [node for node in unvisited.items() if node[1]]  # if node is not None (infinite), add it to candidates.
+        
+        # pick next node as current. (always the one with shortest 
+        if len(candidates)>0:
+            current, currentDistance = sorted(candidates, key = lambda x: x[1])[0]
+        
+    # only here of none of the target nodes was reached.
+    return None
+    
+    
+def dijkstra_fast(matrix, start_nodes):
     #matrix is a list of lists: default value is zero. all nodes on x axis, all nodes on y axis. When nodes connected, on x and y axis, node crossing, set it to 1.
     # unweighted, undirected.
     # for row in matrix:
