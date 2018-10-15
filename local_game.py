@@ -48,6 +48,7 @@ class Quoridor_local_game():
         playing = True
         while playing:
             # display the board
+            self.pause()
             self.print_board()
             self.check_state()
             
