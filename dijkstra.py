@@ -22,7 +22,7 @@ def dijkstra_distance_to_target(graph, start_node, target_nodes):
     unvisited[current] = currentDistance
    
     unvisited_shortest_dist_node = None
-    unvisited_shortest_dist = 10000000000000
+    unvisited_shortest_dist = 10000
     while True:
         #visit current node
         for neighbour in graph[current]:  # go over all neighbours of current node.
@@ -42,13 +42,13 @@ def dijkstra_distance_to_target(graph, start_node, target_nodes):
        
         # pick next node as current. (always the one with shortest path length! This makes the algorithm work)
         if unvisited:  # length > 0
-            if (unvisited_shortest_dist == 1000000000000000):
+            if (unvisited_shortest_dist == 10000):
                 # a lot of hassle to try to avoid the sorted algorithm (results in minor time savings).
                 current, currentDistance = sorted(unvisited.items(), key = lambda x: x[1])[0]
             else:
                 current = unvisited_shortest_dist_node
                 currentDistance = unvisited_shortest_dist
-                unvisited_shortest_dist = 1000000000000000
+                unvisited_shortest_dist = 10000
         else:
             return None #at a given point when locked, there in no unvisited left.
     

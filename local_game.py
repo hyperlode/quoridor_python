@@ -48,7 +48,7 @@ class Quoridor_local_game():
         playing = True
         while playing:
             # display the board
-            self.pause()
+            # self.pause()
             self.print_board()
             self.check_state()
             
@@ -242,8 +242,12 @@ if __name__ == "__main__":
     
     ## test cases
     # l = Quoridor_local_game("Umesh", "auto_1", ['d8', '7c', '7a', '5e'] )
+    
+    l = Quoridor_local_game("Lode", "from AI2", ['n', 's', 'n', '8d', 'n', '8f', '3d', '8b', 'n', '8h', 'w', 's', 'w', 's', '4a', 's', '4c', 's', 'n'], loop=False)  # next auto_2 move was ", 'g7'" why??
+    
+    
     # l = Quoridor_local_game("a", "b", ['n', 's', 'n', 's', 'n', '7f', 'n', '8c', '1d', '7d', 'e', '7h', 'n', 'e6', '6d', 'f4', 'b7', '5f', '6b', 'g5'])
     # l = Quoridor_local_game("fromAI1", "fromAI2", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's', '8b', 'e', 'w', 'b7', 'e', 'e', 's', 'e', 'w', '6c', 'e', 'c5', 's', 'e', 's', 'e', 's', 'e', 'e', 'e', 'e', 'n', 'e', 'w', 's', 'h1', 'n', '3a', 'n', '7e', 'w', 'w', 'w', 'n', 'w', 'e', 'n', 'n', 'n', 'w', 'e', 'w', 'e', 'n', 'n', 'w', 'n', 'n', 'w', 'e', 'w', 'n', 'w', 'e', 'w', 'n', 'w', 'n'])
-    l = Quoridor_local_game("fromAI1", "fromAI2", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's', '8b', 'e', 'w', 'b7', 'e', 'e', 's', 'e', 'w', '6c', 'e', 'c5'])
+    # l = Quoridor_local_game("fromAI1", "fromAI2", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's', '8b', 'e', 'w', 'b7', 'e', 'e', 's', 'e', 'w', '6c', 'e', 'c5'])
     # l = Quoridor_local_game("auto_1", "auto_1", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's'], loop=True)
     # l = Quoridor_local_game("fromAI1", "fromAI2", ['n', 's', 'n', 's', '2d', '7e', '3e', 'd3', 'e', 's', 'e', 'h2', 'n', '7g', 'e', 'g3', 'e', '2g', '3c', '4h', 's', '4f', 's', '7a', 's', 'f3', 'd5', 'n', 'd7', 'e', 'f6', 's', '5f', 'w', '6h', 's', 'w', 'e', 'w', 'e', '2a', 'e', '1b', 'n', 'n', 'w', 'w', 'n', 'w', 'e', 'w', 'e', 'w', 'n', 'n', 'w', 'w', 'w', 'n', 'w', 'n', 'w', 'n', 'n', 'n', 'w', 'e', 's', 'n', 's', 'n'])
