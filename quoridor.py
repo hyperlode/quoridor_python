@@ -153,19 +153,16 @@ class Quoridor():
 
         elif move == "rotate":
             self.gameBoard.rotate_board(None)
-
-        elif move == "wall_suggest":
-            positions, delta = self.auto_wall_place_suggestion()
-            return "path length difference change (neg is in active player's advantage): {} by placing a wall on : {}".format(
-                    delta, positions)
-        elif move == "dijkstra fast":
-            self.gameBoard.distances_to_winning_node_fast()
             
         elif move == "suggest_level_2":
             return self.auto_level_2(True)
         
         elif move == "suggest_level_1":
             return self.auto_level_1(True)
+            
+        elif move == "analyse":
+            # all moves with delta for one level deep
+            return self.analyse_level()
             
         elif move == "automove":
             auto_move_directions = self.auto_pawn_move_suggestion()
@@ -206,7 +203,7 @@ class Quoridor():
                     "h or help     for this help\n" +
                     "wide          to toggle wider board\n" +
                     "SPACE or auto to auto move pawn\n" +
-                    "wall          to suggest wall placement\n" +
+                    "analyse       to see all moves with their effect on players path\n" +
                     "q or exit     for exit\n" +
                     "r or rotate   for rotating the board 180DEG"
                     "\n"
@@ -250,7 +247,7 @@ class Quoridor():
         opponent = self.inactive_player().direction
         
         # level 2
-        for i, (pos_level_1, delta) in enumerate(deltas.items()):
+        for i, (pos_level_1, delta) in enumerate(deltas.items()): # run through all possible level 1 moves.
             drawProgressBar(i/len(deltas.items()))
             
             # make level 1 move
@@ -264,7 +261,7 @@ class Quoridor():
             self.active_player().active = True
             
             # obtain all realistic level 2 moves
-             # as this is only to level 2, select the best moves this player will make. (if deeper levels would be considered, we would keep all moves).
+            # as this is only to level 2, select the best moves this player will make. (if deeper levels would be considered, we would keep all moves).
             # get most likely opponent moves (moves that shorten opponents path most).
             best_opponent_moves_with_deltas = self.auto_level_1(simulate=True)
             
@@ -307,27 +304,9 @@ class Quoridor():
         # return all possible moves and their delta.
         one_level_deep_with_distances = self.check_all_moves()
         current_distances = self.gameBoard.distances_to_winning_node()
-        # current_distances_checkcheck = self.gameBoard.distances_to_winning_node_fast()
-        # print("first norm, then new fast:")
-        # print(current_distances)
-        # print(current_distances_checkcheck )
         deltas = self.calculate_delta_improvement(current_distances, one_level_deep_with_distances, self.active_player().direction)
         return deltas
     
-    def analyse_levels(self):
-        # positions, delta = self.auto_wall_place_suggestion()
-       
-        # if len(positions) > 0 and (delta < 0 ):
-            # # worth placing a wall
-            # index = random.randint(0, len(positions)-1)
-            # move = positions[index]
-        # else:
-            # suggestions = self.auto_pawn_move_suggestion()
-            # index = random.randint(0, len(suggestions)-1)
-            # move = suggestions[index]
-        # return move    
-        pass      
-        
     def history_as_string(self, include_distance_history=True):
         lines = []
         col_width  = len(self.players[0].name)
@@ -582,7 +561,14 @@ class Quoridor():
         status = "-----------Change player to {}".format(self.active_player().name)
         logging.info(status)
 
-        
+    def auto_pawn_move_suggestion(self):
+        # list of all pawn directions with equal (minimum) distance to a winning square.
+        all_directions = self.check_all_pawn_moves()
+
+        minimum_dist = min(all_directions.values())
+
+        return [direction for direction in all_directions.keys() if all_directions[direction] == minimum_dist]
+    
     def check_all_moves(self):
         # all possible moves and their distances.
         
@@ -590,6 +576,7 @@ class Quoridor():
         return {**self.check_all_wall_placements(), **self.check_all_pawn_moves()}
     
     def check_all_wall_placements(self):
+        # all valid possible wall positions with distances.
         wall_placements_effect = {}
         for pos in board.NOTATION_VERBOSE_WALL_POSITIONS:
             success = self.place_wall(pos)
@@ -604,7 +591,7 @@ class Quoridor():
                     raise Exception
                     
                 # check if end node is reachable
-                if distances[0] is not None and distances[1] is not None:
+                if None not in distances:
                     wall_placements_effect[pos] = distances
         return wall_placements_effect
         
@@ -620,7 +607,6 @@ class Quoridor():
             if success:
                 #2 check shortest distance
                 distances = self.gameBoard.distances_to_winning_node()
-                
                 
                 # 1b undo move
                 self.active_player().undo_move_pawn()
@@ -652,50 +638,6 @@ class Quoridor():
             deltas[pos] = inverter * ( (d11 - d12) -  delta0 ) + offset
         
         return deltas
-    
-    def auto_wall_place_suggestion(self):
-        # list of all wall suggestions with equal net path gain. (longer path for opponent, not so long for active player).
-        positions_with_length = self.check_all_wall_placements()
-        
-        # if no walls can be placed
-        if len(positions_with_length) == 0:
-            return [], 0
-        
-        current_distances = self.gameBoard.distances_to_winning_node()
-        
-        
-        positions_with_relative_path_length_change = self.calculate_delta_improvement(current_distances, positions_with_length, self.active_player().direction)
-        
-        # c1, c2 = self.gameBoard.distances_to_winning_node()
-
-        # positions_with_relative_path_length_change = {}
-        # for pos, (p1, p2) in positions_with_length.items():
-            # # print("{}:({},{})".format(pos, p1, p2))
-            # if player.PLAYER_TO_NORTH == self.active_player().direction:
-                # positions_with_relative_path_length_change[pos] = (c2 - c1) - (p2 - p1)
-            # else:
-                # positions_with_relative_path_length_change[pos] = (c1 - c2) - (p1 - p2)
-
-
-        # get most impacted path (negative is shorter, pos is longer )
-       
-
-        # return equal path lengthening positions
-        best = min(positions_with_relative_path_length_change.values())
-
-        pos_best_of = [pos for pos in positions_with_relative_path_length_change if positions_with_relative_path_length_change[pos] == best]
-        # print(pos_best_of)
-        return pos_best_of, best
-
-   
-    def auto_pawn_move_suggestion(self):
-        # list of all pawn directions with equal (minimum) distance to a winning square.
-        all_directions = self.check_all_pawn_moves()
-
-        minimum_dist = min(all_directions.values())
-
-        return [direction for direction in all_directions.keys() if all_directions[direction] == minimum_dist]
-
         
     def place_wall(self, position_verbose) :
         success = self.active_player().place_wall(position_verbose)

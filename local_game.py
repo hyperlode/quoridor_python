@@ -147,6 +147,16 @@ class Quoridor_local_game():
                 self.command("save_stats")
                 exit()
         
+        elif command == "analyse":
+            moves_with_delta = self.q.execute_command("analyse")
+            
+            deltas = sorted(list(set( moves_with_delta.values())))
+            moves_sorted_by_delta = {}
+            for d in deltas:
+                moves_sorted_by_delta[d] = sorted([k for k,v in moves_with_delta.items() if d == v])
+                
+            self.print_message("\n".join(["delta: {}:{}\n".format(k,v) for k,v in moves_sorted_by_delta.items()]))
+            
         elif command == "lev1":
             start_millis = int(round(time.time() * 1000))
             suggestions = self.q.execute_command("suggest_level_1")
@@ -166,11 +176,6 @@ class Quoridor_local_game():
 
         elif command in ["r", "rotate"]:
             self.q.execute_command("rotate")
-
-        elif command == ["wall"]:
-            positions, delta = self.q.auto_wall_place_suggestion()
-            self.print_message("Path length difference change (neg is in active player's advantage): {} by placing a wall on : {}".format(
-                    delta, positions))
 
         elif command in [" ", "auto"]:
             result = self.q.execute_command("automove")

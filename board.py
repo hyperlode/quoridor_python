@@ -307,7 +307,7 @@ class Board():
                     hori, vert, orientation = w.get_position("lines_orientation")
                     
                     #check for overlapping center points.
-                    if hori == hori_new and vert ==vert_new :
+                    if hori == hori_new and vert == vert_new :
                         # centerpoint is the same, so for sure a failure. We just have to check what kind of failure:
                         if orientation==orientation_new:
                             logging.info("attempt to place wall on exactly the same location of another wall.")
