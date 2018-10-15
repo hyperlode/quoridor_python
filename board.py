@@ -180,11 +180,26 @@ class Board():
         pass
     
     def distances_to_winning_node(self):    
-        if dijkstra.USE_SCIPY:
-            return self.distances_to_winning_node_with_import()
-        else:
-            return self.distances_to_winning_node_no_imports()
-         
+        return self.distances_to_winning_node_optimized()
+        # if dijkstra.USE_SCIPY:
+            # return self.distances_to_winning_node_with_import()
+        # else:
+            # return self.distances_to_winning_node_no_imports()
+    
+    def distances_to_winning_node_optimized(self):
+        #minimize overhead.
+        
+        # get proper weighted graph
+        board_graph_unweighted = {node:value["edges"] for node, value in self.board_graph.items()}
+        
+        dists = [None,None]
+        dists[player.PLAYER_TO_NORTH] = dijkstra.dijkstra_distance_to_target(board_graph_unweighted, self.players[player.PLAYER_TO_NORTH].pawn.position,PAWN_WINNING_POS[player.PLAYER_TO_NORTH])
+        if dists[player.PLAYER_TO_NORTH] is None:
+            return [None,None]
+        
+        dists[player.PLAYER_TO_SOUTH] = dijkstra.dijkstra_distance_to_target(board_graph_unweighted, self.players[player.PLAYER_TO_SOUTH].pawn.position,PAWN_WINNING_POS[player.PLAYER_TO_SOUTH])
+        return dists
+        
     def distances_to_winning_node_with_import(self):
         # scipy faster dijkstra algoritm
         
@@ -199,7 +214,7 @@ class Board():
                 board_matrix_sparse[row_index][col_index] = 1
         
         # perform dijkstra     
-        distances_per_player = dijkstra.dijkstra_fast(board_matrix_sparse, [ node_to_index(self.players[0].pawn.position), node_to_index(self.players[1].pawn.position)])
+        distances_per_player = dijkstra.dijkstra_fast(board_matrix_sparse, [node_to_index(self.players[0].pawn.position), node_to_index(self.players[1].pawn.position)])
         
         #get distances to winnning nodes
         shortest_dists = [None, None]

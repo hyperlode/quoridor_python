@@ -12,6 +12,9 @@ def dijkstra_distance_to_target(graph, start_node, target_nodes):
     # lode optimized for quoridor
     # will perform algorithm, until one of the target nodes is reached.
     # in unweigthed graphs, the first reached target node is the closest node to start_node
+    
+    # print("target nodes: {}".format(target_nodes))
+    # print("\n".join([ "{}:{}".format(key, value) for key, value in graph.items()]))
     unvisited = {node: None for node in list(graph)} #using None as +inf
     visited = {}
     current = start_node
@@ -21,8 +24,10 @@ def dijkstra_distance_to_target(graph, start_node, target_nodes):
     
     while len(toBeVisited) > 0:
         #visit current node
+        # print("current:{}".format(current))
         for neighbour in graph[current]:  # go over all neighbours of current node.
             if neighbour in target_nodes:
+                # print("target node!: {}".format(neighbour))
                 return currentDistance + 1
             if neighbour in unvisited: 
                 toBeVisited.append(neighbour)
@@ -37,12 +42,14 @@ def dijkstra_distance_to_target(graph, start_node, target_nodes):
         del unvisited[current]
          
         candidates = [node for node in unvisited.items() if node[1]]  # if node is not None (infinite), add it to candidates.
-        
-        # pick next node as current. (always the one with shortest 
-        if len(candidates)>0:
+       
+       # pick next node as current. (always the one with shortest 
+        if candidates:  # length > 0
             current, currentDistance = sorted(candidates, key = lambda x: x[1])[0]
-        
-    # only here of none of the target nodes was reached.
+        else:
+            return None # no candidates at a given point when locked in.
+            
+    # none of the target nodes was reached.
     return None
     
     
