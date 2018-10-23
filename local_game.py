@@ -240,7 +240,7 @@ if __name__ == "__main__":
     # l = Quoridor_local_game()
     # l = Quoridor_local_game(None, "auto_1")
     # l = Quoridor_local_game("lode", "brecht")
-    # l = Quoridor_local_game("lode", "auto_2")
+    l = Quoridor_local_game("Lode", "auto_1")
     # l = Quoridor_local_game("auto_1", "auto_1", loop=True)
     # l = Quoridor_local_game("auto_1", "auto_2", loop=True)
     # l = Quoridor_local_game("auto_2", "auto_2", loop=True)
@@ -248,7 +248,7 @@ if __name__ == "__main__":
     ## test cases
     # l = Quoridor_local_game("Umesh", "auto_1", ['d8', '7c', '7a', '5e'] )
     
-    l = Quoridor_local_game("Lode", "from AI2", ['n', 's', 'n', '8d', 'n', '8f', '3d', '8b', 'n', '8h', 'w', 's', 'w', 's', '4a', 's', '4c', 's', 'n'], loop=False)  # next auto_2 move was ", 'g7'" why??
+    # l = Quoridor_local_game("Lode", "from AI2", ['n', 's', 'n', '8d', 'n', '8f', '3d', '8b', 'n', '8h', 'w', 's', 'w', 's', '4a', 's', '4c', 's', 'n'], loop=False)  # next auto_2 move was ", 'g7'" why??
     
     
     # l = Quoridor_local_game("a", "b", ['n', 's', 'n', 's', 'n', '7f', 'n', '8c', '1d', '7d', 'e', '7h', 'n', 'e6', '6d', 'f4', 'b7', '5f', '6b', 'g5'])
