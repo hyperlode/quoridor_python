@@ -4,6 +4,7 @@ import wall
 import dijkstra
 # import dijkstra_fast
 
+import sys
 import logging
 import time
 
@@ -24,30 +25,56 @@ BOARD_HEIGHT = 9 # 9 is default
 # BOARD_CELL_LINE_VERTICAL = '\u2502'  # "|"
 # BOARD_CELL_LINE_CROSSING =  '\u253c'  # "+"
 
-BOARD_CELL_EMPTY = " "
-BOARD_CELL_PLAYER_TO_TOP =  '\u25b2'
-BOARD_CELL_PLAYER_TO_BOTTOM = '\u25bc' 
-BOARD_CELL_WALL = '+'  # "O"
-BOARD_CELL_WALL_HORIZONTAL = '\u2500'  # "O"
-BOARD_CELL_WALL_VERTICAL = '\u2502'  # "O"
-BOARD_CELL_WALL_BORDER_VERTICAL = "\u2502"
-BOARD_CELL_WALL_BORDER_HORIZONTAL = "\u2500"
-BOARD_CELL_WALL_BORDER_TOP_LEFT = "\u2514"
-BOARD_CELL_WALL_BORDER_TOP_RIGHT = "\u2510"
-BOARD_CELL_WALL_BORDER_BOTTOM_LEFT = "\u250C"
-BOARD_CELL_WALL_BORDER_BOTTOM_RIGHT = "\u2518"
-BOARD_CELL_LINE_HORIZONTAL = ' '  # "-"
-BOARD_CELL_LINE_VERTICAL = ' '  # "|"
-BOARD_CELL_LINE_CROSSING =  '\u253c'  # "+"
+CHARS_UTF8 = {
+    "BOARD_CELL_EMPTY" : " ",
+    "BOARD_CELL_PLAYER_TO_TOP":'\u25b2',
+    "BOARD_CELL_PLAYER_TO_BOTTOM" : '\u25bc' ,
+    "BOARD_CELL_WALL" : '+',  # "O",
+    "BOARD_CELL_WALL_HORIZONTAL" : '\u2500',  # "O",
+    "BOARD_CELL_WALL_VERTICAL" : '\u2502',  # "O",
+    "BOARD_CELL_WALL_BORDER_VERTICAL" : "\u2502",
+    "BOARD_CELL_WALL_BORDER_HORIZONTAL" : "\u2500",
+    "BOARD_CELL_WALL_BORDER_TOP_LEFT" : "\u2514",
+    "BOARD_CELL_WALL_BORDER_TOP_RIGHT" : "\u2510",
+    "BOARD_CELL_WALL_BORDER_BOTTOM_LEFT" : "\u250C",
+    "BOARD_CELL_WALL_BORDER_BOTTOM_RIGHT" : "\u2518",
+    "BOARD_CELL_LINE_HORIZONTAL" : ' ',  # "-",
+    "BOARD_CELL_LINE_VERTICAL" : ' ',  # "|",
+    "BOARD_CELL_LINE_CROSSING" :  '\u253c',  # "+",
+    "EXTENDED_BOARD_EMPTY_SPACE" : " ",
+    "ROSE_VERTICAL" : '\u2502',
+    "ROSE_ARROW_UP" :'\u25b2',
+    "ROSE_ARROW_DOWN" :'\u25bc',
+    "ROSE_CROSSING" : '\u253c'
+    }
 
-EXTENDED_BOARD_EMPTY_SPACE = " "
-
+CHARS_ASCII = {
+    "BOARD_CELL_EMPTY" : " ",
+    "BOARD_CELL_PLAYER_TO_TOP" :  '^',
+    "BOARD_CELL_PLAYER_TO_BOTTOM" : 'v' ,
+    "BOARD_CELL_WALL" : '+',  # "O",
+    "BOARD_CELL_WALL_HORIZONTAL" : '.',  # "O",
+    "BOARD_CELL_WALL_VERTICAL" : '|',  # "O",
+    "BOARD_CELL_WALL_BORDER_VERTICAL" : ".",
+    "BOARD_CELL_WALL_BORDER_HORIZONTAL" : ".",
+    "BOARD_CELL_WALL_BORDER_TOP_LEFT" : ".",
+    "BOARD_CELL_WALL_BORDER_TOP_RIGHT" : ".",
+    "BOARD_CELL_WALL_BORDER_BOTTOM_LEFT" : ".",
+    "BOARD_CELL_WALL_BORDER_BOTTOM_RIGHT" : ".",
+    "BOARD_CELL_LINE_HORIZONTAL" : ' ',  # "-",
+    "BOARD_CELL_LINE_VERTICAL" : ' ',  # "|",
+    "BOARD_CELL_LINE_CROSSING" :  '.',  # "+",
+    "EXTENDED_BOARD_EMPTY_SPACE" : " ",
+    "ROSE_VERTICAL": '|',
+    "ROSE_ARROW_UP":'^',
+    "ROSE_ARROW_DOWN":'v',
+    "ROSE_CROSSING":'+'
+    }
 
 startPosX = BOARD_WIDTH // 2   # for width 9 --> 4  
 
 PAWN_INIT_POS = [(startPosX, 0), (startPosX, BOARD_HEIGHT-1)] 
 # = (PAWN_INIT_POS_X, 0), (PAWN_INIT_POS_X, BOARD_HEIGHT-1)
-
 
 DISPLAY_ORIENTATION = ["player_north_to_top", "player_north_to_bottom"]  # , "active_player_to_top", "active_player_to_bottom"]
 
@@ -111,7 +138,7 @@ class Board():
     
     '''    
     
-    def __init__(self):
+    def __init__(self, output_encoding):
         nodes = [(x,y) for x in range(BOARD_WIDTH) for y in range(BOARD_HEIGHT)]
         
         self.board_graph = {node:{"edges":None, "pawn":None} for node in nodes}
@@ -127,44 +154,15 @@ class Board():
         self.wide_display = True
         self.display_orientation = DISPLAY_ORIENTATION[0]
         
+        
+        if output_encoding == "utf-8":
+            self.chars = CHARS_UTF8
+        else:
+            self.chars = CHARS_ASCII
+        
     # ADMINISTRATION 
     
-    def wide_display_toggle(self):
-        # output board wide or normal
-        self.wide_display = not self.wide_display
-        
-    def rotate_board(self, north_player_to_top=None):
-        if north_player_to_top is None:
-            if self.display_orientation == "player_north_to_top":
-                self.display_orientation = "player_north_to_bottom"
-            else:
-                self.display_orientation = "player_north_to_top"
-            # just rotate 180
-        elif north_player_to_top:
-            # north top
-            self.display_orientation = "player_north_to_top"
-        else:
-            #north is bottom
-            self.display_orientation = "player_north_to_bottom"
-        
-    def get_player_char(self,direction, isActive_player=True):
-        
-        # if self.display_orientation in ["active_player_to_top", "active_player_to_bottom"]:
-            # logging.error("active player board orientation not yet implemented.")
-            # raise Exception
-            
-        if direction == player.PLAYER_TO_NORTH and self.display_orientation == "player_north_to_top":
-            return BOARD_CELL_PLAYER_TO_TOP
-        elif direction == player.PLAYER_TO_NORTH and self.display_orientation == "player_north_to_bottom":
-            return BOARD_CELL_PLAYER_TO_BOTTOM
-        elif direction == player.PLAYER_TO_SOUTH and self.display_orientation == "player_north_to_top":
-            return BOARD_CELL_PLAYER_TO_BOTTOM
-        elif direction == player.PLAYER_TO_SOUTH and self.display_orientation == "player_north_to_bottom":
-            return BOARD_CELL_PLAYER_TO_TOP
-        else:
-            logging.error("troubles in paradise. ")
-            raise Exception 
-            
+       
     def add_player(self, player_instance):
         self.players.append(player_instance)
         self.board_graph[player_instance.pawn.position]["pawn"] = player_instance
@@ -411,6 +409,42 @@ class Board():
     
     # DISPLAY BOARD
     
+    def wide_display_toggle(self):
+        # output board wide or normal
+        self.wide_display = not self.wide_display
+        
+    def rotate_board(self, north_player_to_top=None):
+        if north_player_to_top is None:
+            if self.display_orientation == "player_north_to_top":
+                self.display_orientation = "player_north_to_bottom"
+            else:
+                self.display_orientation = "player_north_to_top"
+            # just rotate 180
+        elif north_player_to_top:
+            # north top
+            self.display_orientation = "player_north_to_top"
+        else:
+            #north is bottom
+            self.display_orientation = "player_north_to_bottom"
+        
+    def get_player_char(self,direction):
+        
+        # if self.display_orientation in ["active_player_to_top", "active_player_to_bottom"]:
+            # logging.error("active player board orientation not yet implemented.")
+            # raise Exception
+            
+        if direction == player.PLAYER_TO_NORTH and self.display_orientation == "player_north_to_top":
+            return self.chars["BOARD_CELL_PLAYER_TO_TOP"]
+        elif direction == player.PLAYER_TO_NORTH and self.display_orientation == "player_north_to_bottom":
+            return self.chars["BOARD_CELL_PLAYER_TO_BOTTOM"]
+        elif direction == player.PLAYER_TO_SOUTH and self.display_orientation == "player_north_to_top":
+            return self.chars["BOARD_CELL_PLAYER_TO_BOTTOM"]
+        elif direction == player.PLAYER_TO_SOUTH and self.display_orientation == "player_north_to_bottom":
+            return self.chars["BOARD_CELL_PLAYER_TO_TOP"]
+        else:
+            logging.error("troubles in paradise. ")
+            raise Exception 
+        
     def board_array(self):
         # converts the graph to an array with cells. for display use.
         board_array = []
@@ -422,24 +456,24 @@ class Board():
             hori_extra = 0
        
         if self.display_orientation == "player_north_to_top":
-            char_player_to_north = BOARD_CELL_PLAYER_TO_TOP
-            char_player_to_south = BOARD_CELL_PLAYER_TO_BOTTOM
+            char_player_to_north = self.chars["BOARD_CELL_PLAYER_TO_TOP"]
+            char_player_to_south = self.chars["BOARD_CELL_PLAYER_TO_BOTTOM"]
             
             #corners of the board
-            char_edge_corner_south_west = BOARD_CELL_WALL_BORDER_BOTTOM_LEFT
-            char_edge_corner_north_west = BOARD_CELL_WALL_BORDER_TOP_LEFT
-            char_edge_corner_south_east = BOARD_CELL_WALL_BORDER_BOTTOM_RIGHT
-            char_edge_corner_north_east = BOARD_CELL_WALL_BORDER_TOP_RIGHT
+            char_edge_corner_south_west = self.chars["BOARD_CELL_WALL_BORDER_BOTTOM_LEFT"]
+            char_edge_corner_north_west = self.chars["BOARD_CELL_WALL_BORDER_TOP_LEFT"]
+            char_edge_corner_south_east = self.chars["BOARD_CELL_WALL_BORDER_BOTTOM_RIGHT"]
+            char_edge_corner_north_east = self.chars["BOARD_CELL_WALL_BORDER_TOP_RIGHT"]
         
         elif self.display_orientation == "player_north_to_bottom":
-            char_player_to_north = BOARD_CELL_PLAYER_TO_BOTTOM
-            char_player_to_south = BOARD_CELL_PLAYER_TO_TOP
+            char_player_to_north = self.chars["BOARD_CELL_PLAYER_TO_BOTTOM"]
+            char_player_to_south = self.chars["BOARD_CELL_PLAYER_TO_TOP"]
             
              #corners of the board
-            char_edge_corner_south_west = BOARD_CELL_WALL_BORDER_TOP_LEFT
-            char_edge_corner_north_west = BOARD_CELL_WALL_BORDER_BOTTOM_LEFT
-            char_edge_corner_south_east = BOARD_CELL_WALL_BORDER_TOP_RIGHT
-            char_edge_corner_north_east = BOARD_CELL_WALL_BORDER_BOTTOM_RIGHT
+            char_edge_corner_south_west = self.chars["BOARD_CELL_WALL_BORDER_TOP_LEFT"]
+            char_edge_corner_north_west = self.chars["BOARD_CELL_WALL_BORDER_BOTTOM_LEFT"]
+            char_edge_corner_south_east = self.chars["BOARD_CELL_WALL_BORDER_TOP_RIGHT"]
+            char_edge_corner_north_east = self.chars["BOARD_CELL_WALL_BORDER_BOTTOM_RIGHT"]
         
         else:
             logging.log("orientation not implemented")
@@ -452,7 +486,7 @@ class Board():
         for row in range(cells_vertical):
             line = []
             for col in range(cells_horizontal):
-                line.append(BOARD_CELL_EMPTY)
+                line.append(self.chars["BOARD_CELL_EMPTY"])
             board_array.append(line)
         
         
@@ -460,19 +494,19 @@ class Board():
         for col in range(cells_horizontal):
             for row in range(cells_vertical):
                 if row == 0 or row == cells_vertical-1:
-                    board_array[row][col] = BOARD_CELL_WALL_BORDER_HORIZONTAL
+                    board_array[row][col] = self.chars["BOARD_CELL_WALL_BORDER_HORIZONTAL"]
                     
                 elif col == 0 or col == cells_horizontal-1:
-                    board_array[row][col] = BOARD_CELL_WALL_BORDER_VERTICAL
+                    board_array[row][col] = self.chars["BOARD_CELL_WALL_BORDER_VERTICAL"]
                     
                 elif row%2 == 0 and col% (2+hori_extra) == 0:
-                    board_array[row][col] = BOARD_CELL_LINE_CROSSING
+                    board_array[row][col] = self.chars["BOARD_CELL_LINE_CROSSING"]
                 
                 elif row%2 == 0:
-                    board_array[row][col] = BOARD_CELL_LINE_HORIZONTAL
+                    board_array[row][col] = self.chars["BOARD_CELL_LINE_HORIZONTAL"]
                 
                 elif col%2 == 0:
-                    board_array[row][col] = BOARD_CELL_LINE_VERTICAL
+                    board_array[row][col] = self.chars["BOARD_CELL_LINE_VERTICAL"]
         
         #corners of the board
         board_array[cells_vertical-1][0]                    = char_edge_corner_south_west
@@ -498,31 +532,31 @@ class Board():
                 if w.status == wall.STATUS_PLACED:
                     hori, vert, orientation = w.get_position("lines_orientation")
                     
-                    # board_array[hori*2 ][vert*2 ] = BOARD_CELL_WALL_CENTER
+                    # board_array[hori*2 ][vert*2 ] = self.chars["BOARD_CELL_WALL_CENTER"
                     if orientation == wall.NORTH_SOUTH:
-                        board_array[hori*2 -1 ][vert*(2+hori_extra)] = BOARD_CELL_WALL_VERTICAL
-                        # board_array[hori*2 ][vert*2 ] = BOARD_CELL_WALL_VERTICAL  # center
-                        board_array[hori*2 +1][vert*(2+hori_extra)] = BOARD_CELL_WALL_VERTICAL
+                        board_array[hori*2 -1 ][vert*(2+hori_extra)] = self.chars["BOARD_CELL_WALL_VERTICAL"]
+                        # board_array[hori*2 ][vert*2 ] = self.chars["BOARD_CELL_WALL_VERTICAL)  # center
+                        board_array[hori*2 +1][vert*(2+hori_extra)] = self.chars["BOARD_CELL_WALL_VERTICAL"]
 
                     elif orientation == wall.EAST_WEST:
-                        board_array[hori*2][vert*(2+hori_extra) -1 ] = BOARD_CELL_WALL_HORIZONTAL
-                        # board_array[hori*2 ][vert*2 ] = BOARD_CELL_WALL_HORIZONTAL  # center
-                        board_array[hori*2][vert*(2+hori_extra) + 1] = BOARD_CELL_WALL_HORIZONTAL
+                        board_array[hori*2][vert*(2+hori_extra) -1 ] = self.chars["BOARD_CELL_WALL_HORIZONTAL"]
+                        # board_array[hori*2 ][vert*2 ] = self.chars["BOARD_CELL_WALL_HORIZONTAL)  # center
+                        board_array[hori*2][vert*(2+hori_extra) + 1] = self.chars["BOARD_CELL_WALL_HORIZONTAL"]
                         if (hori_extra == 2):
-                            board_array[hori*2][vert*(2+hori_extra) -2 ] = BOARD_CELL_WALL_HORIZONTAL    
-                            board_array[hori*2][vert*(2+hori_extra) -3 ] = BOARD_CELL_WALL_HORIZONTAL    
-                            board_array[hori*2][vert*(2+hori_extra) +2 ] = BOARD_CELL_WALL_HORIZONTAL    
-                            board_array[hori*2][vert*(2+hori_extra) +3 ] = BOARD_CELL_WALL_HORIZONTAL    
+                            board_array[hori*2][vert*(2+hori_extra) -2 ] = self.chars["BOARD_CELL_WALL_HORIZONTAL"   ] 
+                            board_array[hori*2][vert*(2+hori_extra) -3 ] = self.chars["BOARD_CELL_WALL_HORIZONTAL" ]  
+                            board_array[hori*2][vert*(2+hori_extra) +2 ] = self.chars["BOARD_CELL_WALL_HORIZONTAL"]    
+                            board_array[hori*2][vert*(2+hori_extra) +3 ] = self.chars["BOARD_CELL_WALL_HORIZONTAL"]    
 
         # add row and column indicators (1->8 , a-> h)
         #     extend array 
         cells_border_offset = 3
         extended_board = board_array[::]
        
-        margin = [EXTENDED_BOARD_EMPTY_SPACE for i in range(cells_border_offset)]
+        margin = [self.chars["EXTENDED_BOARD_EMPTY_SPACE"] for i in range(cells_border_offset)]
         extended_board = [ margin + row + margin for row in board_array]
         
-        extra_row = [EXTENDED_BOARD_EMPTY_SPACE for i in range(len(extended_board[0]))] 
+        extra_row = [self.chars["EXTENDED_BOARD_EMPTY_SPACE"] for i in range(len(extended_board[0]))] 
         for i in range(cells_border_offset):
             extended_board.append(extra_row[::])
             extended_board.insert(0,extra_row[::])
@@ -549,29 +583,30 @@ class Board():
         
         if self.display_orientation == "player_north_to_top":
             
-            board_rows_for_output= [[EXTENDED_BOARD_EMPTY_SPACE for i in range(6)] + row for row in board[::-1]]
+            board_rows_for_output= [[self.chars["EXTENDED_BOARD_EMPTY_SPACE"] for i in range(6)] + row for row in board[::-1]]
             x = 0
             y = 1
+ 
             board_rows_for_output[y][x+3] = "N"
-            board_rows_for_output[y+1][x+3] = '\u25b2'  # "^"
-            board_rows_for_output[y+2][x+3] = '\u2502'  # "|"
-            board_rows_for_output[y+3][x+3] = '\u253c'  # "+"
+            board_rows_for_output[y+1][x+3] = self.chars["ROSE_ARROW_UP"] # "^"
+            board_rows_for_output[y+2][x+3] = self.chars["ROSE_VERTICAL"]  # "|"
+            board_rows_for_output[y+3][x+3] = self.chars["ROSE_CROSSING"]  # "+"
             board_rows_for_output[y+3][x+1] = 'W'  # "+"
             board_rows_for_output[y+3][x+5] = 'E'  # "+"
-            board_rows_for_output[y+4][x+3] = '\u2502'  # "|"
+            board_rows_for_output[y+4][x+3] = self.chars["ROSE_VERTICAL"]  # "|"
             board_rows_for_output[y+5][x+3] = 'S'  
         elif self.display_orientation == "player_north_to_bottom":
-            board_rows_for_output= [[EXTENDED_BOARD_EMPTY_SPACE for i in range(6)] + row for row in board]
+            board_rows_for_output= [[self.chars["EXTENDED_BOARD_EMPTY_SPACE"] for i in range(6)] + row for row in board]
             x = 0
             y = 1
             board_rows_for_output[y][x+3] = "S"
             
-            board_rows_for_output[y+1][x+3] = '\u2502'  # "|"
-            board_rows_for_output[y+2][x+3] = '\u253c'  # "+"
+            board_rows_for_output[y+1][x+3] = self.chars["ROSE_VERTICAL"]  # "|"
+            board_rows_for_output[y+2][x+3] = self.chars["ROSE_CROSSING"]  # "+"
             board_rows_for_output[y+2][x+1] = 'E'  # "+"
             board_rows_for_output[y+2][x+5] = 'W'  # "+"
-            board_rows_for_output[y+3][x+3] = '\u2502'  # "|"
-            board_rows_for_output[y+4][x+3] = '\u25bc'  # "v"
+            board_rows_for_output[y+3][x+3] = self.chars["ROSE_VERTICAL"]  # "|"
+            board_rows_for_output[y+4][x+3] = self.chars["ROSE_ARROW_DOWN"]  # "v"
             board_rows_for_output[y+5][x+3] = 'N'  
         else:
             logging.error("unvalid orientation ")

@@ -52,11 +52,13 @@ SIDE_BAR_EMPTY_SPACE = " "
 
 class Quoridor():
     
-    def __init__(self, settings = None):
+    def __init__(self, settings = None, output_encoding = None):
         
         self.game_state = GAME_STATE_NOT_STARTED
         self.status_message = ""
-            
+        
+        self.output_encoding = output_encoding
+        
         logging.info("Init Quoridor game ")
         if settings is None:
             # start from scratch
@@ -75,7 +77,7 @@ class Quoridor():
         player2 = player.Player(player2_name, player.PLAYER_TO_SOUTH)
         
         self.players = [player1, player2]
-        self.gameBoard = board.Board()
+        self.gameBoard = board.Board(self.output_encoding)
         self.gameBoard.add_player(player1)
         self.gameBoard.add_player(player2)
 
@@ -99,6 +101,8 @@ class Quoridor():
             elif type(data) is list:
                 moves = data
                 self.play_sequence(moves, None)
+                
+        
 
     # ADMINISTRATION
     
@@ -401,15 +405,21 @@ class Quoridor():
             
         first_col_width = 5
         
-        # draw statistics box (https://en.wikipedia.org/wiki/Box-drawing_character)
-        side_bar_stats_lines.append(" {0:<{fw}} \u250C\u2500{1:\u2500<{w}}\u2500\u252C\u2500{2:\u2500<{w}}\u2510".format("", "","",w = col_width, fw = first_col_width))
-        side_bar_stats_lines.append(" {0:<{fw}} \u2502 {1:<{w}} \u2502 {2:<{w}}\u2502".format(" ", self.players[0].name,self.players[1].name,w = col_width, fw = first_col_width))
-        side_bar_stats_lines.append("\u250C{0:\u2500<{fw}}\u2500\u253C\u2500{1:\u2500<{w}}\u2500\u253c\u2500{2:\u2500<{w}}\u2524".format("", "","",w = col_width, fw = first_col_width))
-        side_bar_stats_lines.append("\u2502{0:<{fw}} \u2502 {1:<{w}} \u2502 {2:<{w}}\u2502".format("Pawn", self.gameBoard.get_player_char(0, True), self.gameBoard.get_player_char(1, True),  w = col_width, fw = first_col_width))
-        side_bar_stats_lines.append("\u2502{0:<{fw}} \u2502 {1:<{w}} \u2502 {2:<{w}}\u2502".format("Path", self.distance_history[-1][0], self.distance_history[-1][1], w = col_width, fw = first_col_width))
-        side_bar_stats_lines.append("\u2502{0:<{fw}} \u2502 {1:<{w}} \u2502 {2:<{w}}\u2502".format("Walls", self.players[0].number_of_unplaced_walls(), self.players[1].number_of_unplaced_walls(), w = col_width, fw = first_col_width))
-        side_bar_stats_lines.append("\u2514{0:\u2500<{fw}}\u2500\u2534\u2500{1:\u2500<{w}}\u2500\u2534\u2500{2:\u2500<{w}}\u2518".format("", "","",w = col_width, fw = first_col_width))
-        
+        if self.output_encoding == "utf-8":
+            # draw statistics box (https://en.wikipedia.org/wiki/Box-drawing_character)
+            side_bar_stats_lines.append(" {0:<{fw}} \u250C\u2500{1:\u2500<{w}}\u2500\u252C\u2500{2:\u2500<{w}}\u2510".format("", "","",w = col_width, fw = first_col_width))
+            side_bar_stats_lines.append(" {0:<{fw}} \u2502 {1:<{w}} \u2502 {2:<{w}}\u2502".format(" ", self.players[0].name,self.players[1].name,w = col_width, fw = first_col_width))
+            side_bar_stats_lines.append("\u250C{0:\u2500<{fw}}\u2500\u253C\u2500{1:\u2500<{w}}\u2500\u253c\u2500{2:\u2500<{w}}\u2524".format("", "","",w = col_width, fw = first_col_width))
+            side_bar_stats_lines.append("\u2502{0:<{fw}} \u2502 {1:<{w}} \u2502 {2:<{w}}\u2502".format("Pawn", self.gameBoard.get_player_char(0), self.gameBoard.get_player_char(1),  w = col_width, fw = first_col_width))
+            side_bar_stats_lines.append("\u2502{0:<{fw}} \u2502 {1:<{w}} \u2502 {2:<{w}}\u2502".format("Path", self.distance_history[-1][0], self.distance_history[-1][1], w = col_width, fw = first_col_width))
+            side_bar_stats_lines.append("\u2502{0:<{fw}} \u2502 {1:<{w}} \u2502 {2:<{w}}\u2502".format("Walls", self.players[0].number_of_unplaced_walls(), self.players[1].number_of_unplaced_walls(), w = col_width, fw = first_col_width))
+            side_bar_stats_lines.append("\u2514{0:\u2500<{fw}}\u2500\u2534\u2500{1:\u2500<{w}}\u2500\u2534\u2500{2:\u2500<{w}}\u2518".format("", "","",w = col_width, fw = first_col_width))
+        else:
+            # draw statistics box (https://en.wikipedia.org/wiki/Box-drawing_character)
+            side_bar_stats_lines.append("{0:<{fw}}   {1:<{w}}   {2:<{w}}".format(" ", self.players[0].name,self.players[1].name,w = col_width, fw = first_col_width))
+            side_bar_stats_lines.append("{0:<{fw}}   {1:<{w}}   {2:<{w}}".format("Pawn", self.gameBoard.get_player_char(0), self.gameBoard.get_player_char(1),  w = col_width, fw = first_col_width))
+            side_bar_stats_lines.append("{0:<{fw}}   {1:<{w}}   {2:<{w}}".format("Path", self.distance_history[-1][0], self.distance_history[-1][1], w = col_width, fw = first_col_width))
+            side_bar_stats_lines.append("{0:<{fw}}   {1:<{w}}   {2:<{w}}".format("Walls", self.players[0].number_of_unplaced_walls(), self.players[1].number_of_unplaced_walls(), w = col_width, fw = first_col_width))
         side_bar_width = len(max(side_bar_stats_lines, key=lambda x:len(x)))
         side_bar_whitespace = "{s:{padchar}<{w}}".format(s="", padchar=SIDE_BAR_EMPTY_SPACE, w=side_bar_width)
 

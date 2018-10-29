@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 import quoridor
 
 import logging
@@ -32,7 +34,10 @@ class Quoridor_local_game():
         
         self.init_dict = {"player_1": self.player_names[0], "player_2": self.player_names[1], "game":moves}
         # self.pause()
-        self.q = quoridor.Quoridor(self.init_dict)
+        
+        output_encoding = sys.stdout.encoding  # check for command line encoding. utf-8 is desired.
+        
+        self.q = quoridor.Quoridor(self.init_dict, output_encoding)
         self.game_loop()   
         
     def save_to_stats_file(self, stats):
@@ -233,6 +238,7 @@ def logging_setup():
     # self.logger.setLevel(logging.DEBUG)
 
     # self.logger.debug('often makes a very good meal of %s', 'visiting tourists')
+
     
 if __name__ == "__main__":
 
@@ -240,7 +246,7 @@ if __name__ == "__main__":
     # l = Quoridor_local_game()
     # l = Quoridor_local_game(None, "auto_1")
     # l = Quoridor_local_game("lode", "brecht")
-    l = Quoridor_local_game("Lode", "auto_1")
+    l = Quoridor_local_game("auto_1", "auto_1")
     # l = Quoridor_local_game("auto_1", "auto_1", loop=True)
     # l = Quoridor_local_game("auto_1", "auto_2", loop=True)
     # l = Quoridor_local_game("auto_2", "auto_2", loop=True)
