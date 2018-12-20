@@ -613,7 +613,7 @@ class Quoridor():
             #1 simulate pawn move
             #1a do move
             success = self.move_pawn(dir)
-
+            
             if success:
                 #2 check shortest distance
                 distances = self.gameBoard.distances_to_winning_node()

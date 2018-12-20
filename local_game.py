@@ -22,7 +22,7 @@ class Quoridor_local_game():
         
         for i, name in enumerate(self.player_names):
             if name is None:
-                name = input("Name for player {} going {}. auto for automatic [player{}]".format(i+1, ["north", "south"][i], i+1)) or "player{}".format(i+1)
+                name = input("---INPUT PLAYERS--- \nType auto_1 or auto_2 for computer player (1 is easy, 2 is hard).\nName for player {} going {}. [player{}]:".format(i+1, ["north", "south"][i], i+1)) or "player{}".format(i+1)
                 self.player_names[i] = name
                 
         # loop is mainly used to let computers fight each other.
@@ -117,7 +117,7 @@ class Quoridor_local_game():
     
     def human_turn(self):
 
-        active_player_char = self.q.gameBoard.get_player_char(self.q.active_player().player_direction, True)
+        active_player_char = self.q.gameBoard.get_player_char(self.q.active_player().player_direction)
         logging.info("move history: {}".format(self.q.move_history))
 
         move = input("player {} {} input move(h for help)): ".format(self.q.active_player().name,
@@ -243,10 +243,10 @@ def logging_setup():
 if __name__ == "__main__":
 
     logging_setup()
-    # l = Quoridor_local_game()
+    l = Quoridor_local_game()
     # l = Quoridor_local_game(None, "auto_1")
     # l = Quoridor_local_game("lode", "brecht")
-    l = Quoridor_local_game("auto_1", "auto_1")
+    # l = Quoridor_local_game("auto_1", "auto_1")
     # l = Quoridor_local_game("auto_1", "auto_1", loop=True)
     # l = Quoridor_local_game("auto_1", "auto_2", loop=True)
     # l = Quoridor_local_game("auto_2", "auto_2", loop=True)
@@ -258,6 +258,7 @@ if __name__ == "__main__":
     
     
     # l = Quoridor_local_game("a", "b", ['n', 's', 'n', 's', 'n', '7f', 'n', '8c', '1d', '7d', 'e', '7h', 'n', 'e6', '6d', 'f4', 'b7', '5f', '6b', 'g5'])
+    # l = Quoridor_local_game("bramz", "wasAuto1", ['n', 's', 'n', 's', 'n', 's', '3d', '4d', 'e', '6e', 'e5', '6g', '4b', '7h', 'a5', 'w', 'a7', 'n', 'g7', 'e3', 's', '2f', '3f', 'c2', 'e', 'd1', 'e', 'g2', 's', '1g', 'e', 'n', 's', 'w', 'w', 'w', '8b', 'e', 'c7', 's', '7d', 's', 'w', 'e', 'w', 'n', 'n', 'e', 'w', 'e', 'n', 'n', 'w', 'w', 's', 'w', 's', 'n', 'w', 'w', 'n', 'w', 'n', 'w', 'n', 's', 'w', 's', 'w', 's', 'n', 'ss', 'n', 's', 'n', 's', 'n', 's'])
     # l = Quoridor_local_game("fromAI1", "fromAI2", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's', '8b', 'e', 'w', 'b7', 'e', 'e', 's', 'e', 'w', '6c', 'e', 'c5', 's', 'e', 's', 'e', 's', 'e', 'e', 'e', 'e', 'n', 'e', 'w', 's', 'h1', 'n', '3a', 'n', '7e', 'w', 'w', 'w', 'n', 'w', 'e', 'n', 'n', 'n', 'w', 'e', 'w', 'e', 'n', 'n', 'w', 'n', 'n', 'w', 'e', 'w', 'n', 'w', 'e', 'w', 'n', 'w', 'n'])
     # l = Quoridor_local_game("fromAI1", "fromAI2", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's', '8b', 'e', 'w', 'b7', 'e', 'e', 's', 'e', 'w', '6c', 'e', 'c5'])
     # l = Quoridor_local_game("auto_1", "auto_1", ['n', 's', '1e', '7c', '1c', 'e2', '3f', '2b', 'n', '3d', 'w', 'c3', '1g', 'a1', 's', '5h', 'w', '5f', 'w', '2h', 's'], loop=True)

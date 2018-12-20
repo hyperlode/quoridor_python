@@ -24,19 +24,29 @@ def dijkstra_quoridor(graph, start_node, winning_row):
    
     unvisited_shortest_dist_node = None
     unvisited_shortest_dist = 10000
+    
+    #if start IS on the winning row, there is nothing to be done here.
+    if start_node[1] == winning_row:
+        return 0
+    
     while True:
         #visit current node
         for neighbour in graph[current]:  # go over all neighbours of current node.
+                
             if neighbour[1] == winning_row:
-                # this is the optimization. When target node found, return right away!
+                # # this is the optimization. When target node found, return right away!
+                # print("winning row...for neighbour:{} dist: {}".format(neighbour, currentDistance + 1))
+                # print(neighbour)
                 return currentDistance + 1
+                
             if neighbour not in visited: 
                 newDistance = currentDistance + 1  # check distance
                 if neighbour not in unvisited or unvisited[neighbour] > newDistance:  # if new distance less, apply!
                     unvisited[neighbour] = newDistance
                     if newDistance < unvisited_shortest_dist:
                         unvisited_shortest_dist_node = neighbour
-                    
+                
+                
         visited[current] = currentDistance
         
         del unvisited[current]
@@ -51,7 +61,7 @@ def dijkstra_quoridor(graph, start_node, winning_row):
                 currentDistance = unvisited_shortest_dist
                 unvisited_shortest_dist = 10000
         else:
-            return None #at a given point when locked, there in no unvisited left.
+            return None #at a given point when locked, there is no unvisited left.
     
     
 def dijkstra_distance_to_target(graph, start_node, target_nodes):
