@@ -27,6 +27,7 @@ class Wall():
         
     @staticmethod    
     def position_verbose_to_nodes(verbose):
+        # returns ((tuple of nodes that will be disconnected), (tuple of nodes that will be disconnected),(tuple of x,y,orientation(0 is vertical))
         position_lines_orientation = Wall._notation_to_lines_and_orientation(verbose)
         
         if position_lines_orientation is None:
@@ -83,6 +84,7 @@ class Wall():
     
     @staticmethod
     def _notation_to_lines_and_orientation(verbose):
+        #returns horizonal line (from 1 -> 8), vertical line (1->8), Orientation (1=horizontal, 0=vertical)
         # notation a1 to 8h
         
         verbose = verbose.lower()

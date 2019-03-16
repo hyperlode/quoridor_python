@@ -198,7 +198,27 @@ class Board():
         
         dists[player.PLAYER_TO_SOUTH] = dijkstra.dijkstra_quoridor(board_graph_unweighted, self.players[player.PLAYER_TO_SOUTH].pawn.position,WINNING_ROWS[player.PLAYER_TO_SOUTH])
         return dists
-        
+
+    def paths_to_winning_node(self):
+        # get proper weighted graph
+        board_graph_unweighted = {node:value["edges"] for node, value in self.board_graph.items()}
+
+        # print("nor th pawn pos: {}".format( self.players[player.PLAYER_TO_NORTH].pawn.position))
+        paths = [None,None]
+        paths[player.PLAYER_TO_NORTH] = dijkstra.dijkstra_quoridor(board_graph_unweighted,
+                                                                   self.players[player.PLAYER_TO_NORTH].pawn.position,
+                                                                   WINNING_ROWS[player.PLAYER_TO_NORTH],
+                                                                   True)
+
+        if paths[player.PLAYER_TO_NORTH] is None:
+            return [None,None]
+
+        paths[player.PLAYER_TO_SOUTH] = dijkstra.dijkstra_quoridor(board_graph_unweighted,
+                                                                   self.players[player.PLAYER_TO_SOUTH].pawn.position,
+                                                                   WINNING_ROWS[player.PLAYER_TO_SOUTH],
+                                                                   True)
+        return paths
+
     def distances_to_winning_node_with_import(self):
         # scipy faster dijkstra algoritm
         
