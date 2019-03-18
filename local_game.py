@@ -100,7 +100,6 @@ class Quoridor_local_game():
                     self.q = quoridor.Quoridor(self.init_dict)
             else:
                 logging.error("wrong game state: {}".format(self.q.get_state()))
-                print("eoije")
                 
             feedback_message = self.q.get_status_message()
             if feedback_message != "":
@@ -220,7 +219,10 @@ class Quoridor_local_game():
             
             self.print_message(help + local_game_help)
         else:
-            self.print_message( self.q.execute_command(command))
+            feedback = self.q.execute_command(command)
+            if feedback is not None:
+                self.print_message( feedback)
+            
             
     def pause(self):
         if self.pause_enabled:
@@ -272,7 +274,7 @@ if __name__ == "__main__":
     # l = Quoridor_local_game("auto_1", "auto_1")
     # l = Quoridor_local_game("auto_1", "auto_1", loop=True)
     # l = Quoridor_local_game("auto_1", "auto_2", loop=True)
-    l = Quoridor_local_game("auto_2", "auto_2", loop=True)
+    # l = Quoridor_local_game("auto_2", "auto_2", loop=True)
 
     # l = Quoridor_local_game("auto_2", "auto_2")
 

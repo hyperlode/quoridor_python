@@ -230,6 +230,7 @@ class Quoridor():
                     )
         else:
             self.play_turn(move)
+            
    
     def auto_turn(self, depth=1, simulate=False):
    
