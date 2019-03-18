@@ -201,12 +201,14 @@ class Quoridor():
                     "GENERAL commands:\n" +
                     "u or undo     for undo last move\n" +
                     "m or moves    for move history\n" +
-                    "lev1          level 1 auto suggestions\n" +
-                    "lev2          level 2 auto suggestions\n" +
-                    "stats         for complete game statistics\n" +
+                    "history       also for move history\n" +
+                    "history_nice  extensive history analysis\n" +
+                    "suggest_level_1 level 1 auto suggestions\n" +
+                    "suggest_level_2 level 2 auto suggestions\n" +
+                    "automove      to auto move pawn on shortest path\n" +
                     "h or help     for this help\n" +
                     "wide          to toggle wider board\n" +
-                    "SPACE or auto to auto move pawn\n" +
+                    
                     "analyse       to see all moves with their effect on players path\n" +
                     "q or exit     for exit\n" +
                     "r or rotate   for rotating the board 180DEG"

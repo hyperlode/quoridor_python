@@ -55,8 +55,8 @@ class Quoridor_local_game():
             # display the board
             # self.pause()
             self.print_board()
+
             self.check_state()
-            
             if self.q.get_state() == quoridor.GAME_STATE_PLAYING:
                 # get user input move
                 if "auto" in self.q.players[self.q.playerAtMoveIndex].name:
@@ -76,11 +76,19 @@ class Quoridor_local_game():
 
             elif self.q.get_state() == quoridor.GAME_STATE_FINISHED:
                 if not self.loop:
-                    self.command("m")
+                    # self.command("moves")
+                    self.command("stats")
                     self.command("save_stats")
-                    command = input("game finished. Please enter command.(h for help, enter for exit)") or "exit"
-                    test = self.command(command)
-                    
+                    command = input("game finished. Please enter u for undoing, r for restart or enter for exit") or "exit"
+                    if command in ["u", "undo"]:
+                        self.q.set_state(quoridor.GAME_STATE_PLAYING)
+                        self.q.execute_command("undo")
+                        self.q.execute_command("undo")
+                    elif command in ["r", "restart"]:
+                        self.q = quoridor.Quoridor(self.init_dict)    
+                    else:
+                        exit()
+                    # test = self.command(command)
                 else:
                     # restart game.
                     self.command("save_stats")
@@ -122,7 +130,7 @@ class Quoridor_local_game():
 
         move = input("player {} {} input move(h for help)): ".format(self.q.active_player().name,
                                                                      active_player_char))
-        success = self.command(move, True)
+        feedback = self.command(move, True)
     
     def command(self, command, allow_moves = True):
        
@@ -195,13 +203,23 @@ class Quoridor_local_game():
                     self.q.execute_command(execute_input)
 
         elif command in ["h", "help"]:
-            self.print_message(self.q.execute_command("help"))
-
+            help = self.q.execute_command("help")
+            local_game_help = (   
+                "\n"+
+                "RENAMED commands: \n"+
+                "lev1          level 1 auto suggestions\n" +
+                "lev2          level 2 auto suggestions\n" +
+                "SPACE or auto to auto move pawn\n" +
+                "stats         for complete game statistics\n" 
+            )
+            
+            self.print_message(help + local_game_help)
         else:
-            return self.q.play_turn(command)
+            self.print_message( self.q.execute_command(command))
+            
     def pause(self):
         if self.pause_enabled:
-          tmp = input("press any key to continue...") or None
+          tmp = input("press ENTER to continue...(no commands accepted here)") or None
                 
     def print_board(self):
         board_string = self.q.board_as_string() 
@@ -245,11 +263,11 @@ if __name__ == "__main__":
     logging_setup()
     l = Quoridor_local_game()
     # l = Quoridor_local_game(None, "auto_1")
-    # l = Quoridor_local_game("lode", "brecht")
+    # l = Quoridor_local_game(None, "auto_1",['n', 's', 'n', '8d', '7e', 'w', '7c', '8g', 'n', 'w', 'n', 'w', '7a', 'e', 'e', 'e', 'n', 'f6', '4f', '5e', 'w', 'e4', 'w', '5c', 'w', 'e2', 'w', '7h', 's', '6g', 's', 'e', 'e', 'e', 's', 'e', 's', 'c1', 'n', 's', 'e', 'e', 'e', 'e', 's', 's', '5h', 'w', 'h3', 'w', 's', 's', 'e', 'e', 'e', 's', '3g', 'w', 'e', 'w', 'f2', 's', 'n', 's'])
     # l = Quoridor_local_game("auto_1", "auto_1")
     # l = Quoridor_local_game("auto_1", "auto_1", loop=True)
     # l = Quoridor_local_game("auto_1", "auto_2", loop=True)
-    # l = Quoridor_local_game("auto_2", "auto_2", loop=True)
+    l = Quoridor_local_game("auto_2", "auto_2", loop=True)
     
     ## test cases
     # l = Quoridor_local_game("Umesh", "auto_1", ['d8', '7c', '7a', '5e'] )
