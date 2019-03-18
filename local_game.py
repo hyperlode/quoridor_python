@@ -58,11 +58,16 @@ class Quoridor_local_game():
 
             self.check_state()
             if self.q.get_state() == quoridor.GAME_STATE_PLAYING:
+                start_millis = int(round(time.time() * 1000))
+
                 # get user input move
                 if "auto" in self.q.players[self.q.playerAtMoveIndex].name:
                     self.auto_turn()
                 else:
-                    self.human_turn()    
+                    self.human_turn()
+
+                calc_time = int(round(time.time() * 1000)) - start_millis
+                print("calc time = {} millis".format(calc_time))
                 
                 # self.print_message("___end of turn____")
                     
@@ -133,7 +138,7 @@ class Quoridor_local_game():
         feedback = self.command(move, True)
     
     def command(self, command, allow_moves = True):
-       
+
        # process input
         if command in ["u", "undo"]:
             self.q.execute_command("undo")
@@ -261,16 +266,18 @@ def logging_setup():
 if __name__ == "__main__":
 
     logging_setup()
-    l = Quoridor_local_game()
-    # l = Quoridor_local_game(None, "auto_1")
+    #l = Quoridor_local_game()
+    l = Quoridor_local_game(None, "auto_2")
     # l = Quoridor_local_game(None, "auto_1",['n', 's', 'n', '8d', '7e', 'w', '7c', '8g', 'n', 'w', 'n', 'w', '7a', 'e', 'e', 'e', 'n', 'f6', '4f', '5e', 'w', 'e4', 'w', '5c', 'w', 'e2', 'w', '7h', 's', '6g', 's', 'e', 'e', 'e', 's', 'e', 's', 'c1', 'n', 's', 'e', 'e', 'e', 'e', 's', 's', '5h', 'w', 'h3', 'w', 's', 's', 'e', 'e', 'e', 's', '3g', 'w', 'e', 'w', 'f2', 's', 'n', 's'])
     # l = Quoridor_local_game("auto_1", "auto_1")
     # l = Quoridor_local_game("auto_1", "auto_1", loop=True)
     # l = Quoridor_local_game("auto_1", "auto_2", loop=True)
     l = Quoridor_local_game("auto_2", "auto_2", loop=True)
-    
+
+    # l = Quoridor_local_game("auto_2", "auto_2")
+
     ## test cases
-    # l = Quoridor_local_game("Umesh", "auto_1", ['d8', '7c', '7a', '5e'] )
+    #l = Quoridor_local_game("test", "tttt", ['n', 's', 'n', 's','n','e','n','s','n','s'] )
     
     # l = Quoridor_local_game("Lode", "from AI2", ['n', 's', 'n', '8d', 'n', '8f', '3d', '8b', 'n', '8h', 'w', 's', 'w', 's', '4a', 's', '4c', 's', 'n'], loop=False)  # next auto_2 move was ", 'g7'" why??
     
