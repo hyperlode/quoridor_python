@@ -187,7 +187,14 @@ class Quoridor_local_game():
             calc_time =int(round(time.time() * 1000)) -  start_millis 
             print("calc time = {} millis".format(calc_time))
             self.print_message(suggestions)
-            
+        
+        elif command == "lev3":
+            start_millis = int(round(time.time() * 1000))
+            suggestions = self.q.execute_command("suggest_level_3")
+            calc_time =int(round(time.time() * 1000)) -  start_millis 
+            print("calc time = {} millis".format(calc_time))
+            self.print_message(suggestions)
+        
         elif command == "wide":
             self.q.execute_command("wide")
 
@@ -270,6 +277,7 @@ if __name__ == "__main__":
     logging_setup()
     #l = Quoridor_local_game()
     l = Quoridor_local_game(None, "auto_2")
+    # l = Quoridor_local_game(None, "au", ['n', 's', 'n', '8d', 'n', '8f', '3d', '8b', '3f', '8h', 'n', 's', 'w', 's', 'w', 's', 'n', 's', '5a', 'a6', '5c', '7b', 'd6', '6c', 'd4'])
     # l = Quoridor_local_game(None, "auto_1",['n', 's', 'n', '8d', '7e', 'w', '7c', '8g', 'n', 'w', 'n', 'w', '7a', 'e', 'e', 'e', 'n', 'f6', '4f', '5e', 'w', 'e4', 'w', '5c', 'w', 'e2', 'w', '7h', 's', '6g', 's', 'e', 'e', 'e', 's', 'e', 's', 'c1', 'n', 's', 'e', 'e', 'e', 'e', 's', 's', '5h', 'w', 'h3', 'w', 's', 's', 'e', 'e', 'e', 's', '3g', 'w', 'e', 'w', 'f2', 's', 'n', 's'])
     # l = Quoridor_local_game("auto_1", "auto_1")
     # l = Quoridor_local_game("auto_1", "auto_1", loop=True)
