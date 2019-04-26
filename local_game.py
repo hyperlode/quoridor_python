@@ -276,7 +276,9 @@ if __name__ == "__main__":
 
     logging_setup()
     #l = Quoridor_local_game()
-    l = Quoridor_local_game(None, "auto_2")
+    # l = Quoridor_local_game(None, "auto_2")
+    wouterAuto = ['n', 's', 'n', '8d', 'n', '8f', 'n', '8b', 'n', '8h', '5d', 'w', '5h', 's', '5f', 'w', 'w', 's', '5b', '6a', '1a', '6c', 'e6', 'w', 'e', 'w', 'n', 's', 'w', 's', 'w', 'e', 'n', 'a8', 's', 'b6', 'n', 's', 'w', 'e', '1c', 'e', 'd3','n', 's', 's', 'w', 'n', 'n', 'w']
+    l = Quoridor_local_game("tmp", "tmp2", wouterAuto)
     # l = Quoridor_local_game(None, "au", ['n', 's', 'n', '8d', 'n', '8f', '3d', '8b', '3f', '8h', 'n', 's', 'w', 's', 'w', 's', 'n', 's', '5a', 'a6', '5c', '7b', 'd6', '6c', 'd4'])
     # l = Quoridor_local_game(None, "auto_1",['n', 's', 'n', '8d', '7e', 'w', '7c', '8g', 'n', 'w', 'n', 'w', '7a', 'e', 'e', 'e', 'n', 'f6', '4f', '5e', 'w', 'e4', 'w', '5c', 'w', 'e2', 'w', '7h', 's', '6g', 's', 'e', 'e', 'e', 's', 'e', 's', 'c1', 'n', 's', 'e', 'e', 'e', 'e', 's', 's', '5h', 'w', 'h3', 'w', 's', 's', 'e', 'e', 'e', 's', '3g', 'w', 'e', 'w', 'f2', 's', 'n', 's'])
     # l = Quoridor_local_game("auto_1", "auto_1")
