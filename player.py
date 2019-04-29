@@ -113,6 +113,7 @@ class Player:
         return self.remove_wall(position_verbose)
 
     def remove_wall(self, position_verbose):
+        # print(position_verbose)
         success = False
         for w in self.walls:
             if w.get_position("verbose") == position_verbose:
@@ -131,27 +132,30 @@ class Player:
             logging.info("wall removed from player")
         return success
     
-    def move_pawn(self, direction):
+    def move_pawn(self, direction, fail_silent=False):
         # direction i.e. pawn.NORTH
         if direction in pawn.DIRECTIONS_ORTHO:
             new_position = self.board.direction_to_node(self.pawn.position, direction)
             
             if new_position is None:
-                status = "Pawn cannot move outside board"
-                logging.info("ASSERT ERROR: checked neighbour node is not valid. Most probably pawn hits edge.")
-                logging.info(status)
+                if not fail_silent:
+                    status = "Pawn cannot move outside board"
+                    logging.info("ASSERT ERROR: checked neighbour node is not valid. Most probably pawn hits edge.")
+                    logging.info(status)
                 return False
             
             if self.board.pawn_on_node(new_position):
-                status ="pawn on neighbour."
-                # print("Error: " + status)
-                logging.info("RULE VIOLATION: " + status)
+                if not fail_silent:
+                    status ="pawn on neighbour."
+                    # print("Error: " + status)
+                    logging.info("RULE VIOLATION: " + status)
                 return False 
                 
             if not self.board.nodes_directly_connected(self.pawn.position, new_position):
-                status ="No move possible through wall."
-                # print("Error:" + status)
-                logging.info("RULE VIOLATION: " +status)
+                if not fail_silent:
+                    status ="No move possible through wall."
+                    # print("Error:" + status)
+                    logging.info("RULE VIOLATION: " +status)
                 return False
         
         elif direction in pawn.DIRECTIONS_ORTHO_JUMP:
@@ -159,40 +163,50 @@ class Player:
             # get neighbour node
             neighbour_node = self.board.direction_to_node(self.pawn.position, pawn.FIRST_DIRECTION_FOR_ORTHO_JUMPS[direction])
             if neighbour_node is None:
-                logging.warning("ASSERT ERROR: checked neighbour node is not valid. ")
+                if not fail_silent:
+                    logging.warning("ASSERT ERROR: checked neighbour node is not valid. orthojump direction:{}".format(direction))
+                    raise Exception
                 return False
             
             # check for pawn on neighbour node
             if not self.board.pawn_on_node(neighbour_node):
                 # self.board.check_pawn_positions()
                 # no pawn on neighbour node
-                status = "No pawn on neighbour node"
-                logging.info("RULE VIOLATION: "+ status)
+                if not fail_silent:
+
+                    status = "No pawn on neighbour node"
+                    logging.info("RULE VIOLATION: "+ status)
                 # print("Error: " + status)
                 return False
                 
             if not self.board.nodes_directly_connected(self.pawn.position, neighbour_node):
-                # wall between jumper and jumpee
-                 # no pawn on neighbour node
-                status = "Wall in the way"
-                logging.info("RULE VIOLATION: "+ status)
-                # print("Error: " + status)
+                if not fail_silent:
+
+                    # wall between jumper and jumpee
+                     # no pawn on neighbour node
+                    status = "Wall in the way"
+                    logging.info("RULE VIOLATION: "+ status)
+                    # print("Error: " + status)
                 return False
             
             # check the jump node
             new_position = self.board.direction_to_node(self.pawn.position, direction)
             
             if new_position is None:
-                status = "Jump node is not valid."
-                logging.info("RULE VIOLATION: "+ status)
-                # print("Error: " + status)
+                if not fail_silent:
+
+                    status = "Jump node is not valid."
+                    logging.info("RULE VIOLATION: "+ status)
+                    # print("Error: " + status)
                 return False
             
             # check wall to jump node
             if not self.board.nodes_directly_connected(neighbour_node, new_position):
-                status = "Wall encountered to jump node."
-                logging.info("RULE VIOLATION: "+ status)
-                # print("Error: " + status)
+                if not fail_silent:
+                
+                    status = "Wall encountered to jump node."
+                    logging.info("RULE VIOLATION: "+ status)
+                    # print("Error: " + status)
                 return False
             
             # print("jump valid")    
@@ -212,19 +226,25 @@ class Player:
                         break
           
             if None in [neighbour_node, first_node_direction]:
-                logging.info("ASSERT ERROR: No adjacent squares contain neighbour, no jumping allowed...... ")
+                if not fail_silent:
+
+                    logging.info("ASSERT ERROR: No adjacent squares contain neighbour, no jumping allowed...... ")
                 return False
 
             # check for pawn on neighbour node
             if not self.board.pawn_on_node(neighbour_node):
                 # self.board.check_pawn_positions()
                 # no pawn on neighbour node
-                logging.info("error: no pawn on neighbour node")
+                if not fail_silent:
+
+                    logging.info("error: no pawn on neighbour node")
                 return False
                 
             if not self.board.nodes_directly_connected(self.pawn.position, neighbour_node):
                 # wall between jumper and jumpee
-                logging.info("wall in the way")
+                if not fail_silent:
+
+                    logging.info("wall in the way")
                 return False
             
             # check wall or edge behind pawn (there needs to be one)
@@ -232,7 +252,9 @@ class Player:
             
             if straight_jump_node is not None:
                 if self.board.nodes_directly_connected(neighbour_node, straight_jump_node):
-                    logging.info("there should be a wall behind the jumped pawn to deflect left or right. None encountered.")
+                    if not fail_silent:
+
+                        logging.info("there should be a wall behind the jumped pawn to deflect left or right. None encountered.")
                     return False
             else:
                 pass # no problem, board edge counts as wall
@@ -240,24 +262,30 @@ class Player:
             # check the jump node
             new_position = self.board.direction_to_node(self.pawn.position, direction)
             if new_position is None:
-                logging.info("ASSERT ERROR: jump end position is not valid. ")
+                if not fail_silent:
+
+                    logging.info("ASSERT ERROR: jump end position is not valid. ")
                 return False
             
             # check wall to jump node
             if not self.board.nodes_directly_connected(neighbour_node, new_position):
-                logging.info("wall encountered between neighbour pawn and final node")
+                if not fail_silent:
+
+                    logging.info("wall encountered between neighbour pawn and final node")
                 return False
             
             
         else:
-            info.warning("ASSERT ERROR: illegal direction ({})".format(direction))
+            if not fail_silent:
+
+                info.warning("ASSERT ERROR: illegal direction ({})".format(direction))
             return False
         
             # valid = self.board.node_direction_ok(self.pawn.position, direction)
         
         # check if move possible.
-    
-        logging.info("move from: {}  to:{}".format(self.pawn.position, new_position))
+        if not fail_silent:
+            logging.info("move from: {}  to:{}".format(self.pawn.position, new_position))
         self.board.move_pawn(self.pawn.position, new_position)
         self.pawn.position = new_position
         return True

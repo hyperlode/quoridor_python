@@ -1,15 +1,21 @@
 import quoridor
 
 
+# class QuoridorAnalyzer():
+
+# class QuoridorGamesAnalyzer(Quoridor_game_analyzer):
 
     
-class Quoridor_analyzer():
+    
+class Quoridor_game_analyzer():
     def __init__(self):
         self.all_games = None
         self.current_analyzed_game = None  # contains a move string.
         self.current_analyzed_game_moves = None
         self.games_index = None
-
+    
+    
+    
     def load_games_from_csv(self, csv_path):
         #expects file with games, saved as a list of verbose moves.
         games = []
@@ -28,16 +34,16 @@ class Quoridor_analyzer():
     def command(self, command, allow_moves = False):
        
        # process input
-        if command in ["load csv"]:
+        if command in ["load csv", "l"]:
             # path = input("provide path")
             self.load_games_from_csv(PATH)
-            self.set_current_game(self.games_index)
+            self.set_current_game_from_file(self.games_index)
             
         elif command in [ "next game", "ng"]:
             self.games_index += 1
             if self.games_index >= len(self.all_games):
                 print("Can't go forward. Reached last game.")
-            self.set_current_game(self.games_index)
+            self.set_current_game_from_file(self.games_index)
             
         
         elif command in [ "previous game", "pg"]:
@@ -46,7 +52,7 @@ class Quoridor_analyzer():
                 print("Can't go back. Reached first game already")
                 return
                 
-            self.set_current_game(self.games_index)
+            self.set_current_game_from_file(self.games_index)
                 
         elif command in [ "previous move", "p"]:
             
@@ -62,6 +68,9 @@ class Quoridor_analyzer():
             print("self.moves index {}".format(self.moves_index))
             self.display_current_game(self.moves_index)
         
+        elif command in [ "test", "t"]:
+            print(self.get_winner_of_current_game())
+            
         elif command in [ "next move", "n"]:
             
             if self.moves_index is None:
@@ -77,14 +86,27 @@ class Quoridor_analyzer():
             self.display_current_game(self.moves_index)
                 
         else: 
-            print ("command not found:")
+            print ("command not found. available commands: next move, n, previous move p, next game, ng, previous game, pg, load csv")
 
-    def set_current_game(self, index):
-        self.current_analyzed_game_moves = self.all_games[self.games_index]
-        self.moves_index = None
-        self.display_current_game()
+    def set_current_game_from_file(self, index):
+        self.set_current_game(self.all_games[self.games_index])
         
     
+    def get_winner_of_all_games(self):
+        
+    def set_current_game(self, moves):
+        self.current_analyzed_game_moves = moves
+        self.moves_index = None
+        self.display_current_game()
+    
+    def get_winner_of_current_game(self):
+        print(len(self.current_analyzed_game_moves))
+        print(self.current_analyzed_game.get_shortest_paths())
+        if len(self.current_analyzed_game_moves) % 2 == 0: # true = player 1 is winner, else player 2
+            return 0
+        else:
+            return 1
+            
     def display_current_game(self, specific_moves_index=None):
         '''If specific_moves = None: load all moves
         '''
@@ -109,7 +131,9 @@ class Quoridor_analyzer():
     
 if __name__ == "__main__":
 
-    PATH = r"C:\Temp\auto_2_auto_2.txt"
-    
-    qa = Quoridor_analyzer()
+    PATH = r"C:\Temp\auto_2_auto_3.txt"
+    GAME = ['n', 's', 'n', '8d', 'n', '8f', '3d', '8b', '3f', '8h', 'n', 's', 'w', 's', 'w', 's', 'n', 's', '5a', 'a6', '5c', '7b', 'd6', '6c', 'd4', 'n', 'w', 'e', 'g4', 'e', '5f', 'w', 'e6', 'w', 'n', 'n', 'e', 'n', 'e', 'n', 'n', 'e', 'w', 'e', 'w', '7h', 'w', 's', 'n']
+
+    qa = Quoridor_game_analyzer()
+    qa.set_current_game(GAME)
     qa.input_loop()
