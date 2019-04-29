@@ -270,6 +270,7 @@ if __name__ == "__main__":
     logging_setup()
     #l = Quoridor_local_game()
     l = Quoridor_local_game(None, "auto_2")
+    # computer stuck: l = Quoridor_local_game(None, "fake2", ['n', 's', 'n', '8d', 'n', '8f', '3d', 's', '3f', 's', 'n', 'ss', 'n', '8b', 'n', 'f7', 'w', 'a7', '5a', 'b6', '8h', 'c7', '5c', '6d', '5e', 'e', 'e', 'w', 'e', 'e', 's', 'w', 'w', 'e', 'w', 'w', 'w', 'e', 'n', 'w', 'n', 'e', 'w', 'w', 's', 'e', 's', 'w'])
     # l = Quoridor_local_game(None, "auto_1",['n', 's', 'n', '8d', '7e', 'w', '7c', '8g', 'n', 'w', 'n', 'w', '7a', 'e', 'e', 'e', 'n', 'f6', '4f', '5e', 'w', 'e4', 'w', '5c', 'w', 'e2', 'w', '7h', 's', '6g', 's', 'e', 'e', 'e', 's', 'e', 's', 'c1', 'n', 's', 'e', 'e', 'e', 'e', 's', 's', '5h', 'w', 'h3', 'w', 's', 's', 'e', 'e', 'e', 's', '3g', 'w', 'e', 'w', 'f2', 's', 'n', 's'])
     # l = Quoridor_local_game("auto_1", "auto_1")
     # l = Quoridor_local_game("auto_1", "auto_1", loop=True)
