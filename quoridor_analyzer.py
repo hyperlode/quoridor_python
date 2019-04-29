@@ -5,7 +5,7 @@ class QuoridorAnalyzer():
 
     def __init__(self):
     
-        self.all_games = None
+        
         self.current_analyzed_game = None  # contains a move string.
         self.current_analyzed_game_moves = None
         self.games_index = None
@@ -38,8 +38,11 @@ class QuoridorAnalyzer():
             
             self.current_game.previous_move()
         
-        elif command in [ "test", "t"]:
-            print(self.get_winner())
+        elif command in [ "winner", "w"]:
+            print(self.current_game.get_winner())
+            
+        elif command in [ "overal_winner", "o"]:
+            print(self.games.get_overall_winner())
             
         elif command in [ "next move", "n"]:
             self.current_game.next_move()
@@ -57,6 +60,9 @@ class QuoridorGameAnalyzer():
     def __init__(self, moves):
         self.current_analyzed_game_moves = moves
         self.moves_index = None
+        
+        moves_as_string = " ".join(moves)        
+        self.current_analyzed_game = quoridor.Quoridor({"player_1":"A", "player_2":"B", "game":moves_as_string})
         
     def previous_move(self):
         if self.moves_index is None:
@@ -87,12 +93,12 @@ class QuoridorGameAnalyzer():
             
     
     def get_winner(self):
-        print(len(self.current_analyzed_game_moves))
-        print(self.current_analyzed_game.get_shortest_paths())
-        if len(self.current_analyzed_game_moves) % 2 == 0: # true = player 1 is winner, else player 2
-            return 0
-        else:
+        # print(len(self.current_analyzed_game_moves))
+        # print(self.current_analyzed_game.get_shortest_paths())
+        if len(self.current_analyzed_game_moves) % 2 == 0: # true = player 2 is winner, else player 1
             return 1
+        else:
+            return 0
             
     def display(self, specific_moves_index=None):
         '''If specific_moves = None: load all moves
@@ -110,9 +116,9 @@ class QuoridorGameAnalyzer():
         
 
 
-class QuoridorGamesAnalyzer(QuoridorGameAnalyzer):
+class QuoridorGamesAnalyzer():
     def __init__(self):
-        self.all_games = None
+        self.games = None
         pass
         
     def load_games_from_csv(self, csv_path):
@@ -125,8 +131,8 @@ class QuoridorGamesAnalyzer(QuoridorGameAnalyzer):
                 # game = " ".join(game)
                 games.append(game)
                 # print(game)
-                
-        self.all_games = games
+        self.games = games      
+        
         self.games_index = None
     
     def load_next_game(self):
@@ -134,7 +140,7 @@ class QuoridorGamesAnalyzer(QuoridorGameAnalyzer):
             self.games_index = 1
         else:
             self.games_index += 1
-        if self.games_index >= len(self.all_games):
+        if self.games_index >= len(self.games):
             print("Can't go forward. Reached last game.")
         
         return self.get_moves_from_game(self.games_index)
@@ -151,13 +157,15 @@ class QuoridorGamesAnalyzer(QuoridorGameAnalyzer):
         return self.get_moves_from_game(self.games_index)
         
     def get_moves_from_game(self, index):
-        return self.all_games[self.games_index]
+        return self.games[self.games_index]
     
     
     def get_overall_winner(self):
-        pass       
-    
-
+        winning_games = [0,0] # player1 at index 0, player 2 at index 1
+        for game in self.games:
+            qa = QuoridorGameAnalyzer(game)
+            winning_games[qa.get_winner()] += 1
+        return winning_games
     
 if __name__ == "__main__":
 
