@@ -16,13 +16,14 @@ class Quoridor_local_game():
         # name will be asked when player names None 
         # for computer player: auto_1 --> 1 level deep brute force
         # for computer player: auto_2 --> 2 level deep brute force
+        # for computer player: auto_3 --> 3 level deep brute force
         # moves: list or array with sequence of verbose moves as game starting point.
     
         self.player_names = [player_1_name, player_2_name]
         
         for i, name in enumerate(self.player_names):
             if name is None:
-                name = input("---INPUT PLAYERS--- \nType auto_1 or auto_2 for computer player (1 is easy, 2 is hard).\nName for player {} going {}. [player{}]:".format(i+1, ["north", "south"][i], i+1)) or "player{}".format(i+1)
+                name = input("---INPUT PLAYERS--- \nType auto_1, auto_2 or auto_3 for computer player (1 is easy, 3 is hard).\nName for player {} going {}. [player{}]:".format(i+1, ["north", "south"][i], i+1)) or "player{}".format(i+1)
                 self.player_names[i] = name
                 
         # loop is mainly used to let computers fight each other.
@@ -124,6 +125,8 @@ class Quoridor_local_game():
             self.q.auto_turn(depth=1)
         elif name == "auto_2":
             self.q.auto_turn(depth=2)
+        elif name == "auto_3":
+            self.q.auto_turn(depth=3)
         else:
             self.q.auto_turn()
     
@@ -257,6 +260,7 @@ def logging_setup():
     # logging.basicConfig(filename='c:/temp/quoridortest.log', level=logging.INFO)
     os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
     logging.basicConfig(filename='{}{}'.format(LOG_PATH, LOG_FILENAME), level=logging.ERROR)
+    # logging.basicConfig(filename='{}{}'.format(LOG_PATH, LOG_FILENAME), level=logging.INFO)
     formatter = logging.Formatter(fmt='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
     logging.info('<<<<<<<<<<<<<<<<<<Start of new logging session.>>>>>>>>>>>>>>>>>>>>')
 
@@ -277,10 +281,11 @@ if __name__ == "__main__":
     logging_setup()
     #l = Quoridor_local_game()
     # l = Quoridor_local_game(None, "auto_2")
-    wouterAuto = ['n', 's', 'n', '8d', 'n', '8f', 'n', '8b', 'n', '8h', '5d', 'w', '5h', 's', '5f', 'w', 'w', 's', '5b', '6a', '1a', '6c', 'e6', 'w', 'e', 'w', 'n', 's', 'w', 's', 'w', 'e', 'n', 'a8', 's', 'b6', 'n', 's', 'w', 'e', '1c', 'e', 'd3','n', 's', 's', 'w', 'n', 'n', 'w']
-    l = Quoridor_local_game("tmp", "tmp2", wouterAuto)
+    #wouterAuto = ['n', 's', 'n', '8d', 'n', '8f', 'n', '8b', 'n', '8h', '5d', 'w', '5h', 's', '5f', 'w', 'w', 's', '5b', '6a', '1a', '6c', 'e6', 'w', 'e', 'w', 'n', 's', 'w', 's', 'w', 'e', 'n', 'a8', 's', 'b6', 'n', 's', 'w', 'e', '1c', 'e', 'd3','n', 's', 's', 'w', 'n', 'n', 'w']
+    #l = Quoridor_local_game("tmp", "tmp2", wouterAuto)
     # l = Quoridor_local_game(None, "au", ['n', 's', 'n', '8d', 'n', '8f', '3d', '8b', '3f', '8h', 'n', 's', 'w', 's', 'w', 's', 'n', 's', '5a', 'a6', '5c', '7b', 'd6', '6c', 'd4'])
     # l = Quoridor_local_game(None, "auto_1",['n', 's', 'n', '8d', '7e', 'w', '7c', '8g', 'n', 'w', 'n', 'w', '7a', 'e', 'e', 'e', 'n', 'f6', '4f', '5e', 'w', 'e4', 'w', '5c', 'w', 'e2', 'w', '7h', 's', '6g', 's', 'e', 'e', 'e', 's', 'e', 's', 'c1', 'n', 's', 'e', 'e', 'e', 'e', 's', 's', '5h', 'w', 'h3', 'w', 's', 's', 'e', 'e', 'e', 's', '3g', 'w', 'e', 'w', 'f2', 's', 'n', 's'])
+    l = Quoridor_local_game("lode", "auto_3")
     # l = Quoridor_local_game("auto_1", "auto_1")
     # l = Quoridor_local_game("auto_1", "auto_1", loop=True)
     # l = Quoridor_local_game("auto_1", "auto_2", loop=True)
