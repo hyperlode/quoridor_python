@@ -341,22 +341,23 @@ class Quoridor():
         opponent = self.inactive_player().direction
 
         # level 1
-        deltas = self.analyse_level()
+        moves_level_1 = self.analyse_level()
         
         if verbose:
-            print("level1 deltas: {}" .format(deltas))
+            print("level1 deltas: {}" .format(moves_level_1))
 
         # level 2
-        for i, (pos_level_1, delta) in enumerate(deltas.items()): # run through all possible level 1 moves.
+        for i, (pos_level_1, delta_level_1) in enumerate(moves_level_1.items()): # run through all possible level 1 moves.
 
-            drawProgressBar(i/len(deltas.items()))
+            drawProgressBar(i/len(moves_level_1.items()))
             if verbose:
                 print("level1move: {}".format(pos_level_1))
                 
             # make level 1 move
             success = self.make_move(pos_level_1)
             if verbose:    
-                print(self.board_as_string())
+                # print(self.board_as_string())
+                pass
                 
             #change the player to opponent for analysis level 2 move
             self.active_player().active = False
@@ -384,16 +385,19 @@ class Quoridor():
             best_opponent_moves_with_deltas_inverted = {m:-d for m,d in best_opponent_moves_with_deltas.items()}
             
             # added moves with total delta.
-            level_2_moves_with_delta = {(pos_level_1, m): delta + d for m,d in best_opponent_moves_with_deltas_inverted.items()}
+            level_2_moves_with_delta = {(pos_level_1, m): (delta_level_1, d) for m,d in best_opponent_moves_with_deltas_inverted.items()}
+            # level_2_moves_with_delta = {(pos_level_1, m): delta + d for m,d in best_opponent_moves_with_deltas.items()}
             
             # level3 : run through all level2 moves
-            for i, (pos_level_2, delta) in enumerate(level_2_moves_with_delta.items()): # run through all possible level 2 moves.
+            for i, (pos_level_2, prev_move_deltas) in enumerate(level_2_moves_with_delta.items()): # run through all possible level 2 moves.
+                delta_level_2 = sum(prev_move_deltas)
                 level_2_move = pos_level_2[1]
+                
                 # do level 2 move
                 success = self.make_move(level_2_move)
                 if verbose:
-                    print(self.board_as_string())   
-                
+                    # print(self.board_as_string())   
+                    pass
                 
                 #change the player to self for level 3 analysis 
                 self.active_player().active = False
@@ -415,7 +419,7 @@ class Quoridor():
                 #analyse level3 and add to moves
                 
                 # added moves with total delta.
-                level_3_moves_with_delta = {(pos_level_1, level_2_move, m): delta + d for m,d in best_moves_at_level3_with_deltas.items()}
+                level_3_moves_with_delta = {(pos_level_1, level_2_move, m): {"delta_1":prev_move_deltas[0], "delta_2":prev_move_deltas[1], "delta_3":d, "total_delta": prev_move_deltas[0] + prev_move_deltas[1] + d} for m,d in best_moves_at_level3_with_deltas.items()}
                 
                 # add to the dict.
                 all_level_3_moves_with_delta.update(level_3_moves_with_delta)
@@ -435,10 +439,9 @@ class Quoridor():
                 else:
                     # if wall : remove wall
                     success = self.active_player().undo_place_wall(level_2_move)
-                    
-                    
+                                        
 
-            #change the player to evel 1 to undo the level 1 move.
+            #change the player to level 1 to undo the level 1 move.
             self.active_player().active = False
             self.playerAtMoveIndex += 1
             if self.playerAtMoveIndex >= len(self.players):
@@ -449,24 +452,69 @@ class Quoridor():
             if pos_level_1 in NOTATION_TO_DIRECTION:
                 # move pawn
                 success = self.active_player().undo_move_pawn()
-                # input(" move pawn success?: {}".format(success))
-                
             else:
                 # if wall : remove wall
                 success = self.active_player().undo_place_wall(pos_level_1)
-                # input("fiejfeifj success?: {}".format(success))   
                 
-        #from the list of options, check what cause 
-        best = min(all_level_3_moves_with_delta.values())
+        #from the list of options, choose the ones with best overal effect.
+        all_deltas = all_level_3_moves_with_delta.values()
+        best = None
+        best = min([d["total_delta"] for d in all_deltas])
         print("best move delta: {}".format(best))
-        suggestions = [move for move,dist in all_level_3_moves_with_delta.items() if dist == best]
+        suggestions = {move:deltas for move,deltas in all_level_3_moves_with_delta.items() if deltas["total_delta"] == best}
+        
+        
+        
+        # from options, chose between move 1 and 3 (the one with the biggest immediate impact delta wise).
+        suggestions_direct_impact = {}
+        for moves, deltas_moves in suggestions.items():
+            a,b,c = moves
+            # check impact of level_3 move IF played at level_1 (first move). --> only check if possible. i.e. there might be no South going available at that time.
+            if c in moves_level_1:
+                print("---------========================================")
+                print(moves)
+                # print(deltas_moves)
+                # print(moves_level_1)
+                delta_pretend_level_1_move = moves_level_1[c]
+                # print(delta_pretend_level_1_move)
+            
+                if deltas_moves["delta_1"] > delta_pretend_level_1_move or ( (deltas_moves["delta_1"] == delta_pretend_level_1_move) and c in ALL_PAWN_DIRECTIONS) :
+                    moves = (c,b,a)
+                    deltas_moves = {"delta_1":deltas_moves["delta_3"], "delta_2":deltas_moves["delta_2"], "delta_3": deltas_moves["delta_1"], "total_delta": deltas_moves["total_delta"] }
+                    print("swapped!: {}".format(moves))
+            suggestions_direct_impact[moves] = deltas_moves
+            
+        print(suggestions_direct_impact)
+        print(suggestions)
+        
+        suggestions = suggestions_direct_impact
+        
 
+
+        # from options, chose the one where the first one is a pawn move. In order to save walls (and because of silly wall placements).
+        suggestions_pawn_move = []
+        for moves in suggestions: # takes items.
+            if moves[0] in ALL_PAWN_DIRECTIONS:
+                suggestions_pawn_move.append(moves)
+        if len(suggestions_pawn_move) != 0:
+            suggestions = {moves:suggestions[moves] for moves in suggestions_pawn_move}
+            # suggestions = suggestions_pawn_move
+            
+
+        
+        #final processing
+        suggestion_moves = list(suggestions.keys())
         if simulate:
-            return suggestions
+            if verbose:
+                print(suggestion_moves)
+            return suggestion_moves
         else:
-            index = random.randint(0, len(suggestions)-1)
-            self.play_turn(suggestions[index][0])
-            return suggestions[index][0]
+            print(suggestion_moves)
+            # input("pause for dramatic effect")
+            index = random.randint(0, len(suggestion_moves)-1)
+            input("chosen_moves:{}".format(suggestion_moves[index]))
+            self.play_turn(suggestion_moves[index][0])
+            return suggestion_moves[index][0]
     
     def analyse_level(self):
         # return all possible moves and their delta.
