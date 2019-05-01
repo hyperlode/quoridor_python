@@ -14,6 +14,7 @@ class QuoridorAnalyzer():
     
     def set_current_game(self, moves):
         self.current_game = QuoridorGameAnalyzer(moves)
+       
         self.current_game.display()
     
     def set_games(self, path):
@@ -46,6 +47,9 @@ class QuoridorAnalyzer():
             
         elif command in [ "next move", "n"]:
             self.current_game.next_move()
+            
+        elif command in ["lev3"]:
+            self.current_game.calculate_next_moves(3)
         else: 
             print ("command not found. available commands: next move, n, previous move p, next game, ng, previous game, pg, load csv")
 
@@ -91,7 +95,27 @@ class QuoridorGameAnalyzer():
                 
         self.display(self.moves_index)
             
-    
+    def calculate_next_moves(self, level=1):
+        # will not execute moves of course, as this is an analysis tool, but shows the possibilities...
+        # will give the possible moves, calculated by computer
+        
+        moves_as_string = self.moves_as_string(self.moves_index)
+        
+        game_for_suggesting_moves = quoridor.Quoridor({"player_1":"A", "player_2":"B", "game":moves_as_string})
+        
+        if level == 3:
+            print(game_for_suggesting_moves.auto_level_3(simulate=True, verbose=False))
+        else:
+            print("please provide valild level.")
+        
+    def moves_as_string(self, index=None):
+        if index is None:
+            moves  = self.current_analyzed_game_moves
+        else:
+            moves = self.current_analyzed_game_moves[:index]
+        return " ".join(moves)
+        
+        
     def get_winner(self):
         # print(len(self.current_analyzed_game_moves))
         # print(self.current_analyzed_game.get_shortest_paths())
@@ -103,13 +127,8 @@ class QuoridorGameAnalyzer():
     def display(self, specific_moves_index=None):
         '''If specific_moves = None: load all moves
         '''
-        if specific_moves_index is None:
-            moves  = self.current_analyzed_game_moves
-        else:
+        moves_as_string = self.moves_as_string(specific_moves_index)
         
-            moves = self.current_analyzed_game_moves[:specific_moves_index]
-        
-        moves_as_string = " ".join(moves)
         self.current_analyzed_game = quoridor.Quoridor({"player_1":"A", "player_2":"B", "game":moves_as_string})
         print(self.current_analyzed_game.board_as_string())
         print(self.current_analyzed_game.execute_command("history_nice"))

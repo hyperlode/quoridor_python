@@ -284,7 +284,7 @@ if __name__ == "__main__":
 
     logging_setup()
     #l = Quoridor_local_game()
-    l = Quoridor_local_game("lode", "auto_3")
+    l = Quoridor_local_game("auto_2", "auto_3", loop=True)
     # l = Quoridor_local_game(None, "ale3_fake", ['n', '7c', 'n', 'e3', 'n', '4d', '2d', '7a', '2b', 'd5', 'e1', '7e', 'w', '4b', '6e', 'g6', 'w', 'f4'])
     l = Quoridor_local_game(None, "eife", ['n', 's', 'n', 's', 'n', 's', '3e', '3b', 'd3', '6e', '6b', 'd6'])
     
