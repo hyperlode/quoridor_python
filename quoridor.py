@@ -338,7 +338,7 @@ class Quoridor():
         if simulate:
             return suggestions
         else:
-            suggestions = [move for move,dist in suggestions.items() if dist]
+            suggestions = [move for move,dist in suggestions.items() if dist == best]
             index = random.randint(0, len(suggestions)-1)
             self.play_turn(suggestions[index][0])
             return suggestions[index][0]
@@ -380,7 +380,7 @@ class Quoridor():
             
             # obtain all level 2 moves
             #  select the moves the opponent player can make.
-            opponent_as_level_2_player = True
+            opponent_as_level_2_player = False
             if opponent_as_level_2_player:
                 # check if the opponent thinks as level 2
                 best_opponent_moves_with_deltas = self.auto_level_2(simulate=True)
@@ -466,7 +466,7 @@ class Quoridor():
                 # if wall : remove wall
                 success = self.active_player().undo_place_wall(pos_level_1)
                 
-        #from the list of options, choose the ones with best overal effect.
+        #from the list of options, choose the ones with best overal delta path length.
         all_deltas = all_level_3_moves_with_delta.values()
         best = None
         best = min([d["total_delta"] for d in all_deltas])
@@ -481,8 +481,8 @@ class Quoridor():
             a,b,c = moves
             # check impact of level_3 move IF played at level_1 (first move). --> only check if possible. i.e. there might be no South going available at that time.
             if c in moves_level_1:
-                print("---------========================================")
-                print(moves)
+                # print("---------========================================")
+                # print(moves)
                 # print(deltas_moves)
                 # print(moves_level_1)
                 delta_pretend_level_1_move = moves_level_1[c]
@@ -494,12 +494,48 @@ class Quoridor():
                     print("swapped!: {}".format(moves))
             suggestions_direct_impact[moves] = deltas_moves
             
-        print(suggestions_direct_impact)
-        print(suggestions)
+        # print(suggestions_direct_impact)
+        # print(suggestions)
         
         suggestions = suggestions_direct_impact
         
-
+        # from wall suggenstions, choose the ones that are not set between itself and "goal" row
+        # ONLY DO AFTER BIGGEST DELTA PATH processing. (this is a filter for when chosing between equal length deltas)
+        x,y = self.active_player().get_position() # i.e. starts from 1 (from bottom).
+        suggestions_filter_out_walls_ahead = []
+        for moves in suggestions:
+            #filter wall moves.
+            wall_notation = wall.Wall._notation_to_lines_and_orientation(moves[0])
+            
+            print(moves)
+            print(wall_notation)
+            if wall_notation is not None:
+                hori,vert,isHori = wall_notation  # i.e. 4c = 4,3,1
+                
+                if self.active_player().direction == player.PLAYER_TO_NORTH:
+                    #wall behind = 
+                    if hori - 1 < x:
+                        # this means wall more south of player (which is "good" because it is "behind" player)
+                        suggestions_filter_out_walls_ahead.append(moves)
+                    else:
+                        print("didn't survive wall ahead filter: {}".format(moves))
+                else:
+                    if hori > x:
+                        suggestions_filter_out_walls_ahead.append(moves)
+                    else:
+                        print("didn't survive wall ahead filter: {}".format(moves))
+            else:
+                # if move is not a wall, it survives the filter.
+                suggestions_filter_out_walls_ahead.append(moves)
+                # print(wall_notation)
+                
+                # print(self.inactive_player().get_position()) # i.e. starts from 1 (from bottom).   (x, y)  most South west square is 0,0
+        if len(suggestions_filter_out_walls_ahead) > 0:
+            suggestions = {moves:suggestions[moves] for moves in suggestions_filter_out_walls_ahead}    
+        else:
+            print("there were no filter survivers, filter not applied")
+                
+            
 
         # from options, chose the one where the first one is a pawn move. In order to save walls (and because of silly wall placements).
         suggestions_pawn_move = []
@@ -513,6 +549,8 @@ class Quoridor():
 
         self.last_auto_moves = suggestions
         
+        
+        
         #final processing
         suggestion_moves = list(suggestions.keys())
         if simulate:
@@ -523,7 +561,7 @@ class Quoridor():
             print(suggestion_moves)
             # input("pause for dramatic effect")
             index = random.randint(0, len(suggestion_moves)-1)
-            input("chosen_moves:{}".format(suggestion_moves[index]))
+            # input("chosen_moves:{}".format(suggestion_moves[index]))
             self.play_turn(suggestion_moves[index][0])
             return suggestion_moves[index][0]
     

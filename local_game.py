@@ -284,9 +284,9 @@ if __name__ == "__main__":
 
     logging_setup()
     #l = Quoridor_local_game()
-    # l = Quoridor_local_game("tet", "auto_2")
+    l = Quoridor_local_game("lode", "auto_3")
     # l = Quoridor_local_game(None, "ale3_fake", ['n', '7c', 'n', 'e3', 'n', '4d', '2d', '7a', '2b', 'd5', 'e1', '7e', 'w', '4b', '6e', 'g6', 'w', 'f4'])
-    l = Quoridor_local_game(None, "auto_2", ['n', 's', 'n', 's', 'n', 's', '3e', '3b', 'd3', '6e', '6b', 'd6'])
+    l = Quoridor_local_game(None, "eife", ['n', 's', 'n', 's', 'n', 's', '3e', '3b', 'd3', '6e', '6b', 'd6'])
     
     # computer stuck: l = Quoridor_local_game(None, "fake2", ['n', 's', 'n', '8d', 'n', '8f', '3d', 's', '3f', 's', 'n', 'ss', 'n', '8b', 'n', 'f7', 'w', 'a7', '5a', 'b6', '8h', 'c7', '5c', '6d', '5e', 'e', 'e', 'w', 'e', 'e', 's', 'w', 'w', 'e', 'w', 'w', 'w', 'e', 'n', 'w', 'n', 'e', 'w', 'w', 's', 'e', 's', 'w'])
 

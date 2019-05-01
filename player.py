@@ -289,6 +289,9 @@ class Player:
         self.board.move_pawn(self.pawn.position, new_position)
         self.pawn.position = new_position
         return True
+    
+    def get_position(self):
+        return self.pawn.position
 
     def undo_move_pawn(self):
 
