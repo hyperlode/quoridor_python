@@ -101,7 +101,8 @@ class Quoridor():
             elif type(data) is list:
                 moves = data
                 self.play_sequence(moves, None)
-                
+        
+        self.last_auto_moves = None  # for debugging
         
 
     # ADMINISTRATION
@@ -166,7 +167,7 @@ class Quoridor():
             return self.auto_level_1(True)
             
         elif move == "suggest_level_3":
-            return self.auto_level_3(True, verbose=True)
+            return self.auto_level_3(True, verbose=False)
             
         elif move == "analyse":
             # all moves with delta for one level deep
@@ -181,6 +182,13 @@ class Quoridor():
                 return self.play_turn(auto_move_directions[0])
             else:
                 logging.error("unvalid auto move directions. {}".format(auto_move_directions))
+                
+        elif move == "auto_mind_read":
+            if self.last_auto_moves is not None:
+                return self.last_auto_moves 
+            else:
+                return "no auto move history available"
+                
         elif move == "test":
             # return self.analyse_level()
             # return self.auto_level_2(True)
@@ -254,6 +262,8 @@ class Quoridor():
         deltas = self.analyse_level()
         best = min(deltas.values())
         
+        self.last_auto_moves = deltas
+        
         if simulate:
             suggestions = {move:dist for move,dist in deltas.items() if dist == best}
             return suggestions
@@ -322,11 +332,13 @@ class Quoridor():
                        
         #from the list of options, check what cause 
         best = min(all_level_2_moves_with_delta.values())
-        suggestions = [move for move,dist in all_level_2_moves_with_delta.items() if dist == best]
-
+        suggestions = {move:dist for move,dist in all_level_2_moves_with_delta.items() if dist == best}
+        self.last_auto_moves = suggestions
+        
         if simulate:
             return suggestions
         else:
+            suggestions = [move for move,dist in suggestions.items() if dist]
             index = random.randint(0, len(suggestions)-1)
             self.play_turn(suggestions[index][0])
             return suggestions[index][0]
@@ -367,20 +379,18 @@ class Quoridor():
             self.active_player().active = True
             
             # obtain all level 2 moves
-            # as this is only to level 2, select the moves the opponent player can make.
-            best_opponent_moves_with_deltas = self.auto_level_1(simulate=True)
-            # print(best_opponent_moves_with_deltas)
-            # opponent_moves = self.analyse_level()
-            # print(opponent_moves)
+            #  select the moves the opponent player can make.
+            opponent_as_level_2_player = True
+            if opponent_as_level_2_player:
+                # check if the opponent thinks as level 2
+                best_opponent_moves_with_deltas = self.auto_level_2(simulate=True)
+                best_opponent_moves_with_deltas = {k[0]:v for k,v in best_opponent_moves_with_deltas.items()}
+                # print(best_opponent_moves_with_deltas)  
+                # raise
+            else:
+                # let the opponent play as level 1
+                best_opponent_moves_with_deltas = self.auto_level_1(simulate=True)
             
-            # do not set player back. 
-            # #change the player to current
-            # self.active_player().active = False
-            # self.playerAtMoveIndex += 1
-            # if self.playerAtMoveIndex >= len(self.players):
-                # self.playerAtMoveIndex = 0
-            # self.active_player().active = True 
-
             # inverted to reflect deltas for current player.
             best_opponent_moves_with_deltas_inverted = {m:-d for m,d in best_opponent_moves_with_deltas.items()}
             
@@ -501,6 +511,7 @@ class Quoridor():
             # suggestions = suggestions_pawn_move
             
 
+        self.last_auto_moves = suggestions
         
         #final processing
         suggestion_moves = list(suggestions.keys())

@@ -200,6 +200,9 @@ class Quoridor_local_game():
         
         elif command == "wide":
             self.q.execute_command("wide")
+            
+        elif command == "mindread":
+            self.print_message("previous auto_move options move was chosen from: {}".format(self.q.execute_command("auto_mind_read")))
 
         elif command in ["r", "rotate"]:
             self.q.execute_command("rotate")
@@ -224,7 +227,8 @@ class Quoridor_local_game():
                 "lev1          level 1 auto suggestions\n" +
                 "lev2          level 2 auto suggestions\n" +
                 "SPACE or auto to auto move pawn\n" +
-                "stats         for complete game statistics\n" 
+                "stats         for complete game statistics\n" +
+                "mindread      auto move options for last auto move\n"
             )
             
             self.print_message(help + local_game_help)
@@ -280,8 +284,10 @@ if __name__ == "__main__":
 
     logging_setup()
     #l = Quoridor_local_game()
-    l = Quoridor_local_game("tet", "auto_3")
-    l = Quoridor_local_game(None, "ale3_fake", ['n', '7c', 'n', 'e3', 'n', '4d', '2d', '7a', '2b', 'd5', 'e1', '7e', 'w', '4b', '6e', 'g6', 'w', 'f4'])
+    # l = Quoridor_local_game("tet", "auto_2")
+    # l = Quoridor_local_game(None, "ale3_fake", ['n', '7c', 'n', 'e3', 'n', '4d', '2d', '7a', '2b', 'd5', 'e1', '7e', 'w', '4b', '6e', 'g6', 'w', 'f4'])
+    l = Quoridor_local_game(None, "auto_2", ['n', 's', 'n', 's', 'n', 's', '3e', '3b', 'd3', '6e', '6b', 'd6'])
+    
     # computer stuck: l = Quoridor_local_game(None, "fake2", ['n', 's', 'n', '8d', 'n', '8f', '3d', 's', '3f', 's', 'n', 'ss', 'n', '8b', 'n', 'f7', 'w', 'a7', '5a', 'b6', '8h', 'c7', '5c', '6d', '5e', 'e', 'e', 'w', 'e', 'e', 's', 'w', 'w', 'e', 'w', 'w', 'w', 'e', 'n', 'w', 'n', 'e', 'w', 'w', 's', 'e', 's', 'w'])
 
     # l = Quoridor_local_game(None, "auto_2")
