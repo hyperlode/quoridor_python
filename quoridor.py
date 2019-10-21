@@ -136,7 +136,7 @@ class Quoridor():
         
     # ACTION
     
-    def execute_command (self, move):
+    def execute_command(self, move):
         # move can be a valid move or a commmand.
        
         # process input
@@ -159,14 +159,40 @@ class Quoridor():
 
         elif move == "rotate":
             self.gameBoard.rotate_board(None)
-            
-        elif move == "suggest_level_2":
-            return self.auto_level_2(True, verbose=True)
         
-        elif move == "suggest_level_1":
+        elif move in [ "suggest_previous_move_level_1", "spml1"]:
+            # used to check what on earth the computer was thinking.
+            undone_move = self.move_history[-1]            
+            self.undo_turn(as_independent_turn = True)
+            suggestion = self.auto_level_1(True)
+            self.play_turn(undone_move)
+            return suggestion
+        
+        elif move in [ "suggest_previous_move_level_2", "spml2"]:
+            # used to check what on earth the computer was thinking.
+            undone_move = self.move_history[-1]
+            
+            self.undo_turn(as_independent_turn = True)
+            suggestion = self.auto_level_2(True, verbose=False)
+            self.play_turn(undone_move)
+            return suggestion
+            
+        elif move in [ "suggest_previous_move_level_3", "spml3"]:
+            # used to check what on earth the computer was thinking.
+            undone_move = self.move_history[-1]
+            
+            self.undo_turn(as_independent_turn = True)
+            suggestion = self.auto_level_3(True, verbose=False)
+            self.play_turn(undone_move)
+            return suggestion
+        
+        elif move in ["suggest_level_1", "sl1"]:
             return self.auto_level_1(True)
             
-        elif move == "suggest_level_3":
+        elif move in ["suggest_level_2", "sl2"]:
+            return self.auto_level_2(True, verbose=True)
+            
+        elif move in ["suggest_level_3", "sl3"]:
             return self.auto_level_3(True, verbose=False)
             
         elif move == "analyse":
@@ -228,9 +254,12 @@ class Quoridor():
                     "m or moves    for move history\n" +
                     "history       also for move history\n" +
                     "history_nice  extensive history analysis\n" +
-                    "suggest_level_1 level 1 auto suggestions\n" +
-                    "suggest_level_2 level 2 auto suggestions\n" +
-                    "suggest_level_3 level 3 auto suggestions\n" +
+                    "sl1           level 1 auto suggestions\n" +
+                    "sl2           level 2 auto suggestions\n" +
+                    "sl3           level 3 auto suggestions\n" +
+                    "spml1         level 1 PREVIOUS MOVE auto suggestions\n" +
+                    "spml2         level 2 PREVIOUS MOVE auto suggestions\n" +
+                    "spml3         level 3 PREVIOUS MOVE auto suggestions\n" +
                     "automove      to auto move pawn on shortest path\n" +
                     "h or help     for this help\n" +
                     "wide          to toggle wider board\n" +
