@@ -163,7 +163,7 @@ if __name__ == "__main__":
     bga_table_124984142_str = "e2 e8 e3 e7 e4 e6 e3h f6h c6h a6h d3v e4h g4v h6h d1v f5h g6v d5h f4 c4v c2h g3h"
     bga_table_125651498_str = "e2 d2v c2h e2h f2 e8 g2 g2h f1v e7 h2 h4h f4v e6 i2 e5 e3h e6 i3 f6h h6v f6 g5h h8h g6v e6 i4 e7 h4 h3v g4 d7 g5 f8h d6h d8h h5 c7 i5 c6 i6 b6 i7 b5 a3h c5 c4h b5 i8 b4 h8 c4 g8 c3 f8 b3 e8 a1h d8 b2 c8 c2 c9"
     
-    game_to_convert = bga_table_125651498_str
+    game_to_convert = bga_table_124984142_str
     logger.info(game_to_convert)
     moves_converted = convert_game_bga_to_lode(game_to_convert)
 
