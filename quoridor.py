@@ -373,7 +373,7 @@ class Quoridor():
             return suggestions[index][0]
     
 
-    def auto_level_3(self, simulate=False, verbose=False):
+    def auto_level_3(self, simulate=False, verbose=False, opponent_as_level_2_player=False):
         # check ALL level1 moves (not just the best level1 moves!!!)
         # brute force three moves 
         # simulate: only return list of equal distance suggestions.
@@ -409,7 +409,7 @@ class Quoridor():
             
             # obtain all level 2 moves
             #  select the moves the opponent player can make.
-            opponent_as_level_2_player = False
+            
             if opponent_as_level_2_player:
                 # check if the opponent thinks as level 2
                 best_opponent_moves_with_deltas = self.auto_level_2(simulate=True)
