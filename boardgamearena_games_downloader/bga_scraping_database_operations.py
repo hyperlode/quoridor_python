@@ -3,6 +3,7 @@ from sqlite3 import Error
 
 import random
 import time
+import logging
 from pathlib import Path
 
 '''
@@ -42,7 +43,9 @@ games_table_columns = {
 
 
 class DatabaseSqlite3Actions():
-    def __init__(self, path):
+    def __init__(self, path,logger=None):
+        self.logger = logger or logging.getLogger(__name__)
+        
         self.conn = None
         self.create_connection(path)
 
@@ -52,7 +55,7 @@ class DatabaseSqlite3Actions():
             self.conn = sqlite3.connect(db_file)
            
         except Error as e:
-            print(e)
+            self.logger.error("Error connecting database {}".format(e), exc_info = True)
     
     # def create_table(self, create_table_sql):
     #     """ create a table from the create_table_sql statement
@@ -79,18 +82,21 @@ class DatabaseSqlite3Actions():
                 cur = self.get_cursor()
                 cur.execute(sql)
                 if retry  != DATABASE_RETRIES:
-                    print("SQL success. after: {} retries".format(DATABASE_RETRIES - retry))
+                    self.logger.info("SQL success. after: {} retries".format(DATABASE_RETRIES - retry))
                 retry = 0
             except Exception as e:
-                print(sql)
+                
                 # sqlite3.OperationalError
                 randomtime = random.randint(0,100)/100
                 time.sleep(randomtime)
                 retry -= 1
-                print("database error: {}".format(e))
-                print("database error, retries: {}".format(retry))
+                self.logger.warning("Database error ({}) sql: {}, retries: {}".format(
+                    e,
+                    sql,
+                    retry,
+                    ))
         if verbose:
-            print("sql executed: {} (truncated to 100 chars)".format(sql[:100]))
+            self.logger.info("sql executed: {} (truncated to 100 chars)".format(sql[:100]))
         return cur
 
     def execute_sql_return_rows(self, sql):
@@ -117,7 +123,11 @@ class DatabaseSqlite3Actions():
         return data
 
 class BoardGameArenaDatabaseOperations():
-    def __init__(self, db_path):
+    def __init__(self, db_path, logger=None):
+        self.logger = logger or logging.getLogger(__name__)
+        self.logger.info("BoardGameArena scraper database operations. init.".format(
+            ))
+
         self.db_path = db_path
         self.players_table_name = "players"
         self.games_table_name = "games"
@@ -238,7 +248,7 @@ class BoardGameArenaDatabaseOperations():
             players[row[0]] = row[1]
 
         return players
-        
+
     def update_player_status(self, player_id, player_status, commit):
         if player_status not in PLAYER_STATUSSES:
             raise PlayerStatusNotFound
@@ -305,7 +315,7 @@ class BoardGameArenaDatabaseOperations():
             columns = ",".join(columns)
             values = ",".join(values)
         except:
-            print(values)
+            self.logger.error(values)
             raise
         # sql command
         sql = ''' INSERT OR IGNORE INTO {} ({})
