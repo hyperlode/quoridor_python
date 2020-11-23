@@ -11,7 +11,7 @@ https://www.sqlitetutorial.net/sqlite-python/creating-database/
 SQLiteDatabaseBrowserPortable.exe to browse.
 '''
 
-PLAYER_STATUSSES = ["TEST", "UP_TO_DATE", "TO_BE_SCRAPED"]
+PLAYER_STATUSSES = ["TEST", "UP_TO_DATE", "TO_BE_SCRAPED", "TEST2"]
 
 games_table_columns = {
     "table_id":int,
@@ -37,6 +37,7 @@ games_table_columns = {
     "elo_after":int,
     "elo_win":int,
     "player_id_scraped_player":int,
+    "players_count":int,
 }
 
 
@@ -175,11 +176,82 @@ class BoardGameArenaDatabaseOperations():
             player_2_rank INTEGER,
             elo_after INTEGER,
             elo_win INTEGER,
-            player_id_scraped_player INTEGER
+            player_id_scraped_player INTEGER,
+            players_count INTEGER
 
         );""".format(self.games_table_name)
         self.db.execute_sql(base_sql)
         self.commit()
+    # def get_sequences(self, desired_status, level, count, mark_as_in_progress=False):
+        
+    #     table_name = self.level_to_table_name(level)
+        
+    #     with self.db.conn:
+    #         sql = " SELECT * from '{}' where status = {} LIMIT {}".format(
+    #                 table_name,
+    #                 desired_status,
+    #                 count,
+    #                 )
+
+    #         rows = self.db.execute_sql_return_rows(sql)
+    #         sequences = []
+    #         for row in rows:
+    #             sequence = self.str_to_sequence(row[1])
+    #             sequences.append(sequence)
+
+    #         if mark_as_in_progress:
+    #             self.change_statuses(sequences, TESTING_IN_PROGRESS, True)
+
+    #         return sequences
+    def get_players_from_games(self):
+        sql_base = ''' SELECT * FROM games;'''.format( 
+            )
+
+        sql = sql_base
+
+        rows = self.db.execute_sql_return_rows(sql)
+
+        players = {}
+        for row in rows:
+            players[row[2]] = row[4]
+            players[row[3]] = row[5]
+
+        return players
+
+    def get_players_by_status(self, status, quantity=None):
+        if quantity is None:
+            quantity = ""
+        else:
+            quantity = "LIMIT {}".format(quantity)
+
+        sql_base = ''' SELECT * FROM players WHERE player_status = "{}" {};'''.format(
+            status,
+            quantity,
+            )
+
+        sql = sql_base
+
+        rows = self.db.execute_sql_return_rows(sql)
+
+        players = {}
+        for row in rows:
+            players[row[0]] = row[1]
+
+        return players
+        
+    def update_player_status(self, player_id, player_status, commit):
+        if player_status not in PLAYER_STATUSSES:
+            raise PlayerStatusNotFound
+         
+        sql = "UPDATE '{}' SET player_status = '{}' WHERE player_id = {}".format(
+            self.players_table_name,
+            player_status,
+            player_id,
+            )
+
+        self.db.execute_sql(sql)
+        if commit:
+            self.commit()
 
     def add_player(self, player_id, player_name, player_status, commit):
         if player_status not in PLAYER_STATUSSES:
@@ -202,7 +274,13 @@ class BoardGameArenaDatabaseOperations():
 
         if commit:
             self.commit()
-            
+
+    def update_players_from_games(self):
+        players = self.get_players_from_games()
+        for id,name in players.items():
+            self.add_player( id, name, "TO_BE_SCRAPED", False)
+        self.commit()
+
     def add_game_metadata(self, table_id, metadata, commit):
 
         # check and prepare the data
@@ -223,10 +301,12 @@ class BoardGameArenaDatabaseOperations():
                 raise UnexpectedColumnTypeException
 
             columns.append(k)
-        
-        columns = ",".join(columns)
-        values = ",".join(values)
-
+        try:
+            columns = ",".join(columns)
+            values = ",".join(values)
+        except:
+            print(values)
+            raise
         # sql command
         sql = ''' INSERT OR IGNORE INTO {} ({})
                         VALUES ({});'''.format(
@@ -369,4 +449,8 @@ if __name__ == '__main__':
     db_path = r"C:\Data\Generated_program_data\boardgamearena_quoridor_scraper\bga_quoridor_data.db".format()
     db = BoardGameArenaDatabaseOperations(db_path)
 
-    db.add_player("12345","lode","TEST",True)
+    # db.add_player("12345","lode","TEST",True)
+    print( list(db.get_players_by_status("TEST",1))[0])
+    db.update_player_status(1233, "TEST2", True)
+    print(db.get_players_by_status("TO_BE_SCRAPEDff",1))
+    # db.update_players_from_games()
