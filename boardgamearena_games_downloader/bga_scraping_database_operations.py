@@ -12,7 +12,9 @@ https://www.sqlitetutorial.net/sqlite-python/creating-database/
 SQLiteDatabaseBrowserPortable.exe to browse.
 '''
 
-PLAYER_STATUSSES = ["TEST", "UP_TO_DATE", "TO_BE_SCRAPED", "TEST2"]
+PLAYER_STATUSSES = ["TEST", "UP_TO_DATE", "TO_BE_SCRAPED", "TEST2", "BUSY_SCRAPING"] 
+
+GAME_SCRAPE_STATUSSES = ["BUSY_SCRAPING", "TO_BE_SCRAPED", "SCRAPED", ""]
 
 games_table_columns = {
     "table_id":int,
@@ -73,7 +75,7 @@ class DatabaseSqlite3Actions():
         return self.conn.cursor()
 
     def execute_sql(self, sql, verbose=False):
-        DATABASE_RETRIES = 100
+        DATABASE_RETRIES = 10
         retry = DATABASE_RETRIES
 
         while retry > 0:
@@ -96,7 +98,11 @@ class DatabaseSqlite3Actions():
                     retry,
                     ))
         if verbose:
-            self.logger.info("sql executed: {} (truncated to 100 chars)".format(sql[:100]))
+            max_chars = 1000
+            self.logger.info("sql executed: {} (truncated to {} chars)".format(
+                sql[:max_chars],
+                max_chars,
+                ))
         return cur
 
     def execute_sql_return_rows(self, sql):
@@ -297,26 +303,36 @@ class BoardGameArenaDatabaseOperations():
         columns = []
         values = []
         possible_column_names = games_table_columns.keys()
-        for k,v in metadata.items():
-            if k not in possible_column_names:
+        for column,value in metadata.items():
+            if column not in possible_column_names:
                 raise UnexpectedColumnNameException
 
-            if games_table_columns[k] is str:
-                values.append("\"{}\"".format(v))
+            if value is None:
+                # reaction to error thrown. I presume things changed on website over time.....
+                value = str(None)
+
+            if games_table_columns[column] is str:
+                values.append("\"{}\"".format(value))
                 
-            elif games_table_columns[k] is int:
-                values.append(v)
+            elif games_table_columns[column] is int:
+                if value is None or value == "None":
+                    value = "NULL"
+                values.append(value)
                 
             else:
                 raise UnexpectedColumnTypeException
 
-            columns.append(k)
+            columns.append(column)
         try:
             columns = ",".join(columns)
             values = ",".join(values)
-        except:
-            self.logger.error(values)
+        except Exception as e:
+            self.logger.error("error converting {} to string. ({})".format(
+                values,
+                e,
+                ))
             raise
+
         # sql command
         sql = ''' INSERT OR IGNORE INTO {} ({})
                         VALUES ({});'''.format(

@@ -121,16 +121,22 @@ class BoardGameArenaScraper:
             if len(result_parsed) == 0:
                 ran_over_all_player_games = True
                 self.db.update_player_status(player_id, "UP_TO_DATE", True)
+                self.logger.info(" {:.2f}s since start, {:.2f}s since previous, empty data return --> scraping FINISHED for this player)".format(
+                    time.time() - start_t,
+                    time.time() - previous_t,
+                    ))
 
             else:
                 self.db.commit()
+
+                self.logger.info(" {:.2f}s since start, {:.2f}s since previous, downloaded page {})".format(
+                    time.time() - start_t,
+                    time.time() - previous_t,
+                    page,
+                    ))
+
                 page += 1
 
-            self.logger.info(" {:.2f}s since start, {:.2f}s since previous, at page {})".format(
-                time.time() - start_t,
-                time.time() - previous_t,
-                page,
-                ))
             previous_t = time.time()
 
     def parse_scraped_games_metadata (self, raw, from_scraped_player_id):
@@ -151,23 +157,23 @@ class BoardGameArenaScraper:
             player_names =  game["player_names"].split(",")
             player_ids =  game["players"].split(",")
 
-            game_meta_data["table_id"] = (game["table_id"])
-            game_meta_data["time_start"] = (game["start"])
-            game_meta_data["time_end"] = (game["end"])
-            game_meta_data["concede"] = (game["concede"])
-            game_meta_data["unranked"] = (game["unranked"])
-            game_meta_data["normalend"] = (game["normalend"])
-            game_meta_data["player_1_id"] = (player_ids[0])
-            game_meta_data["player_2_id"] = (player_ids[1])
-            game_meta_data["player_1_name"] = player_names[0]
-            game_meta_data["player_2_name"] = player_names[1]
-            game_meta_data["player_1_score"] = (scores[0])
-            game_meta_data["player_2_score"] = (scores[1])
-            game_meta_data["player_1_rank"] = (ranks[0])
-            game_meta_data["player_2_rank"] = (ranks[0])
+            game_meta_data["table_id"] = str(game["table_id"])
+            game_meta_data["time_start"] = str(game["start"])
+            game_meta_data["time_end"] = str(game["end"])
+            game_meta_data["concede"] = str(game["concede"])
+            game_meta_data["unranked"] = str(game["unranked"])
+            game_meta_data["normalend"] = str(game["normalend"])
+            game_meta_data["player_1_id"] = str(player_ids[0])
+            game_meta_data["player_2_id"] = str(player_ids[1])
+            game_meta_data["player_1_name"] = str(player_names[0])
+            game_meta_data["player_2_name"] = str(player_names[1])
+            game_meta_data["player_1_score"] = str(scores[0])
+            game_meta_data["player_2_score"] = str(scores[1])
+            game_meta_data["player_1_rank"] = str(ranks[0])
+            game_meta_data["player_2_rank"] = str(ranks[0])
             game_meta_data["players_count"] = str(len(player_ids))
-            game_meta_data["elo_after"] = (game["elo_after"])
-            game_meta_data["elo_win"] = (game["elo_win"])
+            game_meta_data["elo_after"] = str(game["elo_after"])
+            game_meta_data["elo_win"] = str(game["elo_win"])
             game_meta_data["player_id_scraped_player"] = str(from_scraped_player_id)
 
             games_meta_data.append(game_meta_data)
