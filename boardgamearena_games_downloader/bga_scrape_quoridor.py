@@ -21,10 +21,11 @@ import requests
 import json
 import time
 import datetime
-import bga_scraping_database_operations
 import traceback
 import logging
 from pathlib import Path
+
+import bga_scraping_database_operations
 
 # https://github.com/tpq/bga/blob/master/py/bga.py
 
@@ -75,7 +76,7 @@ class BoardGameArenaScraper:
 
         return r.text
 
-    def get_full_game(self, tableID):
+    def get_full_game_raw(self, tableID):
         
         tableID = str(tableID)
         
@@ -90,11 +91,20 @@ class BoardGameArenaScraper:
         r = self.session.get(url_game)
         if r.status_code != 200:
              self.logger.error("Error trying to load the gamereview page!", exc_info=True)
+
+        # print(r.headers)
+        # print(r.request.headers)
+
+        # print("-----")
         
         # Retrieve the log files
         r = self.session.get(url_log, params = prm_log)
         if r.status_code != 200:
             self.logger.error("Error trying to load the log file!", exc_info=True)
+        # print(r.headers)
+        # print(r.request.headers)
+        # print(len(r.text))
+        
         log = r.text
 
         return log     
@@ -206,6 +216,150 @@ class BoardGameArenaScraper:
             if len(self.db.get_players_by_status("TO_BE_SCRAPED",1)) == 0:
                 self.logger.info("All up to date.")
                 return
+    
+    def parse_scraped_gamedata(self, raw, table_id):
+
+        game_moves_gba_notation = []
+        reflexion_times = []
+        absolute_timestamps = []
+        reflexion_time_delta = None
+        reflexion_time_max = None
+        starting_player = None
+        non_starting_player = None
+        process_state = "PARSING"
+
+        first_move_done = False
+        at_first_move = False
+        process_notation = False
+
+        data_json = json.loads(raw)
+        try:
+            turns_data = data_json["data"]["data"]["data"]
+        except Exception as e:
+
+
+            self.logger.warning(json.dumps(data_json, indent=4, sort_keys=True))
+            exit()
+
+        
+        for i,t in enumerate(turns_data):
+            
+            # t_type =t["data"]["type"]            
+            t_data = t["data"]
+            t_type =t_data[0]["type"]
+
+            if "time" not in list(t):
+                # parsed = json.loads(t)
+                self.logger.warning(json.dumps(t, indent=4, sort_keys=True))
+                timestamp = None
+            else:
+                timestamp = int(t["time"])
+            
+            process_move = False
+            process_notation = False
+
+            if t_type == "playWall":
+                # print("------\n")
+
+                process_move = True
+                process_notation = True
+
+                if not first_move_done:
+                    at_first_move = True
+                
+            elif t_type == "playToken":
+                process_move = True
+                process_notation = True
+
+                if not first_move_done:
+                    at_first_move = True
+
+            elif t_type == "playerConcedeGame":
+                process_move = True
+
+                # conceding_player = t_data[0]["args"]["player_name"]
+                # print("Conceded: {}".format(conceding_player))
+
+                
+
+                if not first_move_done:
+                    at_first_move = True
+            
+            elif t_type == "gameStateChange":
+                pass
+            elif t_type == "updateMoves":
+                pass
+            else:
+                print(t_type)
+
+            if at_first_move:
+                # print( t_data)
+                reflexion_time_delta = int(t_data[2]["args"]['delta'])
+                # reflexion_time_delta = t_data["data"][2]["args"]['delta']
+                # print(reflexion_time_delta)
+                reflexion_time_max = int(t_data[2]["args"]['max'])
+                starting_player = int(t_data[1]["args"]['active_player'])
+                non_starting_player = int(t_data[2]["args"]['player_id'])
+                
+                at_first_move = False
+                first_move_done = True
+
+            if process_move:
+                absolute_timestamps.append(timestamp)
+                reflexion = t_data[1]["args"]["reflexion"]["total"]
+                # print(reflexion)
+
+                reflexion_times.append((reflexion[str(starting_player)],reflexion[str(non_starting_player)]))
+
+            if process_notation:
+                game_moves_gba_notation.append( t_data[0]["args"]["quoridorstrats_notation"])
+
+        game_data_parsed = {
+            "table_id":table_id,
+            "process_state":process_state,
+            "game_moves_gba_notation":game_moves_gba_notation,
+            "reflexion_times":reflexion_times,
+            "absolute_timestamps":absolute_timestamps,
+            "reflexion_time_delta":reflexion_time_delta,
+            "reflexion_time_max":reflexion_time_max,
+            "starting_player":starting_player,
+            "non_starting_player":non_starting_player
+        }
+
+        return game_data_parsed
+
+    def scrape_gamedata_from_tables(self, table_ids):
+        data_games = {}
+        start_t = time.time()
+        previous_t = start_t
+
+        for i,table_id in enumerate(table_ids):
+
+            try:
+                game_raw = self.get_full_game_raw(table_id)
+                downloaded_raw_length = len(game_raw)
+                parsed_game_data = self.parse_scraped_gamedata(game_raw, table_id)
+
+            except Exception as e:
+                logger.error("error during retrieving and parsing game data from table: {} ({})".format(
+                    table_id,
+                    e,
+                    ), exc_info=True)
+                parsed_game_data = None
+
+            data_games[table_id] = parsed_game_data
+            self.logger.info(" scraped table {} ({}/{}) downloadsize:{} . {:.2f}s since start, {:.2f}s since previous.)".format(
+                table_id,
+                i,
+                len(table_ids),
+                downloaded_raw_length,
+                time.time() - start_t,
+                time.time() - previous_t,
+                ))
+
+            previous_t = time.time()
+
+        return data_games
 
 def logging_setup(level = logging.INFO, log_path = None, new_log_file_creation="", flask_logger=None):
     '''    
@@ -276,15 +430,7 @@ def logging_setup(level = logging.INFO, log_path = None, new_log_file_creation="
 
     return logger
 
-if __name__ == "__main__":
-    
-    logger = logging_setup(logging.INFO, Path(r"C:\Data\Generated_program_data\boardgamearena_quoridor_scraper\logs"), "SESSION" )
-
-    # player_id_scraped_player = 84781397
-    # offline_bga = BoardGameArenaScraper()
-    # raw = '''{"status":1,"data":{"tables":[{"table_id":"67953988","game_name":"quoridor","game_id":"43","start":"1584979102","end":"1584979326","concede":"0","unranked":"0","normalend":"1","players":"85429074,84781397","player_names":"kimy711,Mehrschad","scores":"1,0","ranks":"1,2","elo_win":"-10","elo_after":"1418","arena_win":null,"arena_after":"1.1500"},{"table_id":"67952662","game_name":"quoridor","game_id":"43","start":"1584978660","end":"1584979082","concede":"0","unranked":"0","normalend":"1","players":"85429074,84781397","player_names":"kimy711,Mehrschad","scores":"1,0","ranks":"1,2","elo_win":"-11","elo_after":"1429","arena_win":null,"arena_after":"1.1500"},{"table_id":"67951262","game_name":"quoridor","game_id":"43","start":"1584978149","end":"1584978644","concede":"0","unranked":"0","normalend":"1","players":"85429074,84781397","player_names":"kimy711,Mehrschad","scores":"1,0","ranks":"1,2","elo_win":"-12","elo_after":"1440","arena_win":null,"arena_after":"1.1500"},{"table_id":"67949743","game_name":"quoridor","game_id":"43","start":"1584977614","end":"1584978115","concede":"1","unranked":"0","normalend":"1","players":"84781397,85429074","player_names":"Mehrschad,kimy711","scores":"0,0","ranks":"1,2","elo_win":"30","elo_after":"1452","arena_win":null,"arena_after":"1.1500"},{"table_id":"67948267","game_name":"quoridor","game_id":"43","start":"1584977077","end":"1584977592","concede":"0","unranked":"0","normalend":"1","players":"85429074,84781397","player_names":"kimy711,Mehrschad","scores":"1,0","ranks":"1,2","elo_win":"-11","elo_after":"1422","arena_win":null,"arena_after":"1.1500"},{"table_id":"67946990","game_name":"quoridor","game_id":"43","start":"1584976567","end":"1584977013","concede":"0","unranked":"0","normalend":"1","players":"85429074,84781397","player_names":"kimy711,Mehrschad","scores":"1,0","ranks":"1,2","elo_win":"-11","elo_after":"1432","arena_win":null,"arena_after":"1.1500"},{"table_id":"67944981","game_name":"quoridor","game_id":"43","start":"1584975850","end":"1584976544","concede":"0","unranked":"0","normalend":"1","players":"85429074,84781397","player_names":"kimy711,Mehrschad","scores":"1,0","ranks":"1,2","elo_win":"-19","elo_after":"1444","arena_win":null,"arena_after":"1.1500"},{"table_id":"67911877","game_name":"quoridor","game_id":"43","start":"1584961221","end":"1584961865","concede":"0","unranked":"0","normalend":"1","players":"83961560,84781397","player_names":"Syl20rrr,Mehrschad","scores":"1,0","ranks":"1,2","elo_win":"-42","elo_after":"1463","arena_win":null,"arena_after":"1.1500"},{"table_id":"67910754","game_name":"quoridor","game_id":"43","start":"1584960759","end":"1584961181","concede":"0","unranked":"0","normalend":"1","players":"84781397,83961560","player_names":"Mehrschad,Syl20rrr","scores":"1,0","ranks":"1,2","elo_win":"20","elo_after":"1505","arena_win":null,"arena_after":"1.1500"},{"table_id":"67899669","game_name":"quoridor","game_id":"43","start":"1584953283","end":"1584953448","concede":"1","unranked":"0","normalend":"1","players":"84781397,85124665","player_names":"Mehrschad,elijo","scores":"0,0","ranks":"1,2","elo_win":"32","elo_after":"1468","arena_win":null,"arena_after":"1.1500"}],"stats":[]}}'''
-    # print(offline_bga.parse_scraped_games_metadata(raw, player_id_scraped_player))
-    # exit()
+def scrape_game_metadata(logger):
     try:
         # init (log in )
         bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd", r"C:\Data\Generated_program_data\boardgamearena_quoridor_scraper\bga_quoridor_data.db")
@@ -292,6 +438,48 @@ if __name__ == "__main__":
 
     except Exception as e:
         logger.error("Error in main thread during scraping. {} ".format(e), exc_info=True)
-    
+
     finally:
         bga.close()
+
+def scrape_gamedata(logger, table_ids):
+    bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
+    parsed_data_games = bga.scrape_gamedata_from_tables(table_ids)
+
+    return parsed_data_games
+
+
+def parse_offline_gamedata(logger):
+    offline_bga = BoardGameArenaScraper()
+    with open(r"C:\Data\Generated_program_data\boardgamearena_quoridor_scraper\table_id_124984142.txt","r") as f:
+        game_raw = f.read()
+    parsed_game_data = offline_bga.parse_scraped_gamedata(game_raw, table_id)
+    return parsed_game_data
+
+if __name__ == "__main__":
+    
+    logger = logging_setup(logging.INFO, Path(r"C:\Data\Generated_program_data\boardgamearena_quoridor_scraper\logs"), "SESSION" )
+
+    # scrape_game_metadata(logger)
+
+    # table_id = 3156753
+    # table_id = 124984142
+    table_id = 126439858  # superlode 2020-11-23   times superlode; 1:42 , 1:46, 1:22 , 1:38, 0:23, 1:31
+
+
+    table_ids = [3156753, 124984142, 126439858]
+    table_ids = [3156753] # old
+    table_ids = [6584339] # old
+    table_ids = [10652513]
+    table_ids = [126456011]
+    game_data = scrape_gamedata(logger, table_ids)
+    logger.info(game_data)
+    
+    # exit()
+
+    # player_id_scraped_player = 84781397
+    # offline_bga = BoardGameArenaScraper()
+    # raw = '''{"status":1,"data":{"tables":[{"table_id":"67953988","game_name":"quoridor","game_id":"43","start":"1584979102","end":"1584979326","concede":"0","unranked":"0","normalend":"1","players":"85429074,84781397","player_names":"kimy711,Mehrschad","scores":"1,0","ranks":"1,2","elo_win":"-10","elo_after":"1418","arena_win":null,"arena_after":"1.1500"},{"table_id":"67952662","game_name":"quoridor","game_id":"43","start":"1584978660","end":"1584979082","concede":"0","unranked":"0","normalend":"1","players":"85429074,84781397","player_names":"kimy711,Mehrschad","scores":"1,0","ranks":"1,2","elo_win":"-11","elo_after":"1429","arena_win":null,"arena_after":"1.1500"},{"table_id":"67951262","game_name":"quoridor","game_id":"43","start":"1584978149","end":"1584978644","concede":"0","unranked":"0","normalend":"1","players":"85429074,84781397","player_names":"kimy711,Mehrschad","scores":"1,0","ranks":"1,2","elo_win":"-12","elo_after":"1440","arena_win":null,"arena_after":"1.1500"},{"table_id":"67949743","game_name":"quoridor","game_id":"43","start":"1584977614","end":"1584978115","concede":"1","unranked":"0","normalend":"1","players":"84781397,85429074","player_names":"Mehrschad,kimy711","scores":"0,0","ranks":"1,2","elo_win":"30","elo_after":"1452","arena_win":null,"arena_after":"1.1500"},{"table_id":"67948267","game_name":"quoridor","game_id":"43","start":"1584977077","end":"1584977592","concede":"0","unranked":"0","normalend":"1","players":"85429074,84781397","player_names":"kimy711,Mehrschad","scores":"1,0","ranks":"1,2","elo_win":"-11","elo_after":"1422","arena_win":null,"arena_after":"1.1500"},{"table_id":"67946990","game_name":"quoridor","game_id":"43","start":"1584976567","end":"1584977013","concede":"0","unranked":"0","normalend":"1","players":"85429074,84781397","player_names":"kimy711,Mehrschad","scores":"1,0","ranks":"1,2","elo_win":"-11","elo_after":"1432","arena_win":null,"arena_after":"1.1500"},{"table_id":"67944981","game_name":"quoridor","game_id":"43","start":"1584975850","end":"1584976544","concede":"0","unranked":"0","normalend":"1","players":"85429074,84781397","player_names":"kimy711,Mehrschad","scores":"1,0","ranks":"1,2","elo_win":"-19","elo_after":"1444","arena_win":null,"arena_after":"1.1500"},{"table_id":"67911877","game_name":"quoridor","game_id":"43","start":"1584961221","end":"1584961865","concede":"0","unranked":"0","normalend":"1","players":"83961560,84781397","player_names":"Syl20rrr,Mehrschad","scores":"1,0","ranks":"1,2","elo_win":"-42","elo_after":"1463","arena_win":null,"arena_after":"1.1500"},{"table_id":"67910754","game_name":"quoridor","game_id":"43","start":"1584960759","end":"1584961181","concede":"0","unranked":"0","normalend":"1","players":"84781397,83961560","player_names":"Mehrschad,Syl20rrr","scores":"1,0","ranks":"1,2","elo_win":"20","elo_after":"1505","arena_win":null,"arena_after":"1.1500"},{"table_id":"67899669","game_name":"quoridor","game_id":"43","start":"1584953283","end":"1584953448","concede":"1","unranked":"0","normalend":"1","players":"84781397,85124665","player_names":"Mehrschad,elijo","scores":"0,0","ranks":"1,2","elo_win":"32","elo_after":"1468","arena_win":null,"arena_after":"1.1500"}],"stats":[]}}'''
+    # print(offline_bga.parse_scraped_games_metadata(raw, player_id_scraped_player))
+
+  
