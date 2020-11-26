@@ -27,6 +27,7 @@ from pathlib import Path
 
 import bga_scraping_database_operations
 
+DATA_BASE_PATH = r"C:\Data\Generated_program_data\boardgamearena_quoridor_scraper"
 # https://github.com/tpq/bga/blob/master/py/bga.py
 
 class BoardGameArenaScraper:
@@ -76,38 +77,34 @@ class BoardGameArenaScraper:
 
         return r.text
 
-    def get_full_game_raw(self, tableID):
+    def get_full_game_raw(self, table_id):
         
-        tableID = str(tableID)
+        table_id = str(table_id)
         
         # Define parameters to access to Board Game Arena
        
-       
-        url_game = "http://en.boardgamearena.com/gamereview?table=" + tableID
+        url_game = "http://en.boardgamearena.com/gamereview?table=" + table_id
         url_log = "http://en.boardgamearena.com/archive/archive/logs.html"
-        prm_log = {"table": tableID, "translated": "true"}
+        prm_log = {"table": table_id, "translated": "true"}
             
         # Generate the log files
         r = self.session.get(url_game)
         if r.status_code != 200:
              self.logger.error("Error trying to load the gamereview page!", exc_info=True)
 
-        # print(r.headers)
-        # print(r.request.headers)
-
-        # print("-----")
+        # (r.headers)
+        # (r.request.headers)
         
         # Retrieve the log files
         r = self.session.get(url_log, params = prm_log)
         if r.status_code != 200:
             self.logger.error("Error trying to load the log file!", exc_info=True)
-        # print(r.headers)
-        # print(r.request.headers)
-        # print(len(r.text))
+        raw_data = r.text
         
-        log = r.text
+        with open(Path(DATA_BASE_PATH,r"games_by_table_id_raw/{}.txt".format(table_id)),"w") as f:
+            f.write(raw_data)
 
-        return log     
+        return raw_data
        
     def scrape_player_games_metadata(self, player_id):
 
@@ -233,14 +230,22 @@ class BoardGameArenaScraper:
         process_notation = False
 
         data_json = json.loads(raw)
+
+        if "code" in list(data_json):
+                
+            if data_json["code"] == 100:
+                self.logger.error("Error parsing raw data. --> run into limit? {}".format(data_json) )
+                raise
+                # "code": 100,
+                # "error": "You have reached a limit (replay)",
+                # "expected": 1,
+                # "status": "0"
         try:
             turns_data = data_json["data"]["data"]["data"]
+
         except Exception as e:
-
-
             self.logger.warning(json.dumps(data_json, indent=4, sort_keys=True))
             exit()
-
         
         for i,t in enumerate(turns_data):
             
@@ -259,8 +264,6 @@ class BoardGameArenaScraper:
             process_notation = False
 
             if t_type == "playWall":
-                # print("------\n")
-
                 process_move = True
                 process_notation = True
 
@@ -276,11 +279,7 @@ class BoardGameArenaScraper:
 
             elif t_type == "playerConcedeGame":
                 process_move = True
-
                 # conceding_player = t_data[0]["args"]["player_name"]
-                # print("Conceded: {}".format(conceding_player))
-
-                
 
                 if not first_move_done:
                     at_first_move = True
@@ -293,7 +292,6 @@ class BoardGameArenaScraper:
                 print(t_type)
 
             if at_first_move:
-                # print( t_data)
                 reflexion_time_delta = int(t_data[2]["args"]['delta'])
                 # reflexion_time_delta = t_data["data"][2]["args"]['delta']
                 # print(reflexion_time_delta)
@@ -306,7 +304,21 @@ class BoardGameArenaScraper:
 
             if process_move:
                 absolute_timestamps.append(timestamp)
-                reflexion = t_data[1]["args"]["reflexion"]["total"]
+                try:
+                    reflexion = t_data[1]["args"]["reflexion"]["total"]
+
+                except Exception as e:
+                    try:
+                        reflexion = t_data[2]["args"]["reflexion"]["total"]
+
+                    except Exception as ee:
+                        self.logger.error("Parsing move {}: reflexion times not found. ({})({}) ".format(
+                            i,
+                            e,
+                            ee,
+                            ),exc_info=True)
+                        self.logger.error(json.dumps(t_data, indent=4, sort_keys=True))
+
                 # print(reflexion)
 
                 reflexion_times.append((reflexion[str(starting_player)],reflexion[str(non_starting_player)]))
@@ -328,38 +340,76 @@ class BoardGameArenaScraper:
 
         return game_data_parsed
 
-    def scrape_gamedata_from_tables(self, table_ids):
-        data_games = {}
+    def get_gamedata_from_table(self, table_id):
+      
+        cached = True
+
+        try:
+            # Cached? first, check if already existing offline (previously downloaded. )
+            game_raw = self.get_offine_gamedata_raw(table_id)
+
+            # download if not cached
+            if game_raw is None:
+                cached = False
+                game_raw = self.get_full_game_raw(table_id)
+
+            downloaded_raw_length = len(game_raw)
+            parsed_game_data = self.parse_scraped_gamedata(game_raw, table_id)
+
+        except Exception as e:
+            logger.error("error during retrieving and parsing game data from table: {} ({})".format(
+                table_id,
+                e,
+                ), exc_info=True)
+            parsed_game_data = None
+
+        
+        self.logger.info("Scraped raw data from table {} Was Cached?:{}, Downloadsize:{})".format(
+            table_id,
+            cached,
+            downloaded_raw_length,
+            ))
+
+        return parsed_game_data
+
+    def get_gamedata_from_tables(self, table_ids):
+
         start_t = time.time()
         previous_t = start_t
 
+        data_games = {}
         for i,table_id in enumerate(table_ids):
+            data = self.get_gamedata_from_table(table_id)
+            data_games[table_id] = data
 
-            try:
-                game_raw = self.get_full_game_raw(table_id)
-                downloaded_raw_length = len(game_raw)
-                parsed_game_data = self.parse_scraped_gamedata(game_raw, table_id)
-
-            except Exception as e:
-                logger.error("error during retrieving and parsing game data from table: {} ({})".format(
-                    table_id,
-                    e,
-                    ), exc_info=True)
-                parsed_game_data = None
-
-            data_games[table_id] = parsed_game_data
-            self.logger.info(" scraped table {} ({}/{}) downloadsize:{} . {:.2f}s since start, {:.2f}s since previous.)".format(
+            self.logger.info("Retrieved data from table {} ({}/{}) process time: {:.2f} (total time: {:.2f}))".format(
                 table_id,
-                i,
+                i+1,
                 len(table_ids),
-                downloaded_raw_length,
-                time.time() - start_t,
                 time.time() - previous_t,
+                time.time() - start_t,
                 ))
 
             previous_t = time.time()
 
         return data_games
+
+    def get_offine_gamedata_raw(self, table_id):
+        # offline_bga = BoardGameArenaScraper()
+
+        # table_id = 124984142
+        path = Path(DATA_BASE_PATH, r"games_by_table_id_raw\{}.txt".format(
+            table_id))
+
+        if not path.exists():
+            return None
+
+        with open(path,"r") as f:
+            game_raw = f.read()
+
+        # parsed_game_data = self.parse_scraped_gamedata(game_raw, table_id)
+
+        return game_raw
 
 def logging_setup(level = logging.INFO, log_path = None, new_log_file_creation="", flask_logger=None):
     '''    
@@ -433,7 +483,7 @@ def logging_setup(level = logging.INFO, log_path = None, new_log_file_creation="
 def scrape_game_metadata(logger):
     try:
         # init (log in )
-        bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd", r"C:\Data\Generated_program_data\boardgamearena_quoridor_scraper\bga_quoridor_data.db")
+        bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd", Path(DATA_BASE_PATH, r"bga_quoridor_data.db"))
         bga.scrape_all_players_and_keep_updating_players()
 
     except Exception as e:
@@ -442,26 +492,22 @@ def scrape_game_metadata(logger):
     finally:
         bga.close()
 
-def scrape_gamedata(logger, table_ids):
+def get_gamedata(logger, table_ids):
     bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
-    parsed_data_games = bga.scrape_gamedata_from_tables(table_ids)
+    # bga = BoardGameArenaScraper("lode"+"ameije"+"@"+"gma" + "il.com", "sl"+  "8" + "af" + "val")
+
+   
+    parsed_data_games = bga.get_gamedata_from_tables(table_ids)
 
     return parsed_data_games
 
-
-def parse_offline_gamedata(logger):
-    offline_bga = BoardGameArenaScraper()
-    with open(r"C:\Data\Generated_program_data\boardgamearena_quoridor_scraper\table_id_124984142.txt","r") as f:
-        game_raw = f.read()
-    parsed_game_data = offline_bga.parse_scraped_gamedata(game_raw, table_id)
-    return parsed_game_data
-
 if __name__ == "__main__":
     
-    logger = logging_setup(logging.INFO, Path(r"C:\Data\Generated_program_data\boardgamearena_quoridor_scraper\logs"), "SESSION" )
+    logger = logging_setup(logging.INFO, Path(DATA_BASE_PATH,  r"logs"), "SESSION" )
+    
+    table_id = 124984142
 
-    # scrape_game_metadata(logger)
-
+    
     # table_id = 3156753
     # table_id = 124984142
     table_id = 126439858  # superlode 2020-11-23   times superlode; 1:42 , 1:46, 1:22 , 1:38, 0:23, 1:31
@@ -471,8 +517,10 @@ if __name__ == "__main__":
     table_ids = [3156753] # old
     table_ids = [6584339] # old
     table_ids = [10652513]
-    table_ids = [126456011]
-    game_data = scrape_gamedata(logger, table_ids)
+    table_ids = [124984142, 126456011, 94224007,8925907] 
+    
+    game_data = get_gamedata(logger, table_ids)
+    
     logger.info(game_data)
     
     # exit()

@@ -3,8 +3,10 @@ from sqlite3 import Error
 
 import random
 import time
+import datetime
 import logging
 from pathlib import Path
+from collections import defaultdict
 
 '''
 https://www.sqlitetutorial.net/sqlite-python/creating-database/
@@ -12,9 +14,12 @@ https://www.sqlitetutorial.net/sqlite-python/creating-database/
 SQLiteDatabaseBrowserPortable.exe to browse.
 '''
 
-PLAYER_STATUSSES = ["TEST", "UP_TO_DATE", "TO_BE_SCRAPED", "TEST2", "BUSY_SCRAPING"] 
+PLAYER_STATUSES = ["TEST", "UP_TO_DATE", "TO_BE_SCRAPED", "TEST2", "BUSY_SCRAPING"] 
 
-GAME_SCRAPE_STATUSSES = ["BUSY_SCRAPING", "TO_BE_SCRAPED", "SCRAPED", ""]
+GAME_SCRAPE_STATUSES = ["BUSY_SCRAPING", "TO_BE_SCRAPED", "SCRAPED", ""]
+OPERATION_STATUSES = ["TODO", "BUSY", "DONE"]
+
+DATA_BASE_PATH = r"C:\Data\Generated_program_data\boardgamearena_quoridor_scraper"
 
 games_table_columns = {
     "table_id":int,
@@ -74,17 +79,16 @@ class DatabaseSqlite3Actions():
     def get_cursor(self):
         return self.conn.cursor()
 
-    def execute_sql(self, sql, verbose=False):
-        DATABASE_RETRIES = 10
-        retry = DATABASE_RETRIES
+    def execute_sql(self, sql, verbose=False, database_retries = 10):
+        retry = database_retries
 
         while retry > 0:
 
             try:
                 cur = self.get_cursor()
                 cur.execute(sql)
-                if retry  != DATABASE_RETRIES:
-                    self.logger.info("SQL success. after: {} retries".format(DATABASE_RETRIES - retry))
+                if retry  != database_retries:
+                    self.logger.info("SQL success. after: {} retries".format(database_retries - retry))
                 retry = 0
             except Exception as e:
                 
@@ -105,10 +109,15 @@ class DatabaseSqlite3Actions():
                 ))
         return cur
 
-    def execute_sql_return_rows(self, sql):
-        cur = self.execute_sql(sql)
+    def execute_sql_return_rows(self, sql, row_count=None, database_retries=10):
+        # if row_count is None, return all fetched rows.
+                    
+        cur = self.execute_sql(sql,False,database_retries)
         data = cur.fetchall()
-        return data
+        if row_count is None:
+            return data
+        else:
+            return data[:row_count]
 
     def commit(self):
         self.conn.commit()
@@ -127,6 +136,52 @@ class DatabaseSqlite3Actions():
         cur = self.execute_sql(sql)
         data = cur.fetchall()
         return data
+
+    def column_exists(self, table_name, column_name_to_test):
+
+        table_info = self.get_table_info(table_name)
+
+        for row in table_info:
+            if column_name_to_test in row:
+                return True
+
+        return False
+
+    def get_table_info(self, table_name):
+
+        sql = "pragma table_info('{}')".format(
+            table_name,
+            )
+
+        table_info = self.execute_sql_return_rows(sql)
+
+        return table_info
+
+    def add_column_to_existing_table(self, table_name, column_name, data_type, default_value):
+
+        #  e.g. default_value = "null"
+
+        if self.column_exists(table_name,column_name):
+            self.logger.warning("{} in {} already exists. Will not add column".format(
+                column_name,
+                table_name,
+            ))
+            return 
+
+        if data_type not in ["TEXT", "INT"]:
+            logger.error("not yet added data type.")
+            raise UnknownColumnTypeError 
+
+        sql = "ALTER TABLE {} ADD COLUMN {} {} default {}".format(
+            table_name,
+            column_name,
+            data_type,
+            default_value,
+            )
+        try:
+            self.execute_sql(sql,False,5)
+        except Exception as e:
+            self.logger.error("didn't add column work. {}".format(e,),exc_info=True)
 
 class BoardGameArenaDatabaseOperations():
     def __init__(self, db_path, logger=None):
@@ -167,6 +222,207 @@ class BoardGameArenaDatabaseOperations():
 
     def commit(self):
         self.db.commit()
+
+    def get_player_ids(self, count=None, status=None, set_status_of_selected_rows=None):
+        # if count=None --> all
+        # if status=None --> no status needed.
+
+        if status not in OPERATION_STATUSES:
+            self.logger.error("Illegal status {}".format(status))
+            return
+
+        sql = "SELECT {} FROM {} WHERE processing_status = '{}'".format(
+            "player_id",
+            self.players_table_name,
+            status,
+            )
+        # self.logger.info(sql)
+        rows = self.db.execute_sql_return_rows(sql,count)
+        ids = [r[0] for r in rows]
+        # self.logger.info(ids)
+
+        if set_status_of_selected_rows is not None:
+            self.set_status_of_player_ids(ids,set_status_of_selected_rows)
+        
+        self.db.commit()
+        return ids
+
+        
+    def set_status_of_player_ids(self, ids, status="BUSY"):
+
+        if status not in OPERATION_STATUSES:
+            self.logger.error("Illegal status {}".format(status))
+            return
+        
+        # set statuses as one sql transaction
+        ids_str = [str(id) for id in ids]
+        ids_formatted = ",".join(ids_str)
+
+        sql = "UPDATE '{}' SET {} = '{}' WHERE  {} in ({})".format(
+            self.players_table_name,
+            "processing_status",
+            status,
+            "player_id",
+            ids_formatted,
+            )
+        # self.logger.info(sql)
+
+        self.db.execute_sql(sql)
+        self.db.commit()
+
+    def players_recover_busy_status(self):
+        # anomalous rows that are still at busy even when all process finished need to be reset
+        player_ids = self.get_player_ids(None,"BUSY",None)
+        self.set_status_of_player_ids(player_ids,"TODO")
+
+    def game_count_per_player_fast(self):
+        # go over all games.
+        # get player ids, add counter for both on a defaultdict
+        # 
+        sql = "SELECT player_1_id, player_2_id FROM {} ".format(
+            self.games_table_name,
+        )
+        # sql = "SELECT player_1_id, player_2_id FROM {} WHERE elo_win=47 ".format(
+        #     self.games_table_name,
+        # )
+        
+        rows = self.db.execute_sql_return_rows(sql)
+        games_per_player = defaultdict(int)
+        for player_1, player_2 in rows:
+            games_per_player[player_1] += 1
+            games_per_player[player_2] += 1
+
+        print(games_per_player)
+
+        number_of_players = len(list(games_per_player))
+        for i, (player_id, games_played) in enumerate(games_per_player.items()):
+            # add to table
+            sql = "UPDATE '{}' SET games_played = '{}' WHERE player_id = {}".format(
+            self.players_table_name,
+            games_played,
+            player_id,
+            )
+
+            self.db.execute_sql(sql)
+            self.logger.info("{} ({}/{})".format(
+                player_id,
+                i+1,
+                number_of_players,
+                ))
+        self.commit()
+
+
+    # def games_count_per_player(self, count_per_call=4):
+    #     # select all games for a player as player 1 and as player 2
+    #     # make new column in players table
+    #     # add games count to player.
+    #     # self.db.add_column_to_existing_table("players","games_played", "INT", "null")
+        
+    #     timestamp = time.time()
+
+    #     # reading and writing
+    #     player_ids = self.get_player_ids(count=count_per_call, status="TODO", set_status_of_selected_rows="BUSY")
+
+    #     time_delta_1 = time.time() - timestamp
+    #     timestamp = time.time()
+
+    #     # reading
+    #     if len(player_ids) == 0:
+    #         self.info.logger("No player ids returned. Done.")
+    #         return False
+
+    #     player_games_tuples = []
+    #     for player_id in player_ids:
+    #         game_ids= self.get_game_ids_for_player(player_id)
+    #         games_played = len(game_ids)
+    #         player_games_tuples.append((player_id, games_played))
+    #         self.logger.info("Player {} player {} games".format(
+    #             player_id,
+    #             games_played,
+    #             ))
+        
+    #     time_delta_2 = time.time() - timestamp
+    #     timestamp = time.time()
+
+    #     #writing results (combine to limit time spent writing (database is locked for other processes to read at that time. sqlite is settable for still being readable at that time though...))
+    #     for player_id, games_played in player_games_tuples:
+    #         # add to table
+    #         sql = "UPDATE '{}' SET games_played = '{}' WHERE player_id = {}".format(
+    #         self.players_table_name,
+    #         games_played,
+    #         player_id,
+    #         )
+
+    #         self.db.execute_sql(sql)
+
+
+    #     time_delta_3 = time.time() - timestamp
+    #     timestamp = time.time()
+    #     # add to table
+
+    #     # player_games_count_str = ""
+    #     # for t in player_games_tuples:
+    #     #     player_games_count_str += str(t)
+    #     # player_games_tuples_str = [str(t) for t in player_games_tuples]
+    #     # player_games_count_str = ",".join(player_games_tuples_str)
+
+    #     # sql = "INSERT INTO {} (player_id, games_played) VALUES {} ON DUPLICATED KEYS UPDATE player_id=VALUES(player_id),games_played=VALUES(games_played);".format(
+    #     # self.players_table_name,
+    #     # player_games_count_str,
+    #     # )
+    #     # self.logger.info(sql)
+    #     # self.db.execute_sql(sql)
+
+    #     # self.logger.info("Player {} player {} games".format(
+    #     #     player_id,
+    #     #     games_played,
+    #     #     ))
+        
+    #     self.set_status_of_player_ids(player_ids,"DONE")
+
+    #     time_delta_4 = time.time() - timestamp
+    #     timestamp = time.time()
+        
+    #     self.db.commit()
+    #     self.logger.info("Counted games for {} players. Example player id processed: {}. {:.2f}s,{:.2f}s,{:.2f}s,{:.2f}s.".format(
+    #         count_per_call,
+    #         player_ids[0],
+    #         time_delta_1,
+    #         time_delta_2,
+    #         time_delta_3,
+    #         time_delta_4,
+    #         ))
+
+    #     return True
+
+    def get_game_ids_for_player(self, player_id):
+        player_id = int(player_id)
+        sql = """SELECT table_id FROM games WHERE player_1_id = {0} OR player_2_id = {0};""".format(player_id)
+        
+        rows = self.db.execute_sql_return_rows(sql)
+        ids = [r[0] for r in rows]
+        return ids
+
+    def max_elo_per_player(self):
+        # check for elo at games (it's not perfect, but should do the trick)
+        # add to player.
+        pass
+
+    def set_other_player_elo_per_game(self):
+        # I should download this.... , but the alternative is to take the other players elo (or maybe the elo at the nearest closed table id !...)
+        # YES! DOWNLOAD! Will be so much more straight forward!
+        
+        pass
+
+    def generate_game_importance_score(self):
+        # multiply elo player 1 with elo player 2
+        #  
+        pass
+
+    def set_game_process_status(self, table_id):
+        # update status
+
+        pass
 
     def create_games_table(self):
         base_sql = """CREATE TABLE IF NOT EXISTS {} (
@@ -256,7 +512,7 @@ class BoardGameArenaDatabaseOperations():
         return players
 
     def update_player_status(self, player_id, player_status, commit):
-        if player_status not in PLAYER_STATUSSES:
+        if player_status not in PLAYER_STATUSES:
             raise PlayerStatusNotFound
          
         sql = "UPDATE '{}' SET player_status = '{}' WHERE player_id = {}".format(
@@ -270,7 +526,7 @@ class BoardGameArenaDatabaseOperations():
             self.commit()
 
     def add_player(self, player_id, player_name, player_status, commit):
-        if player_status not in PLAYER_STATUSSES:
+        if player_status not in PLAYER_STATUSES:
             raise PlayerStatusNotFound
         
         # check if player already exists
@@ -470,13 +726,104 @@ class BoardGameArenaDatabaseOperations():
     #         seq.append((int(p),int(o)))
     #     return seq
 
+def logging_setup(level = logging.INFO, log_path = None, new_log_file_creation="", flask_logger=None):
+    '''    
+        if using flask, provide flask_logger as ; app.logger
+
+        new_log_file_creation : 
+        "SESSION" --> every time program restarted, new file
+        "MIDNIGHT" --> new file every day
+        "" or "NEVER" --> single file
+        log_path: full filename (as pathlib.Path)
+    '''    
+    message_format =  logging.Formatter('%(threadName)s\t%(levelname)s\t%(asctime)s\t:\t%(message)s\t(%(module)s/%(funcName)s/%(lineno)d)')
+   
+    if flask_logger is None:
+        logger = logging.getLogger(__name__)
+    else:
+        # flask has its own logger (app.logger)
+        logger = flask_logger
+    
+    logger.setLevel(level=level)  # necessary magic line....
+    logger.propagate = 0
+    
+    if log_path is not None:
+        # log to file
+        # check/create log filepath
+        log_path = Path(log_path)
+        log_path.mkdir(parents=True, exist_ok=True) 
+
+        log_path = Path(log_path, "sSense_communicator_log.txt")
+
+        timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
+        filename = "{}_{}{}".format(log_path.stem,  timestamp_str, log_path.suffix)
+        log_path_with_starttime = Path(log_path.parent, filename)
+
+        if new_log_file_creation == "" or new_log_file_creation == "NEVER":
+            f_handler = logging.FileHandler(log_path)
+            f_handler.setLevel(level=level)
+            f_handler.setFormatter(message_format)
+
+        elif new_log_file_creation == "MIDNIGHT":
+             # do start a new log file for each startup of program. too.
+            f_handler = logging.handlers.TimedRotatingFileHandler(
+                log_path_with_starttime, when="midnight",
+                interval=1,
+                backupCount=100,
+                )  # will first create the log_path name for the actual logging, and then, when time is there, copy this file to a name with the correct time stamp. 
+            f_handler.setLevel(level=level)
+            f_handler.setFormatter(message_format)
+            f_handler.suffix = "_%Y-%m-%d_%H.%M.%S.txt"
+
+        elif new_log_file_creation == "SESSION":
+            # new file at every startup of program.
+            f_handler = logging.FileHandler(log_path_with_starttime)
+            f_handler.setLevel(level=level)
+            f_handler.setFormatter(message_format)
+    
+        else:
+            logger.info("error: uncorrect log file creation identifier:{}".format(new_log_file_creation))
+            
+        logger.addHandler(f_handler)
+
+    # log to console (this needs to put last. If set before logging to file, everything is outputted twice to console.)
+    c_handler = logging.StreamHandler()
+    c_handler.setLevel(level=level)
+    c_handler.setFormatter(message_format)
+       
+    logger.addHandler(c_handler)
+
+    return logger
 if __name__ == '__main__':
     
-    db_path = r"C:\Data\Generated_program_data\boardgamearena_quoridor_scraper\bga_quoridor_data.db".format()
-    db = BoardGameArenaDatabaseOperations(db_path)
+    logger = logging_setup(logging.INFO, Path(DATA_BASE_PATH,  r"logs"), "SESSION" )
+
+    # db_name = "bga_quoridor_data.db"
+    db_name = "TESTING_bga_quoridor_data_bkpAfterBasicScraping_modified_20201120.db"
+
+
+    
+    db_path = Path( DATA_BASE_PATH,
+        db_name,
+        )
+
+    db = BoardGameArenaDatabaseOperations(db_path, logger)
+
+    db.game_count_per_player_fast()
+
+    exit() 
+    db.db.add_column_to_existing_table("players", "processing_status", "TEXT", "TODO")
+    db.db.add_column_to_existing_table("players","games_played", "INT", "null")
+
+    # continue_counting= True
+    # while continue_counting:
+    #     continue_counting = db.games_count_per_player(30)  # 19s for 100 records
+    
+    # print(db.get_games_for_player(2251))
+    # print(db.get_games_for_player(85054430))
 
     # db.add_player("12345","lode","TEST",True)
-    print( list(db.get_players_by_status("TEST",1))[0])
-    db.update_player_status(1233, "TEST2", True)
-    print(db.get_players_by_status("TO_BE_SCRAPEDff",1))
+    # print( list(db.get_players_by_status("TEST",1))[0])
+    # db.update_player_status(1233, "TEST2", True)
+    # print(db.get_players_by_status("TO_BE_SCRAPEDff",1))
     # db.update_players_from_games()
