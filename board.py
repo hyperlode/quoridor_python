@@ -138,7 +138,10 @@ class Board():
     
     '''    
     
-    def __init__(self, output_encoding):
+    def __init__(self, output_encoding, logger=None):
+        
+        self.logger = logger or logging.getLogger(__name__)
+
         nodes = [(x,y) for x in range(BOARD_WIDTH) for y in range(BOARD_HEIGHT)]
         
         self.board_graph = {node:{"edges":None, "pawn":None} for node in nodes}
@@ -173,7 +176,7 @@ class Board():
         for pl in self.players:
             node = pl.pawn.position
             okOnBoard = self.pawn_on_node(node)
-            logging.info("player {} at postion {}, ok on board:{} ".format(pl.name, node, okOnBoard))
+            self.logger.info("player {} at postion {}, ok on board:{} ".format(pl.name, node, okOnBoard))
             
     def check_wall_valid(self, new_wall):
         pass
@@ -286,7 +289,7 @@ class Board():
             else:
                 board_winning_nodes_to_pawn[node] = None  # None is +inf
 
-        # logging.info("Distances to winning nodes for player {}: {}".format(player.name, board_winning_nodes_to_pawn))
+        # self.logger.info("Distances to winning nodes for player {}: {}".format(player.name, board_winning_nodes_to_pawn))
         return board_winning_nodes_to_pawn
         
     # ACTION      
@@ -304,15 +307,15 @@ class Board():
         for node1, node2 in wall_to_remove.get_position("nodes"):
             success = self._link_nodes(node1, node2)
             if not success:
-                logging.warning(
+                self.logger.warning(
                     "connections on the board could not be connected when removing the wall. Board might be corrupt")
                 raise Exception("board potentially corrupt.")
                 return False
 
         if not success:
-            logging.error("error: wall not found. check if verbose position is accurate: {}".format(wall_to_remove.get_position("verbose")))
+            self.logger.error("error: wall not found. check if verbose position is accurate: {}".format(wall_to_remove.get_position("verbose")))
         else:
-            logging.info("wall removed from board")
+            self.logger.info("wall removed from board")
         return success
 
     def place_wall(self, new_wall):
@@ -328,9 +331,9 @@ class Board():
                     if hori == hori_new and vert == vert_new :
                         # centerpoint is the same, so for sure a failure. We just have to check what kind of failure:
                         if orientation==orientation_new:
-                            logging.info("attempt to place wall on exactly the same location of another wall.")
+                            self.logger.info("attempt to place wall on exactly the same location of another wall.")
                         else:
-                            logging.info("attempt to place wall with same centerpoint as other wall (but in another orientation).")
+                            self.logger.info("attempt to place wall with same centerpoint as other wall (but in another orientation).")
                         return False
 
                     # check for overlapping wall (placed in same direction, on same line, not sharing center point, just half a wall overlap.
@@ -346,16 +349,16 @@ class Board():
                             #check for y at least 2 different.
                             if (vert == vert_new) and abs(hori - hori_new) < 2:
                                 #overlap!
-                                logging.info("north south walls on same line and overlapping")
+                                self.logger.info("north south walls on same line and overlapping")
                                 return False
                                 
                         elif orientation == wall.EAST_WEST:
                             if (hori == hori_new) and abs(vert - vert_new) < 2:
                                 #overlap!
-                                logging.info("east-west walls are on the same line and overlapping")
+                                self.logger.info("east-west walls are on the same line and overlapping")
                                 return False
 
-        logging.info("wall can be placed.")
+        self.logger.info("wall can be placed.")
 
         #unlink nodes that are separated by the wall
         for node1, node2 in new_wall.get_position("nodes"):
@@ -370,13 +373,13 @@ class Board():
         if node2 not in self.board_graph[node1]["edges"]:
             self.board_graph[node1]["edges"].append(node2)
         else:
-            logging.warning("ASSERT ERROR: nodes already connected.")
+            self.logger.warning("ASSERT ERROR: nodes already connected.")
             return False
 
         if node1 not in self.board_graph[node2]["edges"]:
             self.board_graph[node2]["edges"].append(node1)
         else:
-            logging.warning("ASSERT ERROR: nodes already connected")
+            self.logger.warning("ASSERT ERROR: nodes already connected")
             return False
         return True
 
@@ -385,16 +388,16 @@ class Board():
         #check if wall already placed
         if node2 in self.board_graph[node1]["edges"]:
             if node1 not in self.board_graph[node2]["edges"]:
-                logging.warning("ASSERT ERROR: assymetrical links between two nodes.")
+                self.logger.warning("ASSERT ERROR: assymetrical links between two nodes.")
                 return False
             
             #now remove edges.
             self.board_graph[node1]["edges"].remove(node2)
             self.board_graph[node2]["edges"].remove(node1)
-            logging.info("wall placed between {} and {}".format(node1, node2))
+            self.logger.info("wall placed between {} and {}".format(node1, node2))
             return True
         else:
-            logging.warning("no link between two nodes. Indicates a placed wall")
+            self.logger.warning("no link between two nodes. Indicates a placed wall")
             return False
          
     def direction_to_node(self, node, direction):
@@ -404,7 +407,7 @@ class Board():
         
         #check if node exists
         if node_neighbour not in list(self.board_graph):
-            logging.info("node not existing: {}".format(node_neighbour))
+            self.logger.info("node not existing: {}".format(node_neighbour))
             return None
         return node_neighbour
     
@@ -424,7 +427,7 @@ class Board():
     
     def pawn_on_node(self, node):
         # check if a pawn is on the provided node (in graph)
-        # logging.debug("what is on node({})?: {}".format(node,self.board_graph[node]))
+        # self.logger.debug("what is on node({})?: {}".format(node,self.board_graph[node]))
         return self.board_graph[node]["pawn"] is not None
     
     # DISPLAY BOARD
@@ -450,7 +453,7 @@ class Board():
     def get_player_char(self,direction):
         
         # if self.display_orientation in ["active_player_to_top", "active_player_to_bottom"]:
-            # logging.error("active player board orientation not yet implemented.")
+            # self.logger.error("active player board orientation not yet implemented.")
             # raise Exception
             
         if direction == player.PLAYER_TO_NORTH and self.display_orientation == "player_north_to_top":
@@ -462,7 +465,7 @@ class Board():
         elif direction == player.PLAYER_TO_SOUTH and self.display_orientation == "player_north_to_bottom":
             return self.chars["BOARD_CELL_PLAYER_TO_TOP"]
         else:
-            logging.error("troubles in paradise. ")
+            self.logger.error("troubles in paradise. ")
             raise Exception 
         
     def board_array(self):
@@ -496,7 +499,7 @@ class Board():
             char_edge_corner_north_east = self.chars["BOARD_CELL_WALL_BORDER_BOTTOM_RIGHT"]
         
         else:
-            logging.log("orientation not implemented")
+            self.logger.log("orientation not implemented")
         
             
        
@@ -545,7 +548,7 @@ class Board():
             elif p.direction == player.PLAYER_TO_SOUTH:
                 board_array[row*2 + 1][col*(2+hori_extra) + 1 + (hori_extra//2)] = char_player_to_south
             else:
-                logging.warning("ASSERT ERROR: no correct direction indicated")
+                self.logger.warning("ASSERT ERROR: no correct direction indicated")
               
             #add walls
             for w in p.walls:
@@ -629,7 +632,7 @@ class Board():
             board_rows_for_output[y+4][x+3] = self.chars["ROSE_ARROW_DOWN"]  # "v"
             board_rows_for_output[y+5][x+3] = 'N'  
         else:
-            logging.error("unvalid orientation ")
+            self.logger.error("unvalid orientation ")
             return False
 
         return ["".join(row) for row in board_rows_for_output]

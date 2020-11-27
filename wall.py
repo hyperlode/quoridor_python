@@ -12,7 +12,10 @@ EAST_WEST = 1
 
 class Wall():
 
-    def __init__(self, type, id):
+    def __init__(self, type, id, logger=None):
+        
+        self.logger = logger or logging.getLogger(__name__)
+
         self._type = type
         
         if type == TYPE_EDGE:
@@ -26,21 +29,21 @@ class Wall():
         self._position_lines_orientation = None   # format (horiline, vertiline,orientation) lines as digits, from 1 to 8, orientation NORTH_SOUTH or EAST_WEST
         
     @staticmethod    
-    def position_verbose_to_nodes(verbose):
+    def position_verbose_to_nodes(verbose, logger):
         # returns ((tuple of nodes that will be disconnected), (tuple of nodes that will be disconnected),(tuple of x,y,orientation(0 is vertical))
-        position_lines_orientation = Wall._notation_to_lines_and_orientation(verbose)
+        position_lines_orientation = Wall._notation_to_lines_and_orientation(verbose, logger)
         
         if position_lines_orientation is None:
-            status.info("INPUT ERROR: failed to interpret wall notation")
+            logger.info("INPUT ERROR: failed to interpret wall notation")
             return None, None
         
-        nodes =  Wall._position_lines_to_nodes(position_lines_orientation)
+        nodes =  Wall._position_lines_to_nodes(position_lines_orientation, logger)
         if nodes is None:
             return None, None
         return nodes, position_lines_orientation
         
     @staticmethod
-    def _position_lines_to_nodes( position_lines_orientation):
+    def _position_lines_to_nodes( position_lines_orientation, logger):
         hori_line, vert_line, orientation = position_lines_orientation
         
         # there are four nodes (2x2) involved per wall. get 2 x and 2 y coords.
@@ -83,14 +86,14 @@ class Wall():
         # return x_nodes, y_nodes
     
     @staticmethod
-    def _notation_to_lines_and_orientation(verbose):
+    def _notation_to_lines_and_orientation(verbose, logger):
         #returns horizonal line (from 1 -> 8), vertical line (1->8), Orientation (1=horizontal, 0=vertical)
         # notation a1 to 8h
         
         verbose = verbose.lower()
         
         if len(verbose) != 2:
-            logging.info("INPUT ERROR:notation wrong: {}".format(verbose))
+            logger.info("INPUT ERROR:notation wrong: {}".format(verbose))
             return None
         
         a, b = verbose 
@@ -114,7 +117,7 @@ class Wall():
         
         # check boundaries
         if vert_line<1 or vert_line > 8 or hori_line<1 or hori_line>8:
-            logging.info("INPUT ERROR: outside boundaries. a1 to h8. Submission:letter {} digit".format(letter,digit))
+            logger.info("INPUT ERROR: outside boundaries. a1 to h8. Submission:letter {} digit".format(letter,digit))
             return None
         
         return (hori_line, vert_line, orientation)
@@ -151,7 +154,7 @@ class Wall():
         elif notation == "lines_orientation":
             return self._position_lines_orientation
         else:
-            logging.error("wrong notation: please provide notation")
+            self.logger.error("wrong notation: please provide notation")
             return None
 
     def reset_position(self, allow_reset_placed_wall = False):
@@ -162,7 +165,7 @@ class Wall():
             self._status = STATUS_NOT_PLACED
             return True
         else:
-            logging.info("once a wall is placed, it cannot be undone")
+            self.logger.info("once a wall is placed, it cannot be undone")
             return False
             
     def consolidate_position(self):
@@ -170,24 +173,24 @@ class Wall():
             self._status = STATUS_PLACED
             return True
         elif self._status == STATUS_PLACED:
-            logging.info ("already consolidated")
+            self.logger.info ("already consolidated")
             return True
         elif self._status == STATUS_NOT_PLACED:
-            logging.info ("nothing to consolidate")
+            self.logger.info ("nothing to consolidate")
             return False
         else:
-            logging.error("ASSERT ERROR: illegal status")
+            self.logger.error("ASSERT ERROR: illegal status")
             return False
     def set_position(self, position_verbose, tentative = False):
         #position is verbose.
         
         if self._status != STATUS_NOT_PLACED:
-            logging.info("error: wall can only be placed once")
+            self.logger.info("error: wall can only be placed once")
             return False
         
-        nodes, position_lines_orientation = Wall.position_verbose_to_nodes(position_verbose)
+        nodes, position_lines_orientation = Wall.position_verbose_to_nodes(position_verbose, self.logger)
         
-        logging.info("nodes: {}".format(nodes))
+        self.logger.info("nodes: {}".format(nodes))
             
         if nodes is not None:
             self._position_nodes = nodes

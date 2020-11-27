@@ -438,8 +438,6 @@ def logging_setup(level = logging.INFO, log_path = None, new_log_file_creation="
         log_path = Path(log_path)
         log_path.mkdir(parents=True, exist_ok=True) 
 
-        log_path = Path(log_path, "sSense_communicator_log.txt")
-
         timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
         filename = "{}_{}{}".format(log_path.stem,  timestamp_str, log_path.suffix)
         log_path_with_starttime = Path(log_path.parent, filename)
@@ -503,7 +501,7 @@ def get_gamedata(logger, table_ids):
 
 if __name__ == "__main__":
     
-    logger = logging_setup(logging.INFO, Path(DATA_BASE_PATH,  r"logs"), "SESSION" )
+    logger = logging_setup(logging.INFO, Path(DATA_BASE_PATH,  r"logs", "bga_scrape_quoridor.log"), "SESSION" )
     
     table_id = 124984142
 

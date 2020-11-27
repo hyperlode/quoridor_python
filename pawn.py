@@ -1,4 +1,5 @@
 import getter_setter_property_example as tmp
+import logging
 # POSITION_INIT = 0
 # POSITION_GAME = 1
 # POSITION_END = 2
@@ -52,7 +53,10 @@ DIRECTIONS_DIAGONAL_JUMP = [NORTH_EAST, NORTH_WEST, SOUTH_EAST, SOUTH_WEST]
 
 class Pawn():
     # def __init__(self, position_init, positions_win):
-    def __init__(self, position_init):
+    def __init__(self, position_init, logger=None):
+        
+        self.logger = logger or logging.getLogger(__name__)
+        
         # self.player = player
         self.position_init = position_init
         self._position = position_init

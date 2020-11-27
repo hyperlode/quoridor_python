@@ -52,19 +52,22 @@ SIDE_BAR_EMPTY_SPACE = " "
 
 class Quoridor():
     
-    def __init__(self, settings = None, output_encoding = None):
+    def __init__(self, settings = None, output_encoding = None, logger=None):
+        
+        self.logger = logger or logging.getLogger(__name__)
         
         self.game_state = GAME_STATE_NOT_STARTED
         self.status_message = ""
         
         self.output_encoding = output_encoding
         
-        logging.info("Init Quoridor game ")
+        self.logger.info("Init Quoridor game ")
         if settings is None:
             # start from scratch
             player1_name = input("Name for player 1 (going north) [player_1]:") or "player_1"
             player2_name = input("Name for player 2 (going south) [player_2]:") or "player_2"
             self.settings = {}
+
         else:
             # scrape the dict to see what settings are available
             
@@ -73,11 +76,11 @@ class Quoridor():
             self.settings = settings
             #if direction of player 1 is not North, change it here.
 
-        player1 = player.Player(player1_name, player.PLAYER_TO_NORTH)
-        player2 = player.Player(player2_name, player.PLAYER_TO_SOUTH)
+        player1 = player.Player(player1_name, player.PLAYER_TO_NORTH, self.logger)
+        player2 = player.Player(player2_name, player.PLAYER_TO_SOUTH, self.logger)
         
         self.players = [player1, player2]
-        self.gameBoard = board.Board(self.output_encoding)
+        self.gameBoard = board.Board(self.output_encoding, self.logger)
         self.gameBoard.add_player(player1)
         self.gameBoard.add_player(player2)
 
@@ -207,7 +210,7 @@ class Quoridor():
             elif len(auto_move_directions) == 1:
                 return self.play_turn(auto_move_directions[0])
             else:
-                logging.error("unvalid auto move directions. {}".format(auto_move_directions))
+                self.logger.error("unvalid auto move directions. {}".format(auto_move_directions))
                 
         elif move == "auto_mind_read":
             if self.last_auto_moves is not None:
@@ -282,7 +285,7 @@ class Quoridor():
         elif depth == 3:
             return self.auto_level_3(simulate)
         else:
-            logging.error("auto_turn parameter not correct. ")
+            self.logger.error("auto_turn parameter not correct. ")
             
     def auto_level_1(self, simulate=False):
         # brute force one move 
@@ -534,7 +537,7 @@ class Quoridor():
         suggestions_filter_out_walls_ahead = []
         for moves in suggestions:
             #filter wall moves.
-            wall_notation = wall.Wall._notation_to_lines_and_orientation(moves[0])
+            wall_notation = wall.Wall._notation_to_lines_and_orientation(moves[0], self.logger)
             
             print(moves)
             print(wall_notation)
@@ -660,7 +663,7 @@ class Quoridor():
                     self.distance_history[i], 
                     self.distance_history[i+1]))
         else:
-            logging.error("ASSERT ERROR: no distances column print option")
+            self.logger.error("ASSERT ERROR: no distances column print option")
         # create the columns
         for i, turn in enumerate(turns):
             if include_distance_history:
@@ -732,7 +735,7 @@ class Quoridor():
         
         for step in range(steps):
             if len(self.move_history) == 0:
-                logging.info("nothing to undo")
+                self.logger.info("nothing to undo")
                 return False
 
             # check what the previous move was.
@@ -741,19 +744,19 @@ class Quoridor():
             
             if as_independent_turn:
                 previous_player_index = self.get_previous_player_index()
-                logging.info("undo previous move:{} by {}".format(move_to_undo, self.players[previous_player_index].name))
+                self.logger.info("undo previous move:{} by {}".format(move_to_undo, self.players[previous_player_index].name))
             else:
                 previous_player_index = self.playerAtMoveIndex
                 
             
             if move_to_undo in NOTATION_TO_DIRECTION:
                 # move pawn
-                logging.info("undo pawn move")
+                self.logger.info("undo pawn move")
                 success = self.players[previous_player_index].undo_move_pawn()
 
             else:
                 # if wall : remove wall
-                logging.info("undo wall move")
+                self.logger.info("undo wall move")
                 success = self.players[previous_player_index].undo_place_wall(move_to_undo)
 
             if success:
@@ -763,7 +766,9 @@ class Quoridor():
                 else:
                     pass
             else:
-                logging.error("undo unsuccessful")
+                self.logger.error("undo unsuccessful, move to undo: {}".format(
+                    move_to_undo,
+                    ))
                 raise Exception("Big troubles at undoing.")
     
     def make_move(self, move):
@@ -776,14 +781,14 @@ class Quoridor():
             move = move.upper()
             move_made = self.move_pawn(move)
             if not move_made:
-                logging.info("moved made?:{}".format(move_made))
+                self.logger.info("moved made?:{}".format(move_made))
 
-        elif wall.Wall._notation_to_lines_and_orientation(move) is not None:
+        elif wall.Wall._notation_to_lines_and_orientation(move, self.logger) is not None:
             move_made = self.place_wall(move)
         else:
             status = "Move {} has a wrong notation or is not yet implemented".format(move)
             self.set_status(status)
-            logging.info("INPUT VIOLATION: "+ status)
+            self.logger.info("INPUT VIOLATION: "+ status)
         return move_made
 
     def play_sequence(self, moves, animation_time_ms = None):
@@ -792,7 +797,7 @@ class Quoridor():
             if not success:
                 status = "Illegal move in sequence! Aborting auto play. Provided sequence:{}. Played moves: {}".format(
                     moves, self.move_history)
-                logging.info(status)
+                self.logger.info(status)
                 self.set_status(status)
                 return False
             elif animation_time_ms is not None:
@@ -803,7 +808,7 @@ class Quoridor():
 
     def play_turn(self, move):
         status = "Play turn ( {} playing move: {})".format(self.active_player().name, move)
-        logging.info(status)
+        self.logger.info(status)
         
         move = move.lower()  # clean up first, the only problem move is E3 vs e3  (pawn move over line three vs wall placement).
         
@@ -812,7 +817,7 @@ class Quoridor():
         # add valid move to history
         if not played:
             status = "move not made"
-            logging.info(status)
+            self.logger.info(status)
             self.set_status(status)
             return False
         else:
@@ -828,13 +833,14 @@ class Quoridor():
             played = False
             status = "ERROR: move not executed. There always must be a path to at least one of the winning squares for all players."
             self.set_status(status)
-            logging.info("RULE VIOLATION: no winning path for both players. (dist pl1,dist pl2)(None = no path): {}".format(distances_to_win))
+            self.logger.info("RULE VIOLATION: no winning path for both players. (dist pl1,dist pl2)(None = no path): {}".format(distances_to_win))
             return False
 
         # check for winner
         game_finished = self.active_player().get_pawn_on_winning_position()
         if game_finished:
-           self.game_state = GAME_STATE_FINISHED
+            self.logger.info("Game finished.")
+            self.game_state = GAME_STATE_FINISHED
         else:
             self.next_player()
 
@@ -858,7 +864,7 @@ class Quoridor():
         
         self.active_player().active = True
         status = "-----------Change player to {}".format(self.active_player().name)
-        logging.info(status)
+        self.logger.info(status)
 
     def auto_pawn_move_suggestion(self):
         # list of all pawn directions with equal (minimum) distance to a winning square.
@@ -944,7 +950,7 @@ class Quoridor():
                 continue
 
             # enormous optimization: will only recalculate path if the newly placed wall is somehow blocking the existing shortest path for both players.
-            cuts, _ = wall.Wall.position_verbose_to_nodes(pos)
+            cuts, _ = wall.Wall.position_verbose_to_nodes(pos, self.logger)
             cut1, cut2 = cuts
             recalculate_paths = cut1 in node_crossings or cut2 in node_crossings
             # recalculate_paths = True  # uncomment to UNDO optimization
@@ -965,7 +971,7 @@ class Quoridor():
             # 1b undo move
             success = self.active_player().undo_place_wall(pos)
             if not success:
-                logging.error("ASSERT ERROR undo wall during all wall placements for testing failed.")
+                self.logger.error("ASSERT ERROR undo wall during all wall placements for testing failed.")
                 raise Exception
 
         return wall_placements_effect
@@ -1027,9 +1033,9 @@ class Quoridor():
         # move pawn
         success = self.active_player().move_pawn(direction,fail_silent=fail_silent)
         if success:
-            logging.info("pawn moved.")
+            self.logger.info("pawn moved.")
         else:
-            logging.info("pawn not moved.")
+            self.logger.info("pawn not moved.")
         return success
         
     def state_as_dict(self):
@@ -1067,26 +1073,7 @@ def drawProgressBar(percent, barLen = 20):
     progress = ""
     sys.stdout.write("[{:<{}}] {:.0f}%".format("=" * int(barLen * percent), barLen, percent * 100))
     sys.stdout.flush()
-    
-
-def logging_setup():
-    # https://docs.python.org/3/howto/logging.html
-    # logging.basicConfig(filename='c:/temp/quoridortest.log', level=logging.INFO)
-    logging.basicConfig(filename='c:/temp/quoridortest.log', level=logging.INFO)
-    formatter = logging.Formatter(fmt='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-    logging.info('<<<<<<<<<<<<<<<<<<Start of new logging session.>>>>>>>>>>>>>>>>>>>>')
-
-    # self.logger = logging.getLogger()    
-    # handler = logging.StreamHandler()
-    # formatter = logging.Formatter(
-            # '%(asctime)s %n
-    # (name)-12s %(levelname)-8s %(message)s')
-    # handler.setFormatter(formatter)
-    # self.logger.addHandler(handler)
-    # self.logger.setLevel(logging.DEBUG)
-
-    # self.logger.debug('often makes a very good meal of %s', 'visiting tourists')
-    
+   
     
 if __name__ == "__main__":
     # logging_setup()

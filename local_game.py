@@ -6,12 +6,17 @@ import logging
 import sys
 import os
 import time
+import datetime
+from pathlib import Path
 
 LOG_PATH = "c:/temp/"
 LOG_FILENAME= "quoridor_local_games.log"
 class Quoridor_local_game():
     
-    def __init__(self, player_1_name=None, player_2_name=None, moves=None, loop = False):
+    def __init__(self, player_1_name=None, player_2_name=None, moves=None, loop=False, logger=None):
+
+        
+
         # loop for automatic restart after game end.
         # name will be asked when player names None 
         # for computer player: auto_1 --> 1 level deep brute force
@@ -19,6 +24,8 @@ class Quoridor_local_game():
         # for computer player: auto_3 --> 3 level deep brute force
         # moves: list or array with sequence of verbose moves as game starting point.
     
+        self.logger = logger or logging.getLogger(__name__)
+
         self.player_names = [player_1_name, player_2_name]
         
         for i, name in enumerate(self.player_names):
@@ -38,7 +45,7 @@ class Quoridor_local_game():
         
         output_encoding = sys.stdout.encoding  # check for command line encoding. utf-8 is desired.
         
-        self.q = quoridor.Quoridor(self.init_dict, output_encoding)
+        self.q = quoridor.Quoridor(self.init_dict, output_encoding, self.logger)
         self.game_loop()   
         
     def save_to_stats_file(self, stats):
@@ -55,9 +62,13 @@ class Quoridor_local_game():
         while playing:
             # display the board
             # self.pause()
+            self.logger.info("print board (games state: {}):".format(
+                self.q.get_state(),
+            ))
             self.print_board()
 
             self.check_state()
+            
             if self.q.get_state() == quoridor.GAME_STATE_PLAYING:
                 start_millis = int(round(time.time() * 1000))
 
@@ -81,6 +92,10 @@ class Quoridor_local_game():
                     # self.human_turn()    
 
             elif self.q.get_state() == quoridor.GAME_STATE_FINISHED:
+                self.logger.info("game finished... (will restart?:{})".format(
+                    self.loop,
+                    ))
+
                 if not self.loop:
                     # self.command("moves")
                     self.command("stats")
@@ -88,6 +103,10 @@ class Quoridor_local_game():
                     command = input("game finished. Please enter u for undoing, r for restart or enter for exit") or "exit"
                     if command in ["u", "undo"]:
                         self.q.set_state(quoridor.GAME_STATE_PLAYING)
+                        
+                        # hack: we have to pretend like it was the next players' turn to play. So, the undo will properly revert.
+                        self.q.playerAtMoveIndex = self.q.get_previous_player_index()
+
                         self.q.execute_command("undo")
                         self.q.execute_command("undo")
                     elif command in ["r", "restart"]:
@@ -100,7 +119,7 @@ class Quoridor_local_game():
                     self.command("save_stats")
                     self.q = quoridor.Quoridor(self.init_dict)
             else:
-                logging.error("wrong game state: {}".format(self.q.get_state()))
+                self.logger.error("wrong game state: {}".format(self.q.get_state()))
                 
             feedback_message = self.q.get_status_message()
             if feedback_message != "":
@@ -133,7 +152,7 @@ class Quoridor_local_game():
     def human_turn(self):
 
         active_player_char = self.q.gameBoard.get_player_char(self.q.active_player().player_direction)
-        logging.info("move history: {}".format(self.q.move_history))
+        self.logger.info("move history: {}".format(self.q.move_history))
 
         move = input("player {} {} input move(h for help)): ".format(self.q.active_player().name,
                                                                      active_player_char))
@@ -259,30 +278,99 @@ def console_clear():
     '''
     os.system('cls' if os.name == 'nt' else 'echo -e \\\\033c')
 
-def logging_setup():
-    # https://docs.python.org/3/howto/logging.html
-    # logging.basicConfig(filename='c:/temp/quoridortest.log', level=logging.INFO)
-    os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
-    logging.basicConfig(filename='{}{}'.format(LOG_PATH, LOG_FILENAME), level=logging.ERROR)
-    # logging.basicConfig(filename='{}{}'.format(LOG_PATH, LOG_FILENAME), level=logging.INFO)
-    formatter = logging.Formatter(fmt='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-    logging.info('<<<<<<<<<<<<<<<<<<Start of new logging session.>>>>>>>>>>>>>>>>>>>>')
 
-    # self.logger = logging.getLogger()    
-    # handler = logging.StreamHandler()
-    # formatter = logging.Formatter(
-            # '%(asctime)s %n
-    # (name)-12s %(levelname)-8s %(message)s')
-    # handler.setFormatter(formatter)
-    # self.logger.addHandler(handler)
-    # self.logger.setLevel(logging.DEBUG)
+def logging_setup(level = logging.INFO, log_path = None, new_log_file_creation="", flask_logger=None):
+    '''    
+        if using flask, provide flask_logger as ; app.logger
+        log_path: full filename (as pathlib.Path) e.g. c:/temp/logs/mylog.txt --> It will automatically add a date between name and extension
 
-    # self.logger.debug('often makes a very good meal of %s', 'visiting tourists')
+        new_log_file_creation : 
+        "SESSION" --> every time program restarted, new file
+        "MIDNIGHT" --> new file every day
+        "" or "NEVER" --> single file
+    '''    
+    message_format =  logging.Formatter('%(threadName)s\t%(levelname)s\t%(asctime)s\t:\t%(message)s\t(%(module)s/%(funcName)s/%(lineno)d)')
+   
+    if flask_logger is None:
+        logger = logging.getLogger(__name__)
+    else:
+        # flask has its own logger (app.logger)
+        logger = flask_logger
+    
+    logger.setLevel(level=level)  # necessary magic line....
+    logger.propagate = 0
+    
+    if log_path is not None:
+        # log to file
+        # check/create log filepath
+        log_path = Path(log_path)
+        log_path.mkdir(parents=True, exist_ok=True) 
+
+        timestamp_str = datetime.datetime.now().strftime("%Y-%m-%d_%H.%M.%S")
+        filename = "{}_{}{}".format(log_path.stem,  timestamp_str, log_path.suffix)
+        log_path_with_starttime = Path(log_path.parent, filename)
+
+        if new_log_file_creation == "" or new_log_file_creation == "NEVER":
+            f_handler = logging.FileHandler(log_path)
+            f_handler.setLevel(level=level)
+            f_handler.setFormatter(message_format)
+
+        elif new_log_file_creation == "MIDNIGHT":
+             # do start a new log file for each startup of program. too.
+            f_handler = logging.handlers.TimedRotatingFileHandler(
+                log_path_with_starttime, when="midnight",
+                interval=1,
+                backupCount=100,
+                )  # will first create the log_path name for the actual logging, and then, when time is there, copy this file to a name with the correct time stamp. 
+            f_handler.setLevel(level=level)
+            f_handler.setFormatter(message_format)
+            f_handler.suffix = "_%Y-%m-%d_%H.%M.%S.txt"
+
+        elif new_log_file_creation == "SESSION":
+            # new file at every startup of program.
+            f_handler = logging.FileHandler(log_path_with_starttime)
+            f_handler.setLevel(level=level)
+            f_handler.setFormatter(message_format)
+    
+        else:
+            logger.info("error: uncorrect log file creation identifier:{}".format(new_log_file_creation))
+            
+        logger.addHandler(f_handler)
+
+    # log to console (this needs to put last. If set before logging to file, everything is outputted twice to console.)
+    c_handler = logging.StreamHandler()
+    c_handler.setLevel(level=level)
+    c_handler.setFormatter(message_format)
+       
+    logger.addHandler(c_handler)
+
+    return logger
+
+# def logging_setup():
+#     # https://docs.python.org/3/howto/logging.html
+#     # logging.basicConfig(filename='c:/temp/quoridortest.log', level=logging.INFO)
+#     os.makedirs(os.path.dirname(LOG_PATH), exist_ok=True)
+#     logging.basicConfig(filename='{}{}'.format(LOG_PATH, LOG_FILENAME), level=logging.ERROR)
+#     # logging.basicConfig(filename='{}{}'.format(LOG_PATH, LOG_FILENAME), level=logging.INFO)
+#     formatter = logging.Formatter(fmt='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+#     logging.info('<<<<<<<<<<<<<<<<<<Start of new logging session.>>>>>>>>>>>>>>>>>>>>')
+
+#     # self.logger = logging.getLogger()    
+#     # handler = logging.StreamHandler()
+#     # formatter = logging.Formatter(
+#             # '%(asctime)s %n
+#     # (name)-12s %(levelname)-8s %(message)s')
+#     # handler.setFormatter(formatter)
+#     # self.logger.addHandler(handler)
+#     # self.logger.setLevel(logging.DEBUG)
+
+#     # self.logger.debug('often makes a very good meal of %s', 'visiting tourists')
 
     
 if __name__ == "__main__":
 
-    logging_setup()
+    logger = logging_setup(logging.INFO, log_path=r"c:/temp/quoridor_local_games.log", new_log_file_creation="SESSION")
+
     #l = Quoridor_local_game()
     # l = Quoridor_local_game("lode", "tmp", loop=False)
     # l = Quoridor_local_game(None, "ale3_fake", ['n', '7c', 'n', 'e3', 'n', '4d', '2d', '7a', '2b', 'd5', 'e1', '7e', 'w', '4b', '6e', 'g6', 'w', 'f4'])
@@ -310,7 +398,8 @@ if __name__ == "__main__":
     
     # l = Quoridor_local_game("Lode", "from AI2", ['n', 's', 'n', '8d', 'n', '8f', '3d', '8b', 'n', '8h', 'w', 's', 'w', 's', '4a', 's', '4c', 's', 'n'], loop=False)  # next auto_2 move was ", 'g7'" why??
     
-    bga_game_31425340 = Quoridor_local_game("tmp", "tmp2",['N', 'S', 'N', '3d', 'c3', 'S', 'c1', '7f', 'd7', '7h', '7b', 'S', 'E', '3f', 'E', 'g2', 'f1', '8d', 'S', '6c', 'S', 'e7', '4b', '5a', 'e5', 'S', 'E', 'S', 'N', 'E', 'N', 'E', 'N', 'EE', '3h', 'WW', 'WW', 'WW', 'WW', 'N', 'd5', 'S', 'N', 'W', 'N', 'N', 'W', 'W', 'W', 'W', 'c7', 'W', 'W', 'S', 'N', 'S', 'N', '8a', 'E', 'S', 'E', 'S'])
+    bga_game_31425340 = Quoridor_local_game("tmp", "tmp2",['N', 'S', 'N', '3d', 'c3', 'S', 'c1', '7f', 'd7', '7h', '7b', 'S', 'E', '3f', 'E', 'g2', 'f1', '8d', 'S', '6c', 'S', 'e7', '4b', '5a', 'e5', 'S', 'E', 'S', 'N', 'E', 'N', 'E', 'N', 'EE', '3h', 'WW', 'WW', 'WW', 'WW', 'N', 'd5', 'S', 'N', 'W', 'N', 'N', 'W', 'W', 'W', 'W', 'c7', 'W', 'W', 'S', 'N', 'S', 'N', '8a', 'E', 'S', 'E','S'], logger=logger)
+    bga_game_31425340 = Quoridor_local_game("tmp", "tmp2",['N', 'S', 'N', '3d', 'c3', 'S', 'c1', '7f', 'd7', '7h', '7b', 'S', 'E', '3f', 'E', 'g2', 'f1', '8d', 'S', '6c', 'S', 'e7', '4b', '5a', 'e5', 'S', 'E', 'S', 'N', 'E', 'N', 'E', 'N', 'EE', '3h', 'WW', 'WW', 'WW', 'WW', 'N', 'd5', 'S', 'N', 'W', 'N', 'N', 'W', 'W', 'W', 'W', 'c7', 'W', 'W', 'S', 'N', 'S', 'N', '8a', 'E', 'S', 'E'], logger=logger)
     
     # l = Quoridor_local_game("a", "b", ['n', 's', 'n', 's', 'n', '7f', 'n', '8c', '1d', '7d', 'e', '7h', 'n', 'e6', '6d', 'f4', 'b7', '5f', '6b', 'g5'])
     # l = Quoridor_local_game("bramz", "wasAuto1", ['n', 's', 'n', 's', 'n', 's', '3d', '4d', 'e', '6e', 'e5', '6g', '4b', '7h', 'a5', 'w', 'a7', 'n', 'g7', 'e3', 's', '2f', '3f', 'c2', 'e', 'd1', 'e', 'g2', 's', '1g', 'e', 'n', 's', 'w', 'w', 'w', '8b', 'e', 'c7', 's', '7d', 's', 'w', 'e', 'w', 'n', 'n', 'e', 'w', 'e', 'n', 'n', 'w', 'w', 's', 'w', 's', 'n', 'w', 'w', 'n', 'w', 'n', 'w', 'n', 's', 'w', 's', 'w', 's', 'n', 'ss', 'n', 's', 'n', 's', 'n', 's'])
