@@ -517,7 +517,7 @@ if __name__ == "__main__":
     table_ids = [3156753] # old
     table_ids = [6584339] # old
     table_ids = [10652513]
-    table_ids = [124984142, 126456011, 94224007,8925907] 
+    table_ids = [124984142, 126456011, 94224007,8925907,26381891, 31425340] 
     
     game_data = get_gamedata(logger, table_ids)
     

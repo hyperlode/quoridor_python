@@ -302,7 +302,7 @@ if __name__ == "__main__":
     # l = Quoridor_local_game("auto_1", "auto_2", loop=True)
     # l = Quoridor_local_game("auto_2", "auto_2", loop=True)
     # l = Quoridor_local_game("auto_2", "auto_3", loop=True)
-    l = Quoridor_local_game("Shane", "auto_2", loop=True)
+    # l = Quoridor_local_game("Shane", "auto_2", loop=True)
     # l = Quoridor_local_game("auto_2", "auto_2")
 
     ## test cases
@@ -310,6 +310,7 @@ if __name__ == "__main__":
     
     # l = Quoridor_local_game("Lode", "from AI2", ['n', 's', 'n', '8d', 'n', '8f', '3d', '8b', 'n', '8h', 'w', 's', 'w', 's', '4a', 's', '4c', 's', 'n'], loop=False)  # next auto_2 move was ", 'g7'" why??
     
+    bga_game_31425340 = Quoridor_local_game("tmp", "tmp2",['N', 'S', 'N', '3d', 'c3', 'S', 'c1', '7f', 'd7', '7h', '7b', 'S', 'E', '3f', 'E', 'g2', 'f1', '8d', 'S', '6c', 'S', 'e7', '4b', '5a', 'e5', 'S', 'E', 'S', 'N', 'E', 'N', 'E', 'N', 'EE', '3h', 'WW', 'WW', 'WW', 'WW', 'N', 'd5', 'S', 'N', 'W', 'N', 'N', 'W', 'W', 'W', 'W', 'c7', 'W', 'W', 'S', 'N', 'S', 'N', '8a', 'E', 'S', 'E', 'S'])
     
     # l = Quoridor_local_game("a", "b", ['n', 's', 'n', 's', 'n', '7f', 'n', '8c', '1d', '7d', 'e', '7h', 'n', 'e6', '6d', 'f4', 'b7', '5f', '6b', 'g5'])
     # l = Quoridor_local_game("bramz", "wasAuto1", ['n', 's', 'n', 's', 'n', 's', '3d', '4d', 'e', '6e', 'e5', '6g', '4b', '7h', 'a5', 'w', 'a7', 'n', 'g7', 'e3', 's', '2f', '3f', 'c2', 'e', 'd1', 'e', 'g2', 's', '1g', 'e', 'n', 's', 'w', 'w', 'w', '8b', 'e', 'c7', 's', '7d', 's', 'w', 'e', 'w', 'n', 'n', 'e', 'w', 'e', 'n', 'n', 'w', 'w', 's', 'w', 's', 'n', 'w', 'w', 'n', 'w', 'n', 'w', 'n', 's', 'w', 's', 'w', 's', 'n', 'ss', 'n', 's', 'n', 's', 'n', 's'])

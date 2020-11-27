@@ -275,41 +275,353 @@ class BoardGameArenaDatabaseOperations():
         player_ids = self.get_player_ids(None,"BUSY",None)
         self.set_status_of_player_ids(player_ids,"TODO")
 
-    def game_count_per_player_fast(self):
-        # go over all games.
-        # get player ids, add counter for both on a defaultdict
-        # 
-        sql = "SELECT player_1_id, player_2_id FROM {} ".format(
-            self.games_table_name,
-        )
-        # sql = "SELECT player_1_id, player_2_id FROM {} WHERE elo_win=47 ".format(
-        #     self.games_table_name,
-        # )
+    def set_games_priority(self):
         
+        # for every player number of games time elo ranking! 
+        # player_1 average elo 
+        # player_2 average elo
+        # player_1 number of games
+        # player_2 number of games
+        # 
+        # player_1_elo_with_games_count_multiplied
+        # player_2_elo_with_games_count_multiplied
+
+        # game_importance_from_elo_and_games_count
+        
+        # get players data
+
+        # get game data --> player1 and player2
+
+        # create game importance data
+
+        # create sql to set game importance
+
+
+        
+
+
+
+        pass
+
+
+
+    def fill_in_games_data(self):
+        # get games
+
+        # timestamp
+
+        # restriction = "WHERE games_played=100"
+        restriction = ""
+
+        # get games data
+        sql = "SELECT table_id, time_start, time_end FROM {} {}".format(
+            self.games_table_name,
+            restriction,
+        )
+        self.logger.info(sql)
         rows = self.db.execute_sql_return_rows(sql)
-        games_per_player = defaultdict(int)
-        for player_1, player_2 in rows:
-            games_per_player[player_1] += 1
-            games_per_player[player_2] += 1
 
-        print(games_per_player)
+        games_data = defaultdict(dict)
+        
+        # process data
+        for table_id, timestamp_start, timestamp_end in rows:
+           
+            games_data[table_id]["time_start_ISO"] = datetime.datetime.fromtimestamp(timestamp_start).strftime("%Y.%m.%d-%H.%M.%S")
+            games_data[table_id]["time_end_ISO"] = datetime.datetime.fromtimestamp(timestamp_end).strftime("%Y.%m.%d-%H.%M.%S")
 
-        number_of_players = len(list(games_per_player))
-        for i, (player_id, games_played) in enumerate(games_per_player.items()):
+        self.db.add_column_to_existing_table("games","time_start_ISO", "TEXT", "null")
+        self.db.add_column_to_existing_table("games","time_end_ISO", "TEXT", "null")
+        
+        # write every games's stats
+        number_of_games = len(list(games_data))
+        for i, (table_id, data) in enumerate(games_data.items()):
             # add to table
-            sql = "UPDATE '{}' SET games_played = '{}' WHERE player_id = {}".format(
+            sql = "UPDATE '{}' SET time_start_ISO='{}', time_end_ISO='{}' WHERE table_id = {}".format(
+            self.games_table_name,
+            data["time_start_ISO"],
+            data["time_end_ISO"],
+            table_id,
+            )
+
+            self.db.execute_sql(sql)
+            if i%1000 == 0:
+                self.logger.info("{} ({}/{})".format(
+                    table_id,
+                    i+1,
+                    number_of_games,
+                    ))
+        self.commit()     
+
+    def fill_in_games_data_from_player(self):
+
+        # get player stats
+        # get all games 
+        # applying player stats
+        # get games data
+        
+        # restriction = "WHERE games_played=100"
+        restriction = ""
+        # get player data
+        sql = "SELECT player_id, games_played, avg_elo_games_count_mult, high_elo_games_count_mult FROM {} {}".format(
             self.players_table_name,
-            games_played,
+            restriction,
+        )
+        player_rows = self.db.execute_sql_return_rows(sql)
+
+        players_strength_data = {id:(count,avg,high) for id,count,avg,high in player_rows}
+
+        # self.logger.info(players_strength_data[9668513])
+        
+        # get games data
+        sql = "SELECT table_id, player_1_id, player_2_id FROM {} {}".format(
+            self.games_table_name,
+            restriction,
+        )
+        rows = self.db.execute_sql_return_rows(sql)
+
+        games_data = defaultdict(dict)
+
+         # process data
+        for table_id, player_1, player_2 in rows:
+            try:
+                # print(table_id)
+                count1,avg1, high1 = players_strength_data[int(player_1)]
+                count2,avg2, high2 = players_strength_data[int(player_2)]
+            except Exception as e:
+                # self.logger.warning("error: most probably, one of the players is not known in the database. {}".format(e), exc_info=True)
+                continue
+
+            avg_total = avg1*avg2
+            high_total = high1*high2
+            count_total = count1*count2
+
+            games_data[table_id] = (count_total, avg_total, high_total)
+        
+        self.db.add_column_to_existing_table("games","game_quality_count", "INT", "null")
+        self.db.add_column_to_existing_table("games","game_quality_eloavg", "INT", "null")
+        self.db.add_column_to_existing_table("games","game_quality_elohigh", "INT", "null")
+        
+        # self.db.add_column_to_existing_table("games","game_quality_gamesplayed", "TEXT", "null")
+
+        # write every player's stats
+        number_of_games = len(list(games_data))
+        self.logger.info("number of games to be checked: {}".format(number_of_games))
+        for i, (table_id,  (count_total, avg_total, high_total)) in enumerate(games_data.items()):
+            # add to table
+            sql = "UPDATE '{}' SET game_quality_count={}, game_quality_eloavg={}, game_quality_elohigh={} WHERE table_id = {}".format(
+            self.games_table_name,
+            count_total,
+            avg_total,
+            high_total,
+            # data["game_quality_count"],
+            # data["game_quality_eloavg"],
+            # data["game_quality_elohigh"],
+            table_id,
+            )
+
+            self.db.execute_sql(sql)
+            if i%1000 == 0:
+                self.logger.info("{} ({}/{})".format(
+                    table_id,
+                    i+1,
+                    number_of_games,
+                    ))
+        self.commit()     
+
+    def fill_in_player_data(self):
+        # get players
+
+        # avg_elo_games_count_mult
+        # high_elo_games_count_mult
+
+
+        # restriction = "WHERE games_played=100"
+        restriction = ""
+
+        # get player data
+        sql = "SELECT player_id, games_played, average_elo, highest_elo FROM {} {}".format(
+            self.players_table_name,
+            restriction,
+        )
+        rows = self.db.execute_sql_return_rows(sql)
+
+        player_data = defaultdict(dict)
+        
+        # process data
+        for player_id, games_played, average_elo, highest_elo in rows:
+            if games_played is None:
+                games_played = 0
+            if average_elo is None:
+                average_elo = 0
+            if highest_elo is None:
+                highest_elo = 0
+
+            player_data[player_id]["avg_elo_games_count_mult"] = games_played * average_elo
+            player_data[player_id]["high_elo_games_count_mult"] = games_played * highest_elo
+
+        self.db.add_column_to_existing_table("players","avg_elo_games_count_mult", "INT", "null")
+        self.db.add_column_to_existing_table("players","high_elo_games_count_mult", "INT", "null")
+        
+        # write every player's stats
+        number_of_players = len(list(player_data))
+        for i, (player_id, data) in enumerate(player_data.items()):
+            # add to table
+            sql = "UPDATE '{}' SET avg_elo_games_count_mult={}, high_elo_games_count_mult={} WHERE player_id = {}".format(
+            self.players_table_name,
+            data["avg_elo_games_count_mult"],
+            data["high_elo_games_count_mult"],
             player_id,
             )
 
             self.db.execute_sql(sql)
-            self.logger.info("{} ({}/{})".format(
-                player_id,
-                i+1,
-                number_of_players,
-                ))
-        self.commit()
+            if i%1000 == 0:
+                self.logger.info("{} ({}/{})".format(
+                    player_id,
+                    i+1,
+                    number_of_players,
+                    ))
+        self.commit()     
+
+
+    def complete_player_data_from_games(self):
+
+        # lowest timestamp
+        # highest timestamp
+        # highest elo
+        # average elo
+        # games played
+
+
+        # restriction = "WHERE elo_win=47"
+        restriction = ""
+
+        # get games data
+        sql = "SELECT player_1_id, player_2_id, time_start, player_id_scraped_player, elo_after FROM {} {}".format(
+            self.games_table_name,
+            restriction,
+        )
+        rows = self.db.execute_sql_return_rows(sql)
+
+        player_data = defaultdict(dict)
+        
+        # process data
+        for player_1, player_2, time_start, player_id_scraped_player, elo_after in rows:
+
+            for player_id in (player_1, player_2):
+               
+
+                if not "games_played" in player_data[player_id]:
+                    player_data[player_id]["games_played"] = 0
+
+                player_data[player_id]["games_played"] += 1
+
+                if not "lowest_timestamp" in player_data[player_id]:
+                    player_data[player_id]["lowest_timestamp"] = 99999999999
+                if player_data[player_id]["lowest_timestamp"] > time_start:
+                    player_data[player_id]["lowest_timestamp"] = time_start
+                    time_start_ISO = datetime.datetime.fromtimestamp(time_start).strftime("%Y.%m.%d-%H.%M.%S")
+                    player_data[player_id]["lowest_timestamp_ISO"] = time_start_ISO
+
+                if not "highest_timestamp" in player_data[player_id]:
+                    player_data[player_id]["highest_timestamp"] = 0
+                if player_data[player_id]["highest_timestamp"] < time_start:
+                    player_data[player_id]["highest_timestamp"] = time_start
+                    time_start_ISO = datetime.datetime.fromtimestamp(time_start).strftime("%Y.%m.%d-%H.%M.%S")
+                    player_data[player_id]["highest_timestamp_ISO"] = time_start_ISO
+                    
+                if not "highest_elo" in player_data[player_id]:
+                    player_data[player_id]["highest_elo"] = 0
+                if not "average_elo" in player_data[player_id]:
+                    player_data[player_id]["average_elo"] = 0
+                
+
+                if player_id == player_id_scraped_player:
+                    if player_data[player_id]["highest_elo"] < elo_after:
+                        player_data[player_id]["highest_elo"] = elo_after
+
+                    average_elo = ((((player_data[player_id]["games_played"]-1) * player_data[player_id]["average_elo"]) + elo_after) / player_data[player_id]["games_played"])  # games_played is already updated.
+                    player_data[player_id]["average_elo"] = average_elo
+
+               
+        # make sure columns exist
+        self.db.add_column_to_existing_table("players","games_played", "INT", "null")
+        self.db.add_column_to_existing_table("players","average_elo", "INT", "null")
+        self.db.add_column_to_existing_table("players","highest_elo", "INT", "null")
+        self.db.add_column_to_existing_table("players","highest_timestamp", "INT", "null")
+        self.db.add_column_to_existing_table("players","lowest_timestamp", "INT", "null")
+        self.db.add_column_to_existing_table("players","highest_timestamp_ISO", "TEXT", "null")
+        self.db.add_column_to_existing_table("players","lowest_timestamp_ISO", "TEXT", "null")
+
+        # write every player's stats
+        number_of_players = len(list(player_data))
+        for i, (player_id, data) in enumerate(player_data.items()):
+            # add to table
+            sql = "UPDATE '{}' SET games_played={}, average_elo={}, highest_elo={}, highest_timestamp={}, lowest_timestamp={}, highest_timestamp_ISO='{}', lowest_timestamp_ISO='{}' WHERE player_id = {}".format(
+            self.players_table_name,
+            data["games_played"],
+            data["average_elo"],
+            data["highest_elo"],
+            data["highest_timestamp"],
+            data["lowest_timestamp"],
+            data["highest_timestamp_ISO"],
+            data["lowest_timestamp_ISO"],
+            player_id,
+            )
+            # if player_id == 9668513:
+            #     # self.logger.info("FOUND PABLITOOOOO")
+            #     # self.logger.info(player_data[player_id])
+            #     self.logger.info(sql)
+
+            self.db.execute_sql(sql)
+            if i%1000 == 0:
+                self.logger.info("{} ({}/{})".format(
+                    player_id,
+                    i+1,
+                    number_of_players,
+                    ))
+        self.commit()     
+
+    def elo_max_average_per_player(self):
+        pass
+
+    # def game_count_per_player_fast(self):
+    #     # go over all games.
+    #     # get player ids, add counter for both on a defaultdict
+
+    #     sql = "SELECT player_1_id, player_2_id FROM {} ".format(
+    #         self.games_table_name,
+    #     )
+    #     # sql = "SELECT player_1_id, player_2_id FROM {} WHERE elo_win=47 ".format(
+    #     #     self.games_table_name,
+    #     # )
+        
+    #     rows = self.db.execute_sql_return_rows(sql)
+    #     games_per_player = defaultdict(int)
+
+    #     for player_1, player_2 in rows:
+    #         games_per_player[player_1] += 1
+    #         games_per_player[player_2] += 1
+
+    #     # make sure a column exists
+    #     self.db.add_column_to_existing_table("players","games_played", "INT", "null")
+
+    #     # write every player's stats
+    #     number_of_players = len(list(games_per_player))
+    #     for i, (player_id, games_played) in enumerate(games_per_player.items()):
+    #         # add to table
+    #         sql = "UPDATE '{}' SET games_played = '{}' WHERE player_id = {}".format(
+    #         self.players_table_name,
+    #         games_played,
+    #         player_id,
+    #         )
+
+    #         self.db.execute_sql(sql)
+    #         self.logger.info("{} ({}/{})".format(
+    #             player_id,
+    #             i+1,
+    #             number_of_players,
+    #             ))
+    #     self.commit()
 
 
     # def games_count_per_player(self, count_per_call=4):
@@ -809,11 +1121,14 @@ if __name__ == '__main__':
 
     db = BoardGameArenaDatabaseOperations(db_path, logger)
 
-    db.game_count_per_player_fast()
+    # db.complete_player_data_from_games()
+    # db.fill_in_player_data()
+    # db.fill_in_games_data_from_player()
+    db.fill_in_games_data()
 
     exit() 
     db.db.add_column_to_existing_table("players", "processing_status", "TEXT", "TODO")
-    db.db.add_column_to_existing_table("players","games_played", "INT", "null")
+    
 
     # continue_counting= True
     # while continue_counting:

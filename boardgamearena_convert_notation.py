@@ -91,7 +91,7 @@ def test():
 
 def convert_game_bga_to_lode(game_bga, return_as_string_else_array=False):
     # example of boardgamearena game: "e2 e8 e3 e7 e4 e6 e3h f6h c6h a6h d3v e4h g4v h6h d1v f5h g6v d5h f4 c4v c2h g3h"
-    
+    print(type(game_bga))
     if type(game_bga) is str:
         bga_str = game_bga
         bga_str = bga_str.strip()  # remove leading and trailing whitespace
@@ -102,20 +102,20 @@ def convert_game_bga_to_lode(game_bga, return_as_string_else_array=False):
     
     # keep track of both players turn
 
-    player_1_previous_position_bga = "e1"
-    player_2_previous_position_bga = "e9"
+    player_1_previous_position_bga = "e1" # start position
+    player_2_previous_position_bga = "e9" # start position
     player_1_playing_else_player_2 = True
     
     moves_converted = []
     for m in bga:
-        # logger.info("convert move: {}".format(
-        #     m,
-        #     ))
+        logger.info("convert move: {}".format(
+            m,
+            ))
 
-        if "v" in m:
+        if m[-1] == "v":
             m_converted = m[0:2]
 
-        elif "h" in m:
+        elif m[-1]=="h":
             # wall placement
             m_converted = m[-2:-4:-1]  # will swap letters
         
@@ -163,7 +163,11 @@ if __name__ == "__main__":
     bga_table_124984142_str = "e2 e8 e3 e7 e4 e6 e3h f6h c6h a6h d3v e4h g4v h6h d1v f5h g6v d5h f4 c4v c2h g3h"
     bga_table_125651498_str = "e2 d2v c2h e2h f2 e8 g2 g2h f1v e7 h2 h4h f4v e6 i2 e5 e3h e6 i3 f6h h6v f6 g5h h8h g6v e6 i4 e7 h4 h3v g4 d7 g5 f8h d6h d8h h5 c7 i5 c6 i6 b6 i7 b5 a3h c5 c4h b5 i8 b4 h8 c4 g8 c3 f8 b3 e8 a1h d8 b2 c8 c2 c9"
     
-    game_to_convert = bga_table_125651498_str
+    bga_table_26381891 = ['e2', 'e8', 'e3', 'e7', 'd6h', 'f7', 'f6h', 'h6v', 'g7v', 'e8v', 'd3', 'e6v', 'h4h', 'f4v', 'g3h', 'f5h', 'h2h', 'f2v', 'g1h', 'f8', 'c3', 'g8', 'g8h', 'f8', 'c4', 'f9', 'c5', 'g9', 'c6', 'b6h', 'b6', 'a6v', 'b5', 'a7h']
+    bga_table_31425340 = ['e2', 'e8', 'e3', 'd3h', 'c3v', 'e7', 'c1v', 'f7h', 'd7v', 'h7h', 'b7h', 'e6', 'f3', 'f3h', 'g3', 'g2v', 'f1v', 'd8h', 'g2', 'c6h', 'g1', 'e7v', 'b4h', 'a5h', 'e5v', 'e5', 'h1', 'e4', 'h2', 'f4', 'h3', 'g4', 'h4', 'i4', 'h3h', 'g4', 'f4', 'e4', 'd4', 'e5', 'd5v', 'e4', 'd5', 'd4', 'd6', 'd5', 'c6', 'c5', 'b6', 'b5', 'c7v', 'a5', 'a6', 'a4', 'a7', 'a3', 'a8', 'a8h', 'b8', 'a2', 'c8', 'a1'] # highest quality by games_count
+    # bga_table_31425340 = ['e2', 'e8', 'e3', 'd3h', 'c3v', 'e7', 'c1v', 'f7h', 'd7v', 'h7h', 'b7h', 'e6', 'f3', 'f3h', 'g3', 'g2v', 'f1v', 'd8h', 'g2', 'c6h', 'g1', 'e7v', 'b4h', 'a5h', 'e5v', 'e5', 'h1', 'e4', 'h2']
+    
+    game_to_convert = bga_table_31425340
     logger.info(game_to_convert)
     moves_converted = convert_game_bga_to_lode(game_to_convert)
 
