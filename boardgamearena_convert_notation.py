@@ -56,13 +56,13 @@ def isolate_player_moves(moves, player_1_else_player_2):
 def filter_out_walls(moves):
     return [m for m in moves if ("h" not in m and "v" not in m)]
 
-def print_moves_nicely(moves):
+def print_moves_nicely(moves_as_array):
     # make length even: 
-    if len(moves)%2==1:
-        moves.append(" ")
+    if len(moves_as_array)%2==1:
+        moves_as_array.append(" ")
     
     pretty_str = "\tpl1\tpl2\t\n"
-    for i, round_tuple in enumerate(zip(moves[::2], moves[1::2])):
+    for i, round_tuple in enumerate(zip(moves_as_array[::2], moves_as_array[1::2])):
         
         pretty_str += "{}\t{}\t{}\t\n".format(
             i+1,
@@ -167,10 +167,16 @@ if __name__ == "__main__":
     bga_table_31425340 = ['e2', 'e8', 'e3', 'd3h', 'c3v', 'e7', 'c1v', 'f7h', 'd7v', 'h7h', 'b7h', 'e6', 'f3', 'f3h', 'g3', 'g2v', 'f1v', 'd8h', 'g2', 'c6h', 'g1', 'e7v', 'b4h', 'a5h', 'e5v', 'e5', 'h1', 'e4', 'h2', 'f4', 'h3', 'g4', 'h4', 'i4', 'h3h', 'g4', 'f4', 'e4', 'd4', 'e5', 'd5v', 'e4', 'd5', 'd4', 'd6', 'd5', 'c6', 'c5', 'b6', 'b5', 'c7v', 'a5', 'a6', 'a4', 'a7', 'a3', 'a8', 'a8h', 'b8', 'a2', 'c8', 'a1'] # highest quality by games_count
     # bga_table_31425340 = ['e2', 'e8', 'e3', 'd3h', 'c3v', 'e7', 'c1v', 'f7h', 'd7v', 'h7h', 'b7h', 'e6', 'f3', 'f3h', 'g3', 'g2v', 'f1v', 'd8h', 'g2', 'c6h', 'g1', 'e7v', 'b4h', 'a5h', 'e5v', 'e5', 'h1', 'e4', 'h2']
     
-    game_to_convert = bga_table_31425340
+    bga_table_130697191 = ['e2', 'e8', 'f2', 'e7', 'e6h', 'e7h', 'f3', 'c7h', 'g3', 'f6v', 'g4', 'f5h', 'g5', 'h5h', 'f5', 'e4v', 'f4', 'b6v', 'f3', 'd7', 'c5h', 'd6', 'd4h', 'b4v', 'e3', 'b2v', 'd3', 'e6', 'd2', 'e5', 'c2', 'd5', 'c1', 'c5', 'b1', 'c4', 'c3h', 'd4', 'd2v', 'e2v', 'b2', 'e4', 'b3', 'e3', 'b4', 'e2', 'b5', 'e1']
+    game_to_convert = bga_table_124984142_str
     logger.info(game_to_convert)
-    moves_converted = convert_game_bga_to_lode(game_to_convert)
+    
+    data_return_as_string_else_array= False
+    moves_converted = convert_game_bga_to_lode(game_to_convert, data_return_as_string_else_array)
 
+    csv_string = ",".join(moves_converted)
+    
+    logger.info(csv_string  )
     logger.info(moves_converted)
 
     print( print_moves_nicely(moves_converted))

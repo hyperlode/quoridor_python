@@ -340,7 +340,7 @@ class BoardGameArenaScraper:
 
         return game_data_parsed
 
-    def get_gamedata_from_table(self, table_id):
+    def get_gamedata_from_table(self, table_id, download_delay_seconds=30):
       
         cached = True
 
@@ -351,6 +351,10 @@ class BoardGameArenaScraper:
             # download if not cached
             if game_raw is None:
                 cached = False
+                self.logger.info("Wait for a delay of {}s...".format(
+                    download_delay_seconds,
+                    ))
+                time.sleep(download_delay_seconds)  # do first, in order to never ever have multiple downloads in quick succession.
                 game_raw = self.get_full_game_raw(table_id)
 
             downloaded_raw_length = len(game_raw)
@@ -372,22 +376,24 @@ class BoardGameArenaScraper:
 
         return parsed_game_data
 
-    def get_gamedata_from_tables(self, table_ids):
+    def get_gamedata_from_tables(self, table_ids, download_delay_seconds=30):
 
-        start_t = time.time()
+        start_t = time.time()  
         previous_t = start_t
 
         data_games = {}
         for i,table_id in enumerate(table_ids):
-            data = self.get_gamedata_from_table(table_id)
+
+            data = self.get_gamedata_from_table(table_id, download_delay_seconds)
             data_games[table_id] = data
 
-            self.logger.info("Retrieved data from table {} ({}/{}) process time: {:.2f} (total time: {:.2f}))".format(
+            self.logger.info("Retrieved data from table {} ({}/{}) process time: {:.2f} (total time: {:.2f} after a delay of {}s.))".format(
                 table_id,
                 i+1,
                 len(table_ids),
                 time.time() - previous_t,
                 time.time() - start_t,
+                download_delay_seconds,
                 ))
 
             previous_t = time.time()
@@ -410,6 +416,16 @@ class BoardGameArenaScraper:
         # parsed_game_data = self.parse_scraped_gamedata(game_raw, table_id)
 
         return game_raw
+
+    def game_data_by_playerid(self, player_id, count=4, download_delay_seconds=30):
+        table_ids = self.db.get_and_mark_game_ids_for_player(player_id, count)
+
+        if len (table_ids) == 0:
+            return []
+
+        parsed_data_games = self.get_gamedata_from_tables(table_ids, download_delay_seconds)
+        self.db.set_status_of_game_ids(table_ids,"DONE")
+        return parsed_data_games
 
 def logging_setup(level = logging.INFO, log_path = None, new_log_file_creation="", flask_logger=None):
     '''    
@@ -490,12 +506,35 @@ def scrape_game_metadata(logger):
     finally:
         bga.close()
 
-def get_gamedata(logger, table_ids):
-    bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
+def all_game_data_by_playerid(logger, player_id):
+
+    db_path = Path(DATA_BASE_PATH, r"bga_quoridor_data.db")
+    pwd =  "w8"+  "w" + "oo" + "rd"
+    # id  = "sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com"
+    id  = "sun"+"setonalo"+"nely.bea" + "ch"+"@"+"gma" + "il.com"
+    # bga = BoardGameArenaScraper("sun"+"setonalo"+"nely.bea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
+    # bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
+    # bga = BoardGameArenaScraper("lode"+"ameije"+"@"+"gma" + "il.com", "sl"+  "8" + "af" + "val")
+
+
+    bga = BoardGameArenaScraper(id, pwd, db_path= db_path , logger=logger)
+
+    continue_scraping = True
+    all_parsed_games = []
+    while continue_scraping:
+        parsed_games = bga.game_data_by_playerid(player_id, count=10, download_delay_seconds=30)
+        if len(parsed_games) == 0:
+            continue_scraping = False
+        all_parsed_games.extend(parsed_games)
+    return all_parsed_games
+
+def get_gamedata(logger, table_ids,download_delay_seconds=30):
+    bga = BoardGameArenaScraper("sun"+"setonalo"+"nely.bea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
+    # bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
     # bga = BoardGameArenaScraper("lode"+"ameije"+"@"+"gma" + "il.com", "sl"+  "8" + "af" + "val")
 
    
-    parsed_data_games = bga.get_gamedata_from_tables(table_ids)
+    parsed_data_games = bga.get_gamedata_from_tables(table_ids, download_delay_seconds)
 
     return parsed_data_games
 
@@ -503,22 +542,26 @@ if __name__ == "__main__":
     
     logger = logging_setup(logging.INFO, Path(DATA_BASE_PATH,  r"logs", "bga_scrape_quoridor.log"), "SESSION" )
     
-    table_id = 124984142
-
-    
-    # table_id = 3156753
     # table_id = 124984142
-    table_id = 126439858  # superlode 2020-11-23   times superlode; 1:42 , 1:46, 1:22 , 1:38, 0:23, 1:31
+
+    
+    # # table_id = 3156753
+    # # table_id = 124984142
+    # table_id = 126439858  # superlode 2020-11-23   times superlode; 1:42 , 1:46, 1:22 , 1:38, 0:23, 1:31
 
 
-    table_ids = [3156753, 124984142, 126439858]
-    table_ids = [3156753] # old
-    table_ids = [6584339] # old
-    table_ids = [10652513]
-    table_ids = [124984142, 126456011, 94224007,8925907,26381891, 31425340] 
+    # table_ids = [3156753, 124984142, 126439858]
+    # table_ids = [3156753] # old
+    # table_ids = [6584339] # old
+    # table_ids = [10652513]
+    # table_ids = [124984142, 126456011, 94224007,8925907,26381891, 31425340] 
+    # table_ids = [   117864158] 
+    table_ids = [130697191] 
     
-    game_data = get_gamedata(logger, table_ids)
-    
+    game_data = get_gamedata(logger, table_ids, 3)    
+
+    # all_game_data_by_playerid(logger, 84945751)
+
     logger.info(game_data)
     
     # exit()

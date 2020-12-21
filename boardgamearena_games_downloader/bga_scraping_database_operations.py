@@ -192,20 +192,17 @@ class BoardGameArenaDatabaseOperations():
         self.db_path = db_path
         self.players_table_name = "players"
         self.games_table_name = "games"
+        # self.games_per_player_table_name = "games_per_player"
 
         self.db_connect(self.db_path)
 
-
         self.create_players_table()  # will only create if not exists
         self.create_games_table()
+        # self.create_games_per_player_table()
 
     def db_connect(self, db_path):
         self.db = DatabaseSqlite3Actions( db_path)
     
-    # def row_count(self,level):
-    #     table_name = self.level_to_table_name(level)
-    #     return self.db.get_row_count(table_name)
-        
     def create_players_table(self):
         sql_create_player_table = """CREATE TABLE IF NOT EXISTS {} (
             player_id INTEGER PRIMARY KEY,
@@ -222,6 +219,52 @@ class BoardGameArenaDatabaseOperations():
 
     def commit(self):
         self.db.commit()
+
+    def set_status_of_game_ids(self, ids, status="BUSY"):
+
+        if status not in OPERATION_STATUSES:
+            self.logger.error("Illegal status {}".format(status))
+            return
+        
+        # set statuses as one sql transaction
+        ids_str = [str(id) for id in ids]
+        ids_formatted = ",".join(ids_str)
+
+        sql = "UPDATE '{}' SET {} = '{}' WHERE  {} in ({})".format(
+            self.games_table_name,
+            "download_status",
+            status,
+            "table_id",
+            ids_formatted,
+            )
+
+        self.logger.info(sql)
+
+        self.db.execute_sql(sql)
+        self.db.commit()    
+
+    def games_set_status_from_status(self, find_status="BUSY", set_status="DONE"):
+        # anomalous rows that are still at busy even when all process finished need to be reset
+        table_ids = self.get_games_ids_by_status(None,find_status)
+        self.set_status_of_game_ids(table_ids, set_status)
+
+    def get_games_ids_by_status(self, count=None, status=None):
+        # if count=None --> all
+        # if status=None --> no status needed.
+
+        if status not in OPERATION_STATUSES:
+            self.logger.error("Illegal status {}".format(status))
+            return
+
+        sql = "SELECT {} FROM {} WHERE download_status = '{}'".format(
+            "table_id",
+            self.games_table_name,
+            status,
+            )
+        rows = self.db.execute_sql_return_rows(sql,count)
+        ids = [r[0] for r in rows]
+
+        return ids
 
     def get_player_ids(self, count=None, status=None, set_status_of_selected_rows=None):
         # if count=None --> all
@@ -246,35 +289,7 @@ class BoardGameArenaDatabaseOperations():
         
         self.db.commit()
         return ids
-
-        
-    def set_status_of_player_ids(self, ids, status="BUSY"):
-
-        if status not in OPERATION_STATUSES:
-            self.logger.error("Illegal status {}".format(status))
-            return
-        
-        # set statuses as one sql transaction
-        ids_str = [str(id) for id in ids]
-        ids_formatted = ",".join(ids_str)
-
-        sql = "UPDATE '{}' SET {} = '{}' WHERE  {} in ({})".format(
-            self.players_table_name,
-            "processing_status",
-            status,
-            "player_id",
-            ids_formatted,
-            )
-        # self.logger.info(sql)
-
-        self.db.execute_sql(sql)
-        self.db.commit()
-
-    def players_recover_busy_status(self):
-        # anomalous rows that are still at busy even when all process finished need to be reset
-        player_ids = self.get_player_ids(None,"BUSY",None)
-        self.set_status_of_player_ids(player_ids,"TODO")
-
+    
     def set_games_priority(self):
         
         # for every player number of games time elo ranking! 
@@ -296,14 +311,7 @@ class BoardGameArenaDatabaseOperations():
 
         # create sql to set game importance
 
-
-        
-
-
-
         pass
-
-
 
     def fill_in_games_data(self):
         # get games
@@ -352,6 +360,34 @@ class BoardGameArenaDatabaseOperations():
                     ))
         self.commit()     
 
+    def set_status_of_player_ids(self, ids, status="BUSY"):
+
+        if status not in OPERATION_STATUSES:
+            self.logger.error("Illegal status {}".format(status))
+            return
+        
+        # set statuses as one sql transaction
+        ids_str = [str(id) for id in ids]
+        ids_formatted = ",".join(ids_str)
+
+        sql = "UPDATE '{}' SET {} = '{}' WHERE  {} in ({})".format(
+            self.players_table_name,
+            "processing_status",
+            status,
+            "player_id",
+            ids_formatted,
+            )
+        # self.logger.info(sql)
+
+        self.db.execute_sql(sql)
+        self.db.commit()
+
+    def players_recover_busy_status(self):
+        # anomalous rows that are still at busy even when all process finished need to be reset
+        player_ids = self.get_player_ids(None,"BUSY",None)
+        self.set_status_of_player_ids(player_ids,"TODO")
+
+   
     def fill_in_games_data_from_player(self):
 
         # get player stats
@@ -714,6 +750,24 @@ class BoardGameArenaDatabaseOperations():
         rows = self.db.execute_sql_return_rows(sql)
         ids = [r[0] for r in rows]
         return ids
+    
+    def get_and_mark_game_ids_for_player(self, player_id, count=None, set_status="BUSY"):
+        player_id = int(player_id)
+        sql = """SELECT table_id FROM games WHERE (player_1_id = {0} OR player_2_id = {0}) AND (download_status is null) LIMIT {1};""".format(
+            player_id,
+            count,
+            )
+
+        rows = self.db.execute_sql_return_rows(sql)
+
+        if count is not None:
+            ids = [r[0] for r in rows [:count]]
+        else:
+            ids = [r[0] for r in rows]
+        
+        self.set_status_of_game_ids(ids, set_status)
+
+        return ids
 
     def max_elo_per_player(self):
         # check for elo at games (it's not perfect, but should do the trick)
@@ -766,6 +820,7 @@ class BoardGameArenaDatabaseOperations():
         );""".format(self.games_table_name)
         self.db.execute_sql(base_sql)
         self.commit()
+  
     # def get_sequences(self, desired_status, level, count, mark_as_in_progress=False):
         
     #     table_name = self.level_to_table_name(level)
@@ -787,6 +842,31 @@ class BoardGameArenaDatabaseOperations():
     #             self.change_statuses(sequences, TESTING_IN_PROGRESS, True)
 
     #         return sequences
+
+    # def get_games_from_player_id(self, player_id, count, mark_as_in_progress=False):
+
+        # get table_id
+        # mark status as busy (downloading) 
+
+            
+        
+
+        # with self.db.conn:
+        #     sql = " SELECT table_id from '{}' where (player_1_id={} OR player_2_id={})".format(
+        #             self.games_table_name,
+        #             )
+
+        #     rows = self.db.execute_sql_return_rows(sql)
+        #     sequences = []
+        #     for row in rows:
+        #         sequence = self.str_to_sequence(row[1])
+        #         sequences.append(sequence)
+
+        #     if mark_as_in_progress:
+        #         self.change_statuses(sequences, TESTING_IN_PROGRESS, True)
+
+        #     return sequences
+  
     def get_players_from_games(self):
         sql_base = ''' SELECT * FROM games;'''.format( 
             )
@@ -1109,20 +1189,25 @@ if __name__ == '__main__':
     logger = logging_setup(logging.INFO, Path(DATA_BASE_PATH,  r"logs", "bga_scraping_database_operations.log"), "SESSION" )
 
     # db_name = "bga_quoridor_data.db"
-    db_name = "TESTING_bga_quoridor_data_bkpAfterBasicScraping_modified_20201120.db"
+    db_name = "TESTING_bga_quoridor_data.db"
+    # db_name = "TESTING_bga_quoridor_data_bkpAfterBasicScraping_modified_20201120.db"
 
 
     
     db_path = Path( DATA_BASE_PATH,
         db_name,
         )
-
+    
     db = BoardGameArenaDatabaseOperations(db_path, logger)
+
+    # ids = db.get_and_mark_game_ids_for_player(84306079, 4, "BUSY")
+    # db.set_status_of_game_ids(ids,"TODO")
+    # db.games_set_status_from_status("BUSY", "TODO")
 
     # db.complete_player_data_from_games()
     # db.fill_in_player_data()
     # db.fill_in_games_data_from_player()
-    db.fill_in_games_data()
+    # db.fill_in_games_data()
 
     exit() 
     db.db.add_column_to_existing_table("players", "processing_status", "TEXT", "TODO")
