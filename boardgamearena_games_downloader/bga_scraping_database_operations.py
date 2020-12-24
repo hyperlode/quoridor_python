@@ -21,32 +21,89 @@ OPERATION_STATUSES = ["TODO", "BUSY", "DONE"]
 
 DATA_BASE_PATH = r"C:\Data\Generated_program_data\boardgamearena_quoridor_scraper"
 
-games_table_columns = {
+DATATYPE_TO_SQL_DATATYPE= {
+    int:"INTEGER",
+    str:"TEXT",
+}
+
+# create_games_split_per_player_columns = {
+game_metadata_by_player_columns = {
+
+    "table_with_player_id":str,
     "table_id":int,
     "download_status":str,
     "player_1_id":int,
     "player_2_id":int,
     "player_1_name":str,
     "player_2_name":str,
-    "moves_bga_notation":str,
-    "moves_lode_notation":str,
-    "thinking_times":str,
-    "total_time":str,
-    "game_quality":str,
     "time_start":int,
     "time_end":int,
     "concede":int,
     "unranked":int,
     "normalend":int,
     "player_1_score":int,
-    "player_2_score":int,
     "player_1_rank":int,
+    "player_2_score":int,
     "player_2_rank":int,
     "elo_after":int,
     "elo_win":int,
     "player_id_scraped_player":int,
     "players_count":int,
 }
+
+games_table_columns = {
+    "table_with_player_id":int,
+    "table_id":int,
+    "download_status":str,
+    "player_1_id":int,
+    "player_2_id":int,
+    # "player_1_name":str,
+    # "player_2_name":str,
+    "moves_bga_notation":str,
+    "moves_lode_notation":str,
+    "thinking_times":str,
+    "total_time":str,
+    "game_quality":str,
+    # "time_start":int,
+    # "time_end":int,
+    "concede":int,
+    "unranked":int,
+    "normalend":int,
+    # "player_1_score":int,
+    # "player_2_score":int,
+    # "player_1_rank":int,
+    # "player_2_rank":int,
+    # "elo_after":int,
+    # "elo_win":int,
+    # "player_id_scraped_player":int,
+    "players_count":int,
+}
+# games_table_columns = {
+#     "table_id":int,
+#     "download_status":str,
+#     "player_1_id":int,
+#     "player_2_id":int,
+#     "player_1_name":str,
+#     "player_2_name":str,
+#     "moves_bga_notation":str,
+#     "moves_lode_notation":str,
+#     "thinking_times":str,
+#     "total_time":str,
+#     "game_quality":str,
+#     "time_start":int,
+#     "time_end":int,
+#     "concede":int,
+#     "unranked":int,
+#     "normalend":int,
+#     "player_1_score":int,
+#     "player_2_score":int,
+#     "player_1_rank":int,
+#     "player_2_rank":int,
+#     "elo_after":int,
+#     "elo_win":int,
+#     "player_id_scraped_player":int,
+#     "players_count":int,
+# }
 
 
 class DatabaseSqlite3Actions():
@@ -183,6 +240,8 @@ class DatabaseSqlite3Actions():
         except Exception as e:
             self.logger.error("didn't add column work. {}".format(e,),exc_info=True)
 
+    
+
 class BoardGameArenaDatabaseOperations():
     def __init__(self, db_path, logger=None):
         self.logger = logger or logging.getLogger(__name__)
@@ -192,17 +251,81 @@ class BoardGameArenaDatabaseOperations():
         self.db_path = db_path
         self.players_table_name = "players"
         self.games_table_name = "games"
-        # self.games_per_player_table_name = "games_per_player"
+        self.games_per_player_table_name = "games_per_player"
 
         self.db_connect(self.db_path)
 
         self.create_players_table()  # will only create if not exists
         self.create_games_table()
-        # self.create_games_per_player_table()
+        self.create_game_metadata_by_player_table()
 
     def db_connect(self, db_path):
         self.db = DatabaseSqlite3Actions( db_path)
+
+        
+    def create_games_table(self):
+        base_sql = """CREATE TABLE IF NOT EXISTS {} (
+            table_id INTEGER PRIMARY KEY,
+            download_status TEXT,
+            player_1_id INTEGER ,
+            player_2_id INTEGER ,
+            player_1_name INTEGER,
+            player_2_name INTEGER,
+            moves_bga_notation TEXT,
+            moves_lode_notation TEXT,
+            thinking_times TEXT,
+            total_time TEXT,
+            game_quality TEXT,
+            time_start INTEGER,
+            time_end INTEGER,
+            concede INTEGER,
+            unranked INTEGER,
+            normalend INTEGER,
+            player_1_score INTEGER,
+            player_2_score INTEGER,
+            player_1_rank INTEGER,
+            player_2_rank INTEGER,
+            elo_after INTEGER,
+            elo_win INTEGER,
+            player_id_scraped_player INTEGER,
+            players_count INTEGER
+
+        );""".format(self.games_table_name)
+
+
+        self.db.execute_sql(base_sql)
+        self.commit()
     
+    def prepare_columns_data_for_sql(self, table_columns_dict, primary_key_column_name):
+
+        columns = []
+        for name,datatype in table_columns_dict.items():
+            col = "{} {}".format(name, DATATYPE_TO_SQL_DATATYPE[datatype])
+            
+            if name == primary_key_column_name:
+                col = "{} PRIMARY KEY".format(col)
+            
+            columns.append(col)
+        
+        sql_columns_string = "({})".format(
+            ",".join(columns),
+            )
+        return sql_columns_string 
+
+    def create_game_metadata_by_player_table(self):
+
+        col_str = self.prepare_columns_data_for_sql(game_metadata_by_player_columns, "table_with_player_id")
+         
+
+        sql = """CREATE TABLE IF NOT EXISTS {} {};""".format(
+            self.games_per_player_table_name,
+            col_str,
+            )
+
+        # self.logger.info(sql)
+        self.db.execute_sql(sql)
+        self.commit()
+
     def create_players_table(self):
         sql_create_player_table = """CREATE TABLE IF NOT EXISTS {} (
             player_id INTEGER PRIMARY KEY,
@@ -790,36 +913,6 @@ class BoardGameArenaDatabaseOperations():
 
         pass
 
-    def create_games_table(self):
-        base_sql = """CREATE TABLE IF NOT EXISTS {} (
-            table_id INTEGER PRIMARY KEY,
-            download_status TEXT,
-            player_1_id INTEGER ,
-            player_2_id INTEGER ,
-            player_1_name INTEGER,
-            player_2_name INTEGER,
-            moves_bga_notation TEXT,
-            moves_lode_notation TEXT,
-            thinking_times TEXT,
-            total_time TEXT,
-            game_quality TEXT,
-            time_start INTEGER,
-            time_end INTEGER,
-            concede INTEGER,
-            unranked INTEGER,
-            normalend INTEGER,
-            player_1_score INTEGER,
-            player_2_score INTEGER,
-            player_1_rank INTEGER,
-            player_2_rank INTEGER,
-            elo_after INTEGER,
-            elo_win INTEGER,
-            player_id_scraped_player INTEGER,
-            players_count INTEGER
-
-        );""".format(self.games_table_name)
-        self.db.execute_sql(base_sql)
-        self.commit()
   
     # def get_sequences(self, desired_status, level, count, mark_as_in_progress=False):
         
@@ -868,7 +961,8 @@ class BoardGameArenaDatabaseOperations():
         #     return sequences
   
     def get_players_from_games(self):
-        sql_base = ''' SELECT * FROM games;'''.format( 
+        sql_base = ''' SELECT * FROM {};'''.format( 
+            self.games_per_player_table_name,
             )
 
         sql = sql_base
@@ -877,8 +971,9 @@ class BoardGameArenaDatabaseOperations():
 
         players = {}
         for row in rows:
-            players[row[2]] = row[4]
+            # player id:name pair
             players[row[3]] = row[5]
+            players[row[4]] = row[6]
 
         return players
 
@@ -950,7 +1045,9 @@ class BoardGameArenaDatabaseOperations():
         # check and prepare the data
         columns = []
         values = []
-        possible_column_names = games_table_columns.keys()
+
+        table_columns_data = game_metadata_by_player_columns
+        possible_column_names = table_columns_data.keys()
         for column,value in metadata.items():
             if column not in possible_column_names:
                 raise UnexpectedColumnNameException
@@ -959,10 +1056,10 @@ class BoardGameArenaDatabaseOperations():
                 # reaction to error thrown. I presume things changed on website over time.....
                 value = str(None)
 
-            if games_table_columns[column] is str:
+            if table_columns_data[column] is str:
                 values.append("\"{}\"".format(value))
                 
-            elif games_table_columns[column] is int:
+            elif table_columns_data[column] is int:
                 if value is None or value == "None":
                     value = "NULL"
                 values.append(value)
@@ -984,7 +1081,7 @@ class BoardGameArenaDatabaseOperations():
         # sql command
         sql = ''' INSERT OR IGNORE INTO {} ({})
                         VALUES ({});'''.format(
-            self.games_table_name,
+            self.games_per_player_table_name,
             columns,
             values,
             )
@@ -1189,7 +1286,9 @@ if __name__ == '__main__':
     logger = logging_setup(logging.INFO, Path(DATA_BASE_PATH,  r"logs", "bga_scraping_database_operations.log"), "SESSION" )
 
     # db_name = "bga_quoridor_data.db"
-    db_name = "TESTING_bga_quoridor_data.db"
+    # db_name = "TESTING_bga_quoridor_data.db"
+    # db_name = "TESTING_bga_quoridor_data_test_player_game_table.db"
+    db_name = "bga_quoridor_data.db"
     # db_name = "TESTING_bga_quoridor_data_bkpAfterBasicScraping_modified_20201120.db"
 
 
@@ -1210,7 +1309,7 @@ if __name__ == '__main__':
     # db.fill_in_games_data()
 
     exit() 
-    db.db.add_column_to_existing_table("players", "processing_status", "TEXT", "TODO")
+    # db.db.add_column_to_existing_table("players", "processing_status", "TEXT", "TODO")
     
 
     # continue_counting= True

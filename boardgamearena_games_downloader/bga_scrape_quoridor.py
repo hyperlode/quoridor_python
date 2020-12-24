@@ -115,11 +115,14 @@ class BoardGameArenaScraper:
         start_t = time.time()
         previous_t = start_t
 
+        self.db.update_player_status(player_id, "BUSY_SCRAPING", True)
+       
         ran_over_all_player_games = False
         page = 1
 
         while not ran_over_all_player_games:
             result_raw = self.scrape_player_games_metadata_by_page(player_id, page)
+            
             result_parsed = self.parse_scraped_games_metadata(result_raw, player_id)
                 
             for game in result_parsed:
@@ -164,6 +167,10 @@ class BoardGameArenaScraper:
             player_names =  game["player_names"].split(",")
             player_ids =  game["players"].split(",")
 
+            game_meta_data["table_with_player_id"] = "{}_{}".format(
+                game["table_id"],
+                from_scraped_player_id,
+                )
             game_meta_data["table_id"] = str(game["table_id"])
             game_meta_data["time_start"] = str(game["start"])
             game_meta_data["time_end"] = str(game["end"])
@@ -186,10 +193,13 @@ class BoardGameArenaScraper:
             games_meta_data.append(game_meta_data)
         return games_meta_data
 
-    def scrape_all_players_to_be_scraped_metadata(self):
+    def scrape_all_players_to_be_scraped_metadata(self, do_hanging_to_be_scraped_players=False):
 
         while True:
-            scrapee_data = self.db.get_players_by_status("TO_BE_SCRAPED",1)
+            if do_hanging_to_be_scraped_players:
+                scrapee_data = self.db.get_players_by_status("BUSY_SCRAPING",1)
+            else:
+                scrapee_data = self.db.get_players_by_status("TO_BE_SCRAPED",1)
 
             if len(scrapee_data) == 0:
                 self.logger.info("No more players to be scraped in table 'players'")
@@ -201,18 +211,31 @@ class BoardGameArenaScraper:
             # scrape his games
             self.scrape_player_games_metadata(scrapee_player_id)
 
-    def scrape_all_players_and_keep_updating_players(self):
+    def scrape_all_players_and_keep_updating_players(self, start_empty=False, clean_up_leftover_busy_states=False):
+
+        # on new database, no players yet, we have to kickstart it.
+        if start_empty:
+            # 84401637
+            self.scrape_player_games_metadata(84401637)
         while True:
             # do all players
-            self.scrape_all_players_to_be_scraped_metadata()
+            self.scrape_all_players_to_be_scraped_metadata(False)
             
             # save all new players
             self.db.update_players_from_games()
 
             # check if there are players to be scraped
             if len(self.db.get_players_by_status("TO_BE_SCRAPED",1)) == 0:
-                self.logger.info("All up to date.")
-                return
+                self.logger.info("No players TO_BE_SCRAPED left")
+
+                if (clean_up_leftover_busy_states):
+                    if (len(self.db.get_players_by_status("BUSY_SCRAPING",1)) == 0):
+                        self.scrape_all_players_to_be_scraped_metadata(True)
+                        self.logger.info("Checked left over BUSY_SCRAPING players, ok. noone left hanging.")
+                        return 
+                else:
+
+                    return
     
     def parse_scraped_gamedata(self, raw, table_id):
 
@@ -494,11 +517,25 @@ def logging_setup(level = logging.INFO, log_path = None, new_log_file_creation="
 
     return logger
 
-def scrape_game_metadata(logger):
+# --------------------------------------------------------------
+# SCRAPER FUNCTIONALITY 
+# --------------------------------------------------------------
+
+def scrape_game_metadata(logger, start_empty=False, clean_up_busy_states=False):
+    # Get games metadata. (there are 120 000 000 million games on bga, so we need to go by player to get the right games.)
+    db_path = Path(DATA_BASE_PATH, r"bga_quoridor_data.db")
+    pwd =  "w8"+  "w" + "oo" + "rd"
+    # id  = "sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com"
+    id  = "sun"+"setonalo"+"nely.bea" + "ch"+"@"+"gma" + "il.com"
+    # bga = BoardGameArenaScraper("sun"+"setonalo"+"nely.bea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
+    # bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
+    # bga = BoardGameArenaScraper("lode"+"ameije"+"@"+"gma" + "il.com", "sl"+  "8" + "af" + "val")
+    bga = BoardGameArenaScraper(id, pwd, db_path= db_path , logger=logger)
+
     try:
         # init (log in )
         bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd", Path(DATA_BASE_PATH, r"bga_quoridor_data.db"))
-        bga.scrape_all_players_and_keep_updating_players()
+        bga.scrape_all_players_and_keep_updating_players(start_empty, clean_up_busy_states)
 
     except Exception as e:
         logger.error("Error in main thread during scraping. {} ".format(e), exc_info=True)
@@ -542,6 +579,11 @@ if __name__ == "__main__":
     
     logger = logging_setup(logging.INFO, Path(DATA_BASE_PATH,  r"logs", "bga_scrape_quoridor.log"), "SESSION" )
     
+    # get as much games data and players data as possible
+    scrape_game_metadata(logger, False, True)
+    
+    
+    
     # table_id = 124984142
 
     
@@ -558,11 +600,11 @@ if __name__ == "__main__":
     # table_ids = [   117864158] 
     table_ids = [130697191] 
     
-    game_data = get_gamedata(logger, table_ids, 3)    
+    # game_data = get_gamedata(logger, table_ids, 3)    
 
     # all_game_data_by_playerid(logger, 84945751)
 
-    logger.info(game_data)
+    # logger.info(game_data)
     
     # exit()
 
