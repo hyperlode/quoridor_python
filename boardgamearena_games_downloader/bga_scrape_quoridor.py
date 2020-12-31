@@ -199,7 +199,7 @@ class BoardGameArenaScraper:
         while True:
             status = "TO_BE_SCRAPED"
 
-            scrapee_data = self.db.get_players_by_status(status,1)
+            scrapee_data = self.db.get_player_ids(status,1)
             
             if len(scrapee_data) == 0:
                 self.logger.info("No more players to be scraped in table 'players' with status: {}".format(
@@ -208,21 +208,21 @@ class BoardGameArenaScraper:
                 return 
 
             # get a player to be scraped
-            scrapee_player_id = list(scrapee_data.keys())[0]
+            scrapee_player_id = list(scrapee_data.keys())[0]  # player_id is key
 
             # scrape his games
             self.scrape_player_games_metadata(scrapee_player_id)
 
-    def repair_busy_status_to_todo(self):
-        while True:
-            player_ids = self.db.get_players_by_status("BUSY_SCRAPING")
+    # def repair_busy_status_to_todo(self):
+    #     while True:
+    #         player_ids = self.db.get_player_ids("BUSY_SCRAPING")
 
-            if len(player_ids) == 0:
-                return 
+    #         if len(player_ids) == 0:
+    #             return 
                 
-            for player_id in player_ids:
-                self.db.update_player_status(player_id, "TO_BE_SCRAPED", False)
-            self.db.commit()
+    #         for player_id in player_ids:
+    #             self.db.update_player_status(player_id, "TO_BE_SCRAPED", False)
+    #         self.db.commit()
 
     def scrape_all_players_and_keep_updating_players(self, start_empty=False):
 
@@ -239,7 +239,7 @@ class BoardGameArenaScraper:
             self.db.update_players_from_games()
 
             # check if there are players to be scraped
-            if len(self.db.get_players_by_status("TO_BE_SCRAPED",1)) == 0:
+            if len(self.db.get_player_ids("TO_BE_SCRAPED",1)) == 0:
                 self.logger.info("No players TO_BE_SCRAPED left")
                 return
     
@@ -523,27 +523,38 @@ def logging_setup(level = logging.INFO, log_path = None, new_log_file_creation="
 
     return logger
 
+def get_account_info(index):
+    # zero account is the actual account I use. So, take care with that one.
+    accounts = [
+        ("lode"+"ameije"+"@"+"gma" + "il.com", "sl"+  "8" + "af" + "val"),
+        ("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd"),
+        ("sun"+"setonalo"+"nely.bea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd"),
+    ]
+    return accounts[index]
+
+def create_bga_instance(logger, account_index, database_name ):
+    db_path = Path(DATA_BASE_PATH, database_name)
+    id, pwd = get_account_info(account_index)
+    bga = BoardGameArenaScraper(id, pwd, db_path= db_path , logger=logger)
+    return bga
+
 # --------------------------------------------------------------
 # SCRAPER FUNCTIONALITY 
 # --------------------------------------------------------------
 
-def scrape_game_metadata(logger, start_empty=False, clean_up_busy_states=False):
-    # Get games metadata. (there are 120 000 000 million games on bga, so we need to go by player to get the right games.)
-    db_path = Path(DATA_BASE_PATH, r"bga_quoridor_data.db")
-    pwd =  "w8"+  "w" + "oo" + "rd"
-    # id  = "sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com"
-    id  = "sun"+"setonalo"+"nely.bea" + "ch"+"@"+"gma" + "il.com"
-    # bga = BoardGameArenaScraper("sun"+"setonalo"+"nely.bea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
-    # bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
-    # bga = BoardGameArenaScraper("lode"+"ameije"+"@"+"gma" + "il.com", "sl"+  "8" + "af" + "val")
-    bga = BoardGameArenaScraper(id, pwd, db_path= db_path , logger=logger)
 
+def testing(bga):
+    print(bga.db.get_player_id_from_name("superlode"))
+
+def scrape_game_metadata(bga, start_empty=False, clean_up_busy_states=False):
+    # Get games metadata. (there are 120 000 000 million games on bga, so we need to go by player to get the right games.)
+
+    # clean_up_busy_states: if multiple instances running: make sure to set to false! This is only to clean up after you have let it run with many parallel processes. To repair parsings that were stopped halfway.
     if clean_up_busy_states:
-        bga.repair_busy_status_to_todo()
+        bga.db.repair_busy_status_to_todo()
 
     try:
         # init (log in )
-        bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd", Path(DATA_BASE_PATH, r"bga_quoridor_data.db"))
         bga.scrape_all_players_and_keep_updating_players(start_empty)
 
     except Exception as e:
@@ -551,35 +562,33 @@ def scrape_game_metadata(logger, start_empty=False, clean_up_busy_states=False):
 
     finally:
         bga.close()
+    
+def all_game_data_by_player(bga, player):
+    # player can be player_id or player_name 
 
-def all_game_data_by_playerid(logger, player_id):
+    # player can be given as int (for the id) or string (id as string or player_name)
+    try:
+        player_id = int(player)
 
-    db_path = Path(DATA_BASE_PATH, r"bga_quoridor_data.db")
-    pwd =  "w8"+  "w" + "oo" + "rd"
-    # id  = "sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com"
-    id  = "sun"+"setonalo"+"nely.bea" + "ch"+"@"+"gma" + "il.com"
-    # bga = BoardGameArenaScraper("sun"+"setonalo"+"nely.bea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
-    # bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
-    # bga = BoardGameArenaScraper("lode"+"ameije"+"@"+"gma" + "il.com", "sl"+  "8" + "af" + "val")
-
-
-    bga = BoardGameArenaScraper(id, pwd, db_path= db_path , logger=logger)
+    except Exception as e:
+        player_id = bga.db.get_player_id_from_name(player)
+        if player_id is None:
+            logger.error("Could not get player id from name ({})".format(
+                player,
+                ))
+            return False 
 
     continue_scraping = True
     all_parsed_games = []
     while continue_scraping:
+        logger.info(player_id)
         parsed_games = bga.game_data_by_playerid(player_id, count=10, download_delay_seconds=30)
         if len(parsed_games) == 0:
             continue_scraping = False
         all_parsed_games.extend(parsed_games)
     return all_parsed_games
 
-def get_gamedata(logger, table_ids,download_delay_seconds=30):
-    bga = BoardGameArenaScraper("sun"+"setonalo"+"nely.bea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd", logger=logger)
-    # bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
-    # bga = BoardGameArenaScraper("lode"+"ameije"+"@"+"gma" + "il.com", "sl"+  "8" + "af" + "val")
-
-   
+def get_gamedata(bga, table_ids,download_delay_seconds=30):
     parsed_data_games = bga.get_gamedata_from_tables(table_ids, download_delay_seconds)
 
     return parsed_data_games
@@ -587,23 +596,18 @@ def get_gamedata(logger, table_ids,download_delay_seconds=30):
 if __name__ == "__main__":
     
     logger = logging_setup(logging.INFO, Path(DATA_BASE_PATH,  r"logs", "bga_scrape_quoridor.log"), "SESSION" )
-    
+    bga_instance = create_bga_instance(logger, 1, r"bga_quoridor_data.db")
+    testing(bga_instance)
+
+    # --- scrape meta data ----------------------------------------
     # get as much games data and players data as possible
-    print(logger)
-    scrape_game_metadata(logger, False, True)
+    # scrape_game_metadata(bga_instance, False, True)
     
-
-    
-    
-    
+    # --- scrape actual games ----------------------------------------
     # table_id = 124984142
-
-    
     # # table_id = 3156753
     # # table_id = 124984142
     # table_id = 126439858  # superlode 2020-11-23   times superlode; 1:42 , 1:46, 1:22 , 1:38, 0:23, 1:31
-
-
     # table_ids = [3156753, 124984142, 126439858]
     # table_ids = [3156753] # old
     # table_ids = [6584339] # old
@@ -611,10 +615,13 @@ if __name__ == "__main__":
     # table_ids = [124984142, 126456011, 94224007,8925907,26381891, 31425340] 
     # table_ids = [   117864158] 
     table_ids = [130697191] 
-    
-    # game_data = get_gamedata(logger, table_ids, 3)    
 
-    # all_game_data_by_playerid(logger, 84945751)
+    # game_data = get_gamedata(bga_instance, table_ids, 3)    
+    # all_game_data_by_player(bga_instance, 84945751)
+    # all_game_data_by_player(bga_instance, "superlode")
+
+    # --- info ----------------------------------------
+
 
     # logger.info(game_data)
     

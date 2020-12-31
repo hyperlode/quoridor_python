@@ -1,5 +1,4 @@
-import sqlite3
-from sqlite3 import Error
+
 
 import random
 import time
@@ -7,6 +6,8 @@ import datetime
 import logging
 from pathlib import Path
 from collections import defaultdict
+
+import sqlite3_operations
 
 '''
 https://www.sqlitetutorial.net/sqlite-python/creating-database/
@@ -26,7 +27,6 @@ DATATYPE_TO_SQL_DATATYPE= {
     str:"TEXT",
 }
 
-# create_games_split_per_player_columns = {
 game_metadata_by_player_columns = {
 
     "table_with_player_id":str,
@@ -105,143 +105,6 @@ games_table_columns = {
 #     "players_count":int,
 # }
 
-
-class DatabaseSqlite3Actions():
-    def __init__(self, path,logger=None):
-        self.logger = logger or logging.getLogger(__name__)
-        
-        self.conn = None
-        self.create_connection(path)
-
-    def create_connection(self, db_file):
-        """ create a database connection to a SQLite database """
-        try:
-            self.conn = sqlite3.connect(db_file)
-           
-        except Error as e:
-            self.logger.error("Error connecting database {}".format(e), exc_info = True)
-    
-    # def create_table(self, create_table_sql):
-    #     """ create a table from the create_table_sql statement
-    #     :param conn: Connection object
-    #     :param create_table_sql: a CREATE TABLE statement
-    #     :return:
-    #     """
-    #     try:
-    #         c = self.get_cursor()
-    #         c.execute(create_table_sql)
-    #     except Error as e:
-    #         print(e)
-
-    def get_cursor(self):
-        return self.conn.cursor()
-
-    def execute_sql(self, sql, verbose=False, database_retries = 10):
-        retry = database_retries
-
-        while retry > 0:
-
-            try:
-                cur = self.get_cursor()
-                cur.execute(sql)
-                if retry  != database_retries:
-                    self.logger.info("SQL success. after: {} retries".format(database_retries - retry))
-                retry = 0
-            except Exception as e:
-                
-                # sqlite3.OperationalError
-                randomtime = random.randint(0,100)/100
-                time.sleep(randomtime)
-                retry -= 1
-                self.logger.warning("Database error ({}) sql: {}, retries: {}".format(
-                    e,
-                    sql,
-                    retry,
-                    ))
-        if verbose:
-            max_chars = 1000
-            self.logger.info("sql executed: {} (truncated to {} chars)".format(
-                sql[:max_chars],
-                max_chars,
-                ))
-        return cur
-
-    def execute_sql_return_rows(self, sql, row_count=None, database_retries=10):
-        # if row_count is None, return all fetched rows.
-                    
-        cur = self.execute_sql(sql,False,database_retries)
-        data = cur.fetchall()
-        if row_count is None:
-            return data
-        else:
-            return data[:row_count]
-
-    def commit(self):
-        self.conn.commit()
-
-    def get_all_records(self, tablename):
-        sql = "SELECT * FROM {}".format(tablename)
-        return self.execute_sql_return_rows(sql)
-
-    def get_row_count(self, table_name):
-        result = self.execute_sql("select count(*) from {}".format(table_name))
-        row = result.fetchone()
-        return row[0]
-
-    def get_rows(self, table, limit=100):
-        sql = "SELECT * FROM {} LIMIT {}".format(table, limit)
-        cur = self.execute_sql(sql)
-        data = cur.fetchall()
-        return data
-
-    def column_exists(self, table_name, column_name_to_test):
-
-        table_info = self.get_table_info(table_name)
-
-        for row in table_info:
-            if column_name_to_test in row:
-                return True
-
-        return False
-
-    def get_table_info(self, table_name):
-
-        sql = "pragma table_info('{}')".format(
-            table_name,
-            )
-
-        table_info = self.execute_sql_return_rows(sql)
-
-        return table_info
-
-    def add_column_to_existing_table(self, table_name, column_name, data_type, default_value):
-
-        #  e.g. default_value = "null"
-
-        if self.column_exists(table_name,column_name):
-            self.logger.warning("{} in {} already exists. Will not add column".format(
-                column_name,
-                table_name,
-            ))
-            return 
-
-        if data_type not in ["TEXT", "INT"]:
-            logger.error("not yet added data type.")
-            raise UnknownColumnTypeError 
-
-        sql = "ALTER TABLE {} ADD COLUMN {} {} default {}".format(
-            table_name,
-            column_name,
-            data_type,
-            default_value,
-            )
-        try:
-            self.execute_sql(sql,False,5)
-        except Exception as e:
-            self.logger.error("didn't add column work. {}".format(e,),exc_info=True)
-
-    
-
 class BoardGameArenaDatabaseOperations():
     def __init__(self, db_path, logger=None):
         self.logger = logger or logging.getLogger(__name__)
@@ -260,7 +123,7 @@ class BoardGameArenaDatabaseOperations():
         self.create_game_metadata_by_player_table()
 
     def db_connect(self, db_path):
-        self.db = DatabaseSqlite3Actions( db_path, self.logger)
+        self.db = sqlite3_operations.DatabaseSqlite3Actions( db_path, self.logger)
 
     def create_games_table(self):
         base_sql = """CREATE TABLE IF NOT EXISTS {} (
@@ -321,7 +184,6 @@ class BoardGameArenaDatabaseOperations():
             col_str,
             )
 
-        # self.logger.info(sql)
         self.db.execute_sql(sql)
         self.commit()
 
@@ -353,7 +215,7 @@ class BoardGameArenaDatabaseOperations():
         ids_formatted = ",".join(ids_str)
 
         sql = "UPDATE '{}' SET {} = '{}' WHERE  {} in ({})".format(
-            self.games_table_name,
+            self.games_per_player_table_name,
             "download_status",
             status,
             "table_id",
@@ -388,29 +250,6 @@ class BoardGameArenaDatabaseOperations():
 
         return ids
 
-    def get_player_ids(self, count=None, status=None, set_status_of_selected_rows=None):
-        # if count=None --> all
-        # if status=None --> no status needed.
-
-        if status not in OPERATION_STATUSES:
-            self.logger.error("Illegal status {}".format(status))
-            return
-
-        sql = "SELECT {} FROM {} WHERE processing_status = '{}'".format(
-            "player_id",
-            self.players_table_name,
-            status,
-            )
-        # self.logger.info(sql)
-        rows = self.db.execute_sql_return_rows(sql,count)
-        ids = [r[0] for r in rows]
-        # self.logger.info(ids)
-
-        if set_status_of_selected_rows is not None:
-            self.set_status_of_player_ids(ids,set_status_of_selected_rows)
-        
-        self.db.commit()
-        return ids
     
     def set_games_priority(self):
         
@@ -504,12 +343,115 @@ class BoardGameArenaDatabaseOperations():
         self.db.execute_sql(sql)
         self.db.commit()
 
-    def players_recover_busy_status(self):
+    def repair_busy_status_to_todo(self):
         # anomalous rows that are still at busy even when all process finished need to be reset
-        player_ids = self.get_player_ids(None,"BUSY",None)
-        self.set_status_of_player_ids(player_ids,"TODO")
+        while True:
+            player_ids = self.get_player_ids("BUSY_SCRAPING")
 
-   
+            if len(player_ids) == 0:
+                return 
+                
+            for player_id in player_ids:
+                self.update_player_status(player_id, "TO_BE_SCRAPED", False)
+            self.db.commit()
+  
+    def get_player_id_from_name(self, player_name):
+        sql_base = ''' SELECT "player_id" FROM players WHERE {} = "{}";'''.format(
+            "player_name",
+            player_name,
+            )
+
+        sql = sql_base
+
+        rows = self.db.execute_sql_return_rows(sql)
+
+        if len(rows)>1:
+            self.logger.error("More than one id for name: {} ({})".format(
+                player_name,
+                rows,
+                ))
+
+        if len(rows)==0:
+            self.logger.warning("Player {} not found in db. ".format(
+                player_name,
+                ))
+            return None
+
+        return rows[0][0]
+
+    def get_player_ids(self, status=None, count=None):
+        if status is not None:
+            if status not in PLAYER_STATUSES:
+                self.logger.error("Illegal status {}".format(status))
+                return
+            sql_player_status = '''WHERE player_status = "{}"'''.format(status)
+
+        else:
+            sql_player_status = ""
+
+        if count is None:
+            count = ""
+        else:
+            count = "LIMIT {}".format(count)
+
+        sql_base = ''' SELECT * FROM players {} {};'''.format(
+            sql_player_status,
+            count,
+            )
+
+        sql = sql_base
+
+        rows = self.db.execute_sql_return_rows(sql)
+
+        players = {}
+        for row in rows:
+            players[row[0]] = {"name":row[1]}
+
+        return players
+
+    def update_player_status(self, player_id, player_status, commit):
+        if player_status not in PLAYER_STATUSES:
+            raise PlayerStatusNotFound
+         
+        sql = "UPDATE '{}' SET player_status = '{}' WHERE player_id = {}".format(
+            self.players_table_name,
+            player_status,
+            player_id,
+            )
+
+        self.db.execute_sql(sql)
+        if commit:
+            self.commit()
+
+    def add_player(self, player_id, player_name, player_status, commit):
+        if player_status not in PLAYER_STATUSES:
+            raise PlayerStatusNotFound
+        
+        # check if player already exists
+        
+
+        sql_base = ''' INSERT OR IGNORE INTO {} (player_id, player_name,player_status)
+                        VALUES ({},"{}","{}");'''.format(
+            self.players_table_name,
+            player_id,
+            player_name,
+            player_status,
+            )
+
+        sql = sql_base
+
+        self.db.execute_sql(sql)
+
+        if commit:
+            self.commit()
+
+    def update_players_from_games(self):
+        players = self.get_players_from_games()
+        for id,name in players.items():
+            self.add_player( id, name, "TO_BE_SCRAPED", False)
+        self.commit()
+
+
     def fill_in_games_data_from_player(self):
 
         # get player stats
@@ -640,7 +582,6 @@ class BoardGameArenaDatabaseOperations():
                     ))
         self.commit()     
 
-
     def complete_player_data_from_games(self):
 
         # lowest timestamp
@@ -741,6 +682,129 @@ class BoardGameArenaDatabaseOperations():
 
     def elo_max_average_per_player(self):
         pass
+
+
+    def get_game_ids_for_player(self, player_id):
+        player_id = int(player_id)
+        sql = """SELECT table_id FROM games WHERE player_1_id = {0} OR player_2_id = {0};""".format(player_id)
+        
+        rows = self.db.execute_sql_return_rows(sql)
+        ids = [r[0] for r in rows]
+        return ids
+    
+    def get_and_mark_game_ids_for_player(self, player_id, count=None, set_status="BUSY"):
+        player_id = int(player_id)
+        sql = """SELECT table_id FROM games_per_player WHERE (player_id_scraped_player = {0}) AND (download_status is null) LIMIT {1};""".format(
+            player_id,
+            count,
+            )
+
+        self.logger.info(sql)
+
+        rows = self.db.execute_sql_return_rows(sql)
+
+        if count is not None:
+            ids = [r[0] for r in rows [:count]]
+        else:
+            ids = [r[0] for r in rows]
+        
+        self.logger.info("ids: {} , set status: {}".format(
+            ids,
+            set_status,
+            ))
+
+        self.set_status_of_game_ids(ids, set_status)
+
+        return ids
+
+    def max_elo_per_player(self):
+        # check for elo at games (it's not perfect, but should do the trick)
+        # add to player.
+        pass
+
+    def set_other_player_elo_per_game(self):
+        # I should download this.... , but the alternative is to take the other players elo (or maybe the elo at the nearest closed table id !...)
+        # YES! DOWNLOAD! Will be so much more straight forward!
+        
+        pass
+
+    def generate_game_importance_score(self):
+        # multiply elo player 1 with elo player 2
+        #  
+        pass
+
+    def set_game_process_status(self, table_id):
+        # update status
+
+        pass
+  
+    def get_players_from_games(self):
+        sql_base = ''' SELECT * FROM {};'''.format( 
+            self.games_per_player_table_name,
+            )
+
+        sql = sql_base
+
+        rows = self.db.execute_sql_return_rows(sql)
+
+        players = {}
+        for row in rows:
+            # player id:name pair
+            players[row[3]] = row[5]
+            players[row[4]] = row[6]
+
+        return players
+    
+    def add_game_metadata(self, table_id, metadata, commit):
+
+        # check and prepare the data
+        columns = []
+        values = []
+
+        table_columns_data = game_metadata_by_player_columns
+        possible_column_names = table_columns_data.keys()
+        for column,value in metadata.items():
+            if column not in possible_column_names:
+                raise UnexpectedColumnNameException
+
+            if value is None:
+                # reaction to error thrown. I presume things changed on website over time.....
+                value = str(None)
+
+            if table_columns_data[column] is str:
+                values.append("\"{}\"".format(value))
+                
+            elif table_columns_data[column] is int:
+                if value is None or value == "None":
+                    value = "NULL"
+                values.append(value)
+                
+            else:
+                raise UnexpectedColumnTypeException
+
+            columns.append(column)
+        try:
+            columns = ",".join(columns)
+            values = ",".join(values)
+        except Exception as e:
+            self.logger.error("error converting {} to string. ({})".format(
+                values,
+                e,
+                ))
+            raise
+
+        # sql command
+        sql = ''' INSERT OR IGNORE INTO {} ({})
+                        VALUES ({});'''.format(
+            self.games_per_player_table_name,
+            columns,
+            values,
+            )
+
+        self.db.execute_sql(sql)
+
+        if commit:
+            self.commit()
 
     # def game_count_per_player_fast(self):
     #     # go over all games.
@@ -864,236 +928,6 @@ class BoardGameArenaDatabaseOperations():
     #         ))
 
     #     return True
-
-    def get_game_ids_for_player(self, player_id):
-        player_id = int(player_id)
-        sql = """SELECT table_id FROM games WHERE player_1_id = {0} OR player_2_id = {0};""".format(player_id)
-        
-        rows = self.db.execute_sql_return_rows(sql)
-        ids = [r[0] for r in rows]
-        return ids
-    
-    def get_and_mark_game_ids_for_player(self, player_id, count=None, set_status="BUSY"):
-        player_id = int(player_id)
-        sql = """SELECT table_id FROM games WHERE (player_1_id = {0} OR player_2_id = {0}) AND (download_status is null) LIMIT {1};""".format(
-            player_id,
-            count,
-            )
-
-        rows = self.db.execute_sql_return_rows(sql)
-
-        if count is not None:
-            ids = [r[0] for r in rows [:count]]
-        else:
-            ids = [r[0] for r in rows]
-        
-        self.set_status_of_game_ids(ids, set_status)
-
-        return ids
-
-    def max_elo_per_player(self):
-        # check for elo at games (it's not perfect, but should do the trick)
-        # add to player.
-        pass
-
-    def set_other_player_elo_per_game(self):
-        # I should download this.... , but the alternative is to take the other players elo (or maybe the elo at the nearest closed table id !...)
-        # YES! DOWNLOAD! Will be so much more straight forward!
-        
-        pass
-
-    def generate_game_importance_score(self):
-        # multiply elo player 1 with elo player 2
-        #  
-        pass
-
-    def set_game_process_status(self, table_id):
-        # update status
-
-        pass
-
-  
-    # def get_sequences(self, desired_status, level, count, mark_as_in_progress=False):
-        
-    #     table_name = self.level_to_table_name(level)
-        
-    #     with self.db.conn:
-    #         sql = " SELECT * from '{}' where status = {} LIMIT {}".format(
-    #                 table_name,
-    #                 desired_status,
-    #                 count,
-    #                 )
-
-    #         rows = self.db.execute_sql_return_rows(sql)
-    #         sequences = []
-    #         for row in rows:
-    #             sequence = self.str_to_sequence(row[1])
-    #             sequences.append(sequence)
-
-    #         if mark_as_in_progress:
-    #             self.change_statuses(sequences, TESTING_IN_PROGRESS, True)
-
-    #         return sequences
-
-    # def get_games_from_player_id(self, player_id, count, mark_as_in_progress=False):
-
-        # get table_id
-        # mark status as busy (downloading) 
-
-            
-        
-
-        # with self.db.conn:
-        #     sql = " SELECT table_id from '{}' where (player_1_id={} OR player_2_id={})".format(
-        #             self.games_table_name,
-        #             )
-
-        #     rows = self.db.execute_sql_return_rows(sql)
-        #     sequences = []
-        #     for row in rows:
-        #         sequence = self.str_to_sequence(row[1])
-        #         sequences.append(sequence)
-
-        #     if mark_as_in_progress:
-        #         self.change_statuses(sequences, TESTING_IN_PROGRESS, True)
-
-        #     return sequences
-  
-    def get_players_from_games(self):
-        sql_base = ''' SELECT * FROM {};'''.format( 
-            self.games_per_player_table_name,
-            )
-
-        sql = sql_base
-
-        rows = self.db.execute_sql_return_rows(sql)
-
-        players = {}
-        for row in rows:
-            # player id:name pair
-            players[row[3]] = row[5]
-            players[row[4]] = row[6]
-
-        return players
-
-    def get_players_by_status(self, status, quantity=None):
-
-        self.logger.info("coming here for status player get: {}".format(
-            status,
-            ))
-
-        if quantity is None:
-            quantity = ""
-        else:
-            quantity = "LIMIT {}".format(quantity)
-
-        sql_base = ''' SELECT * FROM players WHERE player_status = "{}" {};'''.format(
-            status,
-            quantity,
-            )
-
-        sql = sql_base
-
-        rows = self.db.execute_sql_return_rows(sql)
-
-        players = {}
-        for row in rows:
-            players[row[0]] = row[1]
-
-        return players
-
-    def update_player_status(self, player_id, player_status, commit):
-        if player_status not in PLAYER_STATUSES:
-            raise PlayerStatusNotFound
-         
-        sql = "UPDATE '{}' SET player_status = '{}' WHERE player_id = {}".format(
-            self.players_table_name,
-            player_status,
-            player_id,
-            )
-
-        self.db.execute_sql(sql)
-        if commit:
-            self.commit()
-
-    def add_player(self, player_id, player_name, player_status, commit):
-        if player_status not in PLAYER_STATUSES:
-            raise PlayerStatusNotFound
-        
-        # check if player already exists
-        
-
-        sql_base = ''' INSERT OR IGNORE INTO {} (player_id, player_name,player_status)
-                        VALUES ({},"{}","{}");'''.format(
-            self.players_table_name,
-            player_id,
-            player_name,
-            player_status,
-            )
-
-        sql = sql_base
-
-        self.db.execute_sql(sql)
-
-        if commit:
-            self.commit()
-
-    def update_players_from_games(self):
-        players = self.get_players_from_games()
-        for id,name in players.items():
-            self.add_player( id, name, "TO_BE_SCRAPED", False)
-        self.commit()
-
-    def add_game_metadata(self, table_id, metadata, commit):
-
-        # check and prepare the data
-        columns = []
-        values = []
-
-        table_columns_data = game_metadata_by_player_columns
-        possible_column_names = table_columns_data.keys()
-        for column,value in metadata.items():
-            if column not in possible_column_names:
-                raise UnexpectedColumnNameException
-
-            if value is None:
-                # reaction to error thrown. I presume things changed on website over time.....
-                value = str(None)
-
-            if table_columns_data[column] is str:
-                values.append("\"{}\"".format(value))
-                
-            elif table_columns_data[column] is int:
-                if value is None or value == "None":
-                    value = "NULL"
-                values.append(value)
-                
-            else:
-                raise UnexpectedColumnTypeException
-
-            columns.append(column)
-        try:
-            columns = ",".join(columns)
-            values = ",".join(values)
-        except Exception as e:
-            self.logger.error("error converting {} to string. ({})".format(
-                values,
-                e,
-                ))
-            raise
-
-        # sql command
-        sql = ''' INSERT OR IGNORE INTO {} ({})
-                        VALUES ({});'''.format(
-            self.games_per_player_table_name,
-            columns,
-            values,
-            )
-
-        self.db.execute_sql(sql)
-
-        if commit:
-            self.commit()
 
     # def add_sequences(self, sequences, status, commit=True):
     #     # all sequences are assumed to have the same lenght (aka for the same level)
@@ -1324,7 +1158,7 @@ if __name__ == '__main__':
     # print(db.get_games_for_player(85054430))
 
     # db.add_player("12345","lode","TEST",True)
-    # print( list(db.get_players_by_status("TEST",1))[0])
+    # print( list(db.get_player_ids("TEST",1))[0])
     # db.update_player_status(1233, "TEST2", True)
-    # print(db.get_players_by_status("TO_BE_SCRAPEDff",1))
+    # print(db.get_player_ids("TO_BE_SCRAPEDff",1))
     # db.update_players_from_games()
