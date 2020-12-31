@@ -34,13 +34,14 @@ class BoardGameArenaScraper:
     
     # Initialize a Game object from the html "logs" of a BGA game
     def __init__(self, email=None, password=None, db_path=None, logger=None):
-
+        
         self.logger = logger or logging.getLogger(__name__)
         self.logger.info("BoardGameArenaScraper Logging init.  ".format(
         ))
+       
         
         if db_path is not None:
-            self.db = bga_scraping_database_operations.BoardGameArenaDatabaseOperations(db_path,logger)
+            self.db = bga_scraping_database_operations.BoardGameArenaDatabaseOperations(db_path,self.logger)
             self.logger.info('database set up: {}'.format(
                 db_path,
                 )) 
@@ -193,16 +194,17 @@ class BoardGameArenaScraper:
             games_meta_data.append(game_meta_data)
         return games_meta_data
 
-    def scrape_all_players_to_be_scraped_metadata(self, do_hanging_to_be_scraped_players=False):
+    def scrape_all_players_to_be_scraped_metadata(self):
 
         while True:
-            if do_hanging_to_be_scraped_players:
-                scrapee_data = self.db.get_players_by_status("BUSY_SCRAPING",1)
-            else:
-                scrapee_data = self.db.get_players_by_status("TO_BE_SCRAPED",1)
+            status = "TO_BE_SCRAPED"
 
+            scrapee_data = self.db.get_players_by_status(status,1)
+            
             if len(scrapee_data) == 0:
-                self.logger.info("No more players to be scraped in table 'players'")
+                self.logger.info("No more players to be scraped in table 'players' with status: {}".format(
+                    status,
+                    ))
                 return 
 
             # get a player to be scraped
@@ -211,15 +213,27 @@ class BoardGameArenaScraper:
             # scrape his games
             self.scrape_player_games_metadata(scrapee_player_id)
 
-    def scrape_all_players_and_keep_updating_players(self, start_empty=False, clean_up_leftover_busy_states=False):
+    def repair_busy_status_to_todo(self):
+        while True:
+            player_ids = self.db.get_players_by_status("BUSY_SCRAPING")
+
+            if len(player_ids) == 0:
+                return 
+                
+            for player_id in player_ids:
+                self.db.update_player_status(player_id, "TO_BE_SCRAPED", False)
+            self.db.commit()
+
+    def scrape_all_players_and_keep_updating_players(self, start_empty=False):
 
         # on new database, no players yet, we have to kickstart it.
         if start_empty:
             # 84401637
             self.scrape_player_games_metadata(84401637)
+
         while True:
             # do all players
-            self.scrape_all_players_to_be_scraped_metadata(False)
+            self.scrape_all_players_to_be_scraped_metadata()
             
             # save all new players
             self.db.update_players_from_games()
@@ -227,15 +241,7 @@ class BoardGameArenaScraper:
             # check if there are players to be scraped
             if len(self.db.get_players_by_status("TO_BE_SCRAPED",1)) == 0:
                 self.logger.info("No players TO_BE_SCRAPED left")
-
-                if (clean_up_leftover_busy_states):
-                    if (len(self.db.get_players_by_status("BUSY_SCRAPING",1)) == 0):
-                        self.scrape_all_players_to_be_scraped_metadata(True)
-                        self.logger.info("Checked left over BUSY_SCRAPING players, ok. noone left hanging.")
-                        return 
-                else:
-
-                    return
+                return
     
     def parse_scraped_gamedata(self, raw, table_id):
 
@@ -463,7 +469,7 @@ def logging_setup(level = logging.INFO, log_path = None, new_log_file_creation="
     message_format =  logging.Formatter('%(threadName)s\t%(levelname)s\t%(asctime)s\t:\t%(message)s\t(%(module)s/%(funcName)s/%(lineno)d)')
    
     if flask_logger is None:
-        logger = logging.getLogger(__name__)
+        logger = logging.getLogger(__name__)  # will resort to name  __main__
     else:
         # flask has its own logger (app.logger)
         logger = flask_logger
@@ -532,10 +538,13 @@ def scrape_game_metadata(logger, start_empty=False, clean_up_busy_states=False):
     # bga = BoardGameArenaScraper("lode"+"ameije"+"@"+"gma" + "il.com", "sl"+  "8" + "af" + "val")
     bga = BoardGameArenaScraper(id, pwd, db_path= db_path , logger=logger)
 
+    if clean_up_busy_states:
+        bga.repair_busy_status_to_todo()
+
     try:
         # init (log in )
         bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd", Path(DATA_BASE_PATH, r"bga_quoridor_data.db"))
-        bga.scrape_all_players_and_keep_updating_players(start_empty, clean_up_busy_states)
+        bga.scrape_all_players_and_keep_updating_players(start_empty)
 
     except Exception as e:
         logger.error("Error in main thread during scraping. {} ".format(e), exc_info=True)
@@ -566,7 +575,7 @@ def all_game_data_by_playerid(logger, player_id):
     return all_parsed_games
 
 def get_gamedata(logger, table_ids,download_delay_seconds=30):
-    bga = BoardGameArenaScraper("sun"+"setonalo"+"nely.bea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
+    bga = BoardGameArenaScraper("sun"+"setonalo"+"nely.bea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd", logger=logger)
     # bga = BoardGameArenaScraper("sun"+"setonalo"+"nelybea" + "ch"+"@"+"gma" + "il.com", "w8"+  "w" + "oo" + "rd")
     # bga = BoardGameArenaScraper("lode"+"ameije"+"@"+"gma" + "il.com", "sl"+  "8" + "af" + "val")
 
@@ -580,7 +589,10 @@ if __name__ == "__main__":
     logger = logging_setup(logging.INFO, Path(DATA_BASE_PATH,  r"logs", "bga_scrape_quoridor.log"), "SESSION" )
     
     # get as much games data and players data as possible
+    print(logger)
     scrape_game_metadata(logger, False, True)
+    
+
     
     
     

@@ -247,7 +247,7 @@ class BoardGameArenaDatabaseOperations():
         self.logger = logger or logging.getLogger(__name__)
         self.logger.info("BoardGameArena scraper database operations. init.".format(
             ))
-
+       
         self.db_path = db_path
         self.players_table_name = "players"
         self.games_table_name = "games"
@@ -260,9 +260,8 @@ class BoardGameArenaDatabaseOperations():
         self.create_game_metadata_by_player_table()
 
     def db_connect(self, db_path):
-        self.db = DatabaseSqlite3Actions( db_path)
+        self.db = DatabaseSqlite3Actions( db_path, self.logger)
 
-        
     def create_games_table(self):
         base_sql = """CREATE TABLE IF NOT EXISTS {} (
             table_id INTEGER PRIMARY KEY,
@@ -978,6 +977,11 @@ class BoardGameArenaDatabaseOperations():
         return players
 
     def get_players_by_status(self, status, quantity=None):
+
+        self.logger.info("coming here for status player get: {}".format(
+            status,
+            ))
+
         if quantity is None:
             quantity = ""
         else:
