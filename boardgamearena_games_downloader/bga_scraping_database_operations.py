@@ -20,7 +20,7 @@ PLAYER_STATUSES = ["TEST", "UP_TO_DATE", "TO_BE_SCRAPED", "TEST2", "BUSY_SCRAPIN
 GAME_SCRAPE_STATUSES = ["BUSY_SCRAPING", "TO_BE_SCRAPED", "SCRAPED", ""]
 OPERATION_STATUSES = ["TODO", "BUSY", "DONE"]
 
-DATA_BASE_PATH = r"C:\Data\Generated_program_data\boardgamearena_quoridor_scraper"
+DATABASE_PATH = r"C:\Data\Generated_program_data\boardgamearena_quoridor_scraper"
 
 DATATYPE_TO_SQL_DATATYPE= {
     int:"INTEGER",
@@ -52,32 +52,45 @@ game_metadata_by_player_columns = {
 }
 
 games_table_columns = {
-    "table_with_player_id":int,
     "table_id":int,
-    "download_status":str,
+    
     "player_1_id":int,
     "player_2_id":int,
-    # "player_1_name":str,
-    # "player_2_name":str,
+    "player_1_name":str,
+    "player_2_name":str,
     "moves_bga_notation":str,
     "moves_lode_notation":str,
     "thinking_times":str,
+    "thinking_times":str,
     "total_time":str,
     "game_quality":str,
-    # "time_start":int,
-    # "time_end":int,
+    "time_start":int,
+    "time_end":int,
     "concede":int,
     "unranked":int,
     "normalend":int,
-    # "player_1_score":int,
-    # "player_2_score":int,
-    # "player_1_rank":int,
-    # "player_2_rank":int,
-    # "elo_after":int,
-    # "elo_win":int,
-    # "player_id_scraped_player":int,
+    "player_1_score":int,
+    "player_2_score":int,
+    "player_1_rank":int,
+    "player_2_rank":int,
     "players_count":int,
+
+    "thinking_times":str,
+    "absolute_timestamps":str,
+    "reflexion_time_delta":int,
+    "reflexion_time_max":int,
+    "starting_player":int,
+    "non_starting_player":int,
+    "elo_after_player_1":int,
+    "elo_after_player_2":int,
+    "elo_win_player_1":int,
+    "elo_win_player_2":int,
+
+    "download_status":str,
+    "process_state":str,
 }
+
+
 # games_table_columns = {
 #     "table_id":int,
 #     "download_status":str,
@@ -125,39 +138,6 @@ class BoardGameArenaDatabaseOperations():
     def db_connect(self, db_path):
         self.db = sqlite3_operations.DatabaseSqlite3Actions( db_path, self.logger)
 
-    def create_games_table(self):
-        base_sql = """CREATE TABLE IF NOT EXISTS {} (
-            table_id INTEGER PRIMARY KEY,
-            download_status TEXT,
-            player_1_id INTEGER ,
-            player_2_id INTEGER ,
-            player_1_name INTEGER,
-            player_2_name INTEGER,
-            moves_bga_notation TEXT,
-            moves_lode_notation TEXT,
-            thinking_times TEXT,
-            total_time TEXT,
-            game_quality TEXT,
-            time_start INTEGER,
-            time_end INTEGER,
-            concede INTEGER,
-            unranked INTEGER,
-            normalend INTEGER,
-            player_1_score INTEGER,
-            player_2_score INTEGER,
-            player_1_rank INTEGER,
-            player_2_rank INTEGER,
-            elo_after INTEGER,
-            elo_win INTEGER,
-            player_id_scraped_player INTEGER,
-            players_count INTEGER
-
-        );""".format(self.games_table_name)
-
-
-        self.db.execute_sql(base_sql)
-        self.commit()
-    
     def prepare_columns_data_for_sql(self, table_columns_dict, primary_key_column_name):
 
         columns = []
@@ -203,6 +183,58 @@ class BoardGameArenaDatabaseOperations():
 
     def commit(self):
         self.db.commit()
+
+    def create_games_table(self):
+
+        col_str = self.prepare_columns_data_for_sql(games_table_columns, "table_id")
+         
+
+        sql = """CREATE TABLE IF NOT EXISTS {} {};""".format(
+            self.games_table_name,
+            col_str,
+            )
+
+        self.db.execute_sql(sql)
+        self.commit()
+
+    def add_game(self, game_data):
+        # game_data is a dict with all game data
+        self.db.add_record(self.games_table_name, game_data, True)
+
+    def get_game_metadata(self, id):
+        sql = """SELECT * FROM {} WHERE {}=={};""".format(
+            self.games_per_player_table_name,
+            "table_id",
+            id,
+            )
+
+        rows = self.db.execute_sql_return_rows(sql)
+
+        game_meta_data = {}
+        for row in rows:
+
+            # convert to dict
+            for i,column_name in enumerate(list(game_metadata_by_player_columns)):
+                column_type_convert = game_metadata_by_player_columns[column_name]
+                game_meta_data[column_name] = column_type_convert(row[i])
+
+            if game_meta_data["player_id_scraped_player"] == game_meta_data["player_1_id"]:
+                game_meta_data["elo_after_player_1"] = game_meta_data["elo_after"]
+                game_meta_data["elo_win_player_1"] = game_meta_data["elo_win"]
+
+            elif game_meta_data["player_id_scraped_player"] == game_meta_data["player_2_id"]:
+                game_meta_data["elo_after_player_2"] = game_meta_data["elo_after"]
+                game_meta_data["elo_win_player_2"] = game_meta_data["elo_win"]
+
+            else:
+                self.logger("should be player_1 or player_2.. but non found.")
+                raise Exception 
+
+        del game_meta_data["elo_win"]
+        del game_meta_data["elo_after"]
+        del game_meta_data["table_with_player_id"]
+        del game_meta_data["player_id_scraped_player"]
+        return game_meta_data
 
     def set_status_of_game_ids(self, ids, status="BUSY"):
 
@@ -250,7 +282,6 @@ class BoardGameArenaDatabaseOperations():
 
         return ids
 
-    
     def set_games_priority(self):
         
         # for every player number of games time elo ranking! 
@@ -273,53 +304,6 @@ class BoardGameArenaDatabaseOperations():
         # create sql to set game importance
 
         pass
-
-    def fill_in_games_data(self):
-        # get games
-
-        # timestamp
-
-        # restriction = "WHERE games_played=100"
-        restriction = ""
-
-        # get games data
-        sql = "SELECT table_id, time_start, time_end FROM {} {}".format(
-            self.games_table_name,
-            restriction,
-        )
-        self.logger.info(sql)
-        rows = self.db.execute_sql_return_rows(sql)
-
-        games_data = defaultdict(dict)
-        
-        # process data
-        for table_id, timestamp_start, timestamp_end in rows:
-           
-            games_data[table_id]["time_start_ISO"] = datetime.datetime.fromtimestamp(timestamp_start).strftime("%Y.%m.%d-%H.%M.%S")
-            games_data[table_id]["time_end_ISO"] = datetime.datetime.fromtimestamp(timestamp_end).strftime("%Y.%m.%d-%H.%M.%S")
-
-        self.db.add_column_to_existing_table("games","time_start_ISO", "TEXT", "null")
-        self.db.add_column_to_existing_table("games","time_end_ISO", "TEXT", "null")
-        
-        # write every games's stats
-        number_of_games = len(list(games_data))
-        for i, (table_id, data) in enumerate(games_data.items()):
-            # add to table
-            sql = "UPDATE '{}' SET time_start_ISO='{}', time_end_ISO='{}' WHERE table_id = {}".format(
-            self.games_table_name,
-            data["time_start_ISO"],
-            data["time_end_ISO"],
-            table_id,
-            )
-
-            self.db.execute_sql(sql)
-            if i%1000 == 0:
-                self.logger.info("{} ({}/{})".format(
-                    table_id,
-                    i+1,
-                    number_of_games,
-                    ))
-        self.commit()     
 
     def set_status_of_player_ids(self, ids, status="BUSY"):
 
@@ -354,7 +338,21 @@ class BoardGameArenaDatabaseOperations():
             for player_id in player_ids:
                 self.update_player_status(player_id, "TO_BE_SCRAPED", False)
             self.db.commit()
-  
+
+    def normalize_player_to_player_id(self, player):
+        # player can be given as int (for the id) or string (id as string or player_name)
+        try:
+            player_id = int(player)
+
+        except Exception as e:
+            player_id = self.get_player_id_from_name(player)
+            if player_id is None:
+                self.logger.error("Could not get player id from name ({})".format(
+                    player,
+                    ))
+                return None 
+        return player_id
+                
     def get_player_id_from_name(self, player_name):
         sql_base = ''' SELECT "player_id" FROM players WHERE {} = "{}";'''.format(
             "player_name",
@@ -427,9 +425,6 @@ class BoardGameArenaDatabaseOperations():
         if player_status not in PLAYER_STATUSES:
             raise PlayerStatusNotFound
         
-        # check if player already exists
-        
-
         sql_base = ''' INSERT OR IGNORE INTO {} (player_id, player_name,player_status)
                         VALUES ({},"{}","{}");'''.format(
             self.players_table_name,
@@ -451,82 +446,7 @@ class BoardGameArenaDatabaseOperations():
             self.add_player( id, name, "TO_BE_SCRAPED", False)
         self.commit()
 
-
-    def fill_in_games_data_from_player(self):
-
-        # get player stats
-        # get all games 
-        # applying player stats
-        # get games data
-        
-        # restriction = "WHERE games_played=100"
-        restriction = ""
-        # get player data
-        sql = "SELECT player_id, games_played, avg_elo_games_count_mult, high_elo_games_count_mult FROM {} {}".format(
-            self.players_table_name,
-            restriction,
-        )
-        player_rows = self.db.execute_sql_return_rows(sql)
-
-        players_strength_data = {id:(count,avg,high) for id,count,avg,high in player_rows}
-
-        # self.logger.info(players_strength_data[9668513])
-        
-        # get games data
-        sql = "SELECT table_id, player_1_id, player_2_id FROM {} {}".format(
-            self.games_table_name,
-            restriction,
-        )
-        rows = self.db.execute_sql_return_rows(sql)
-
-        games_data = defaultdict(dict)
-
-         # process data
-        for table_id, player_1, player_2 in rows:
-            try:
-                # print(table_id)
-                count1,avg1, high1 = players_strength_data[int(player_1)]
-                count2,avg2, high2 = players_strength_data[int(player_2)]
-            except Exception as e:
-                # self.logger.warning("error: most probably, one of the players is not known in the database. {}".format(e), exc_info=True)
-                continue
-
-            avg_total = avg1*avg2
-            high_total = high1*high2
-            count_total = count1*count2
-
-            games_data[table_id] = (count_total, avg_total, high_total)
-        
-        self.db.add_column_to_existing_table("games","game_quality_count", "INT", "null")
-        self.db.add_column_to_existing_table("games","game_quality_eloavg", "INT", "null")
-        self.db.add_column_to_existing_table("games","game_quality_elohigh", "INT", "null")
-        
-        # self.db.add_column_to_existing_table("games","game_quality_gamesplayed", "TEXT", "null")
-
-        # write every player's stats
-        number_of_games = len(list(games_data))
-        self.logger.info("number of games to be checked: {}".format(number_of_games))
-        for i, (table_id,  (count_total, avg_total, high_total)) in enumerate(games_data.items()):
-            # add to table
-            sql = "UPDATE '{}' SET game_quality_count={}, game_quality_eloavg={}, game_quality_elohigh={} WHERE table_id = {}".format(
-            self.games_table_name,
-            count_total,
-            avg_total,
-            high_total,
-            # data["game_quality_count"],
-            # data["game_quality_eloavg"],
-            # data["game_quality_elohigh"],
-            table_id,
-            )
-
-            self.db.execute_sql(sql)
-            if i%1000 == 0:
-                self.logger.info("{} ({}/{})".format(
-                    table_id,
-                    i+1,
-                    number_of_games,
-                    ))
-        self.commit()     
+    
 
     def fill_in_player_data(self):
         # get players
@@ -683,14 +603,25 @@ class BoardGameArenaDatabaseOperations():
     def elo_max_average_per_player(self):
         pass
 
-
-    def get_game_ids_for_player(self, player_id):
-        player_id = int(player_id)
-        sql = """SELECT table_id FROM games WHERE player_1_id = {0} OR player_2_id = {0};""".format(player_id)
+    def get_game_ids_for_player_confrontations(self, player_id_1, player_id_2):
+        # from raw scraped data
+        sql = """SELECT table_id FROM {0} WHERE (player_1_id = {2} OR player_1_id = {1}) AND (player_2_id = {2} OR player_2_id = {1});""".format(
+            "games_per_player",
+            player_id_1,
+            player_id_2,
+            )
         
         rows = self.db.execute_sql_return_rows(sql)
         ids = [r[0] for r in rows]
         return ids
+    
+    # def get_game_ids_for_player(self, player_id):
+    #     player_id = int(player_id)
+    #     sql = """SELECT table_id FROM games WHERE player_1_id = {0} OR player_2_id = {0};""".format(player_id)
+        
+    #     rows = self.db.execute_sql_return_rows(sql)
+    #     ids = [r[0] for r in rows]
+    #     return ids
     
     def get_and_mark_game_ids_for_player(self, player_id, count=None, set_status="BUSY"):
         player_id = int(player_id)
@@ -1121,7 +1052,7 @@ def logging_setup(level = logging.INFO, log_path = None, new_log_file_creation="
     return logger
 if __name__ == '__main__':
     
-    logger = logging_setup(logging.INFO, Path(DATA_BASE_PATH,  r"logs", "bga_scraping_database_operations.log"), "SESSION" )
+    logger = logging_setup(logging.INFO, Path(DATABASE_PATH,  r"logs", "bga_scraping_database_operations.log"), "SESSION" )
 
     # db_name = "bga_quoridor_data.db"
     # db_name = "TESTING_bga_quoridor_data.db"
@@ -1131,7 +1062,7 @@ if __name__ == '__main__':
 
 
     
-    db_path = Path( DATA_BASE_PATH,
+    db_path = Path( DATABASE_PATH,
         db_name,
         )
     

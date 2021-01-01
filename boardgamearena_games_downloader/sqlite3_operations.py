@@ -126,4 +126,28 @@ class DatabaseSqlite3Actions():
         except Exception as e:
             self.logger.error("didn't add column work. {}".format(e,),exc_info=True)
 
+    def add_record(self, table_name, col_value_dict, commit=True):
+
+        cols = []
+        vals = []
+        for col, val in col_value_dict.items():
+            cols.append(col)
+            if type(val) is str:
+                vals.append(r'"{}"'.format(val))
+            else:
+                vals.append(str(val))
+
+        print(",".join(cols))
+        print(",".join(vals))
+        sql = ''' INSERT OR IGNORE INTO {} ({})
+                        VALUES ({});'''.format(
+            table_name,
+            ",".join(cols),
+            ",".join(vals),
+            )
+
+        self.execute_sql(sql)
+
+        if commit:
+            self.commit()
     

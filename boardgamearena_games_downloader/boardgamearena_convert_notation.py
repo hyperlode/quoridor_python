@@ -1,3 +1,8 @@
+
+import sys
+import os.path
+sys.path.append(
+    os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))  # make modules one level up discoverable
 import quoridor
 import logging
 
@@ -18,7 +23,7 @@ positions_to_notations = {(0,-2):"SS",
 
 
 
-def bga_moves_to_relative(previous_bga_position, current_bga_position):
+def bga_moves_to_relative(previous_bga_position, current_bga_position, logger=None):
 
     # get horizontal movement
     horizontal_movement = ord(current_bga_position[0]) - ord(previous_bga_position[0])
@@ -38,11 +43,11 @@ def bga_moves_to_relative(previous_bga_position, current_bga_position):
     
     return positions_to_notations[(horizontal_movement, vertical_movement)]
     
-def isolate_player_moves(moves, player_1_else_player_2):
+def isolate_player_moves(moves, player_1_else_player_2, logger=None):
     if player_1_else_player_2:
-        moves_player_isolated = [m for i,m in enumerate(bga) if i%2==0 ]
+        moves_player_isolated = [m for i,m in enumerate(moves) if i%2==0 ]
     else:
-        moves_player_isolated = [m for i,m in enumerate(bga) if i%2!=0 ]
+        moves_player_isolated = [m for i,m in enumerate(moves) if i%2!=0 ]
 
     only_moves = filter_out_walls(moves_player_isolated)
 
@@ -74,24 +79,23 @@ def print_moves_nicely(moves_as_array):
 def test():
 
 
-    print(bga_moves_to_relative("e1", "e2"))
-    print(bga_moves_to_relative("e2", "e1"))
-    print(bga_moves_to_relative("e2", "d2"))
-    print(bga_moves_to_relative("d2", "e2"))
+    print(bga_moves_to_relative("e1", "e2"), logger)
+    print(bga_moves_to_relative("e2", "e1"), logger)
+    print(bga_moves_to_relative("e2", "d2"), logger)
+    print(bga_moves_to_relative("d2", "e2"), logger)
     
-    print(bga_moves_to_relative("e1", "e3"))
-    print(bga_moves_to_relative("e3", "e1"))
-    print(bga_moves_to_relative("e2", "c2"))
-    print(bga_moves_to_relative("d2", "f2"))
+    print(bga_moves_to_relative("e1", "e3"), logger)
+    print(bga_moves_to_relative("e3", "e1"), logger)
+    print(bga_moves_to_relative("e2", "c2"), logger)
+    print(bga_moves_to_relative("d2", "f2"), logger)
 
-    print(bga_moves_to_relative("e1", "d2"))
-    print(bga_moves_to_relative("e1", "f2"))
-    print(bga_moves_to_relative("e2", "d1"))
-    print(bga_moves_to_relative("e2", "f1"))
+    print(bga_moves_to_relative("e1", "d2"), logger)
+    print(bga_moves_to_relative("e1", "f2"), logger)
+    print(bga_moves_to_relative("e2", "d1"), logger)
+    print(bga_moves_to_relative("e2", "f1"), logger)
 
-def convert_game_bga_to_lode(game_bga, return_as_string_else_array=False):
+def convert_game_bga_to_lode(game_bga, return_as_string_else_array=False, logger=None):
     # example of boardgamearena game: "e2 e8 e3 e7 e4 e6 e3h f6h c6h a6h d3v e4h g4v h6h d1v f5h g6v d5h f4 c4v c2h g3h"
-    print(type(game_bga))
     if type(game_bga) is str:
         bga_str = game_bga
         bga_str = bga_str.strip()  # remove leading and trailing whitespace
@@ -108,7 +112,7 @@ def convert_game_bga_to_lode(game_bga, return_as_string_else_array=False):
     
     moves_converted = []
     for m in bga:
-        logger.info("convert move: {}".format(
+        logger.debug("convert move: {}".format(
             m,
             ))
 
@@ -172,7 +176,7 @@ if __name__ == "__main__":
     logger.info(game_to_convert)
     
     data_return_as_string_else_array= False
-    moves_converted = convert_game_bga_to_lode(game_to_convert, data_return_as_string_else_array)
+    moves_converted = convert_game_bga_to_lode(game_to_convert, data_return_as_string_else_array, logger)
 
     csv_string = ",".join(moves_converted)
     
