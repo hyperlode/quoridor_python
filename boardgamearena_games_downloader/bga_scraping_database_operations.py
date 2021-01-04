@@ -440,13 +440,71 @@ class BoardGameArenaDatabaseOperations():
         if commit:
             self.commit()
 
+
+    def get_game_for_analyser(self, table_id):
+
+
+        select_columns = ["table_id", "player_1_id", "player_2_id", "player_1_name", "player_2_name", "moves_lode_notation", "starting_player"]
+        select_columns_str = ",".join(select_columns)
+        sql = "SELECT {} FROM {} WHERE {} = '{}'".format(
+            select_columns_str,
+            self.games_table_name,
+            "table_id",
+            table_id,
+            )
+        rows = self.db.execute_sql_return_rows(sql)
+
+        if len(rows)>1:
+            self.logger.error("more than one table with same id")
+
+        if len(rows) == 0:
+            self.logger.warning("tableid not found. {}".format(
+                table_id,
+                ))
+            return ""
+
+        result_dict = {k:rows[0][i] for i,k in enumerate(select_columns)}
+
+        if result_dict["starting_player"] == result_dict["player_1_id"]:
+            result_dict["starting_player_name"] = result_dict["player_1_name"]
+            result_dict["non_starting_player_name"] = result_dict["player_2_name"]
+
+        elif result_dict["starting_player"] == result_dict["player_2_id"]:
+            result_dict["starting_player_name"] = result_dict["player_2_name"]
+            result_dict["non_starting_player_name"] = result_dict["player_1_name"]
+
+        else:
+            self.logger.error("no valid starting player found {}".format(result_dict))
+            raise ValueError
+
+        # str to be accepted by javascript analyser
+
+        result_str =(
+            "\n"
+            "//--- {} vs {} ---(boardgamearena tableid:{})\n"
+            "var game_moves = {};\n"
+            "var game_id = {};\n"
+            "var starting_player = '{}';\n"
+            "var non_starting_player = '{}';\n"
+            ).format(
+                result_dict["starting_player_name"],
+                result_dict["non_starting_player_name"],
+                result_dict["table_id"],
+                result_dict["moves_lode_notation"],
+                result_dict["table_id"],
+                result_dict["starting_player_name"],
+                result_dict["non_starting_player_name"],
+                )
+
+        return result_str
+
+
+
     def update_players_from_games(self):
         players = self.get_players_from_games()
         for id,name in players.items():
             self.add_player( id, name, "TO_BE_SCRAPED", False)
         self.commit()
-
-    
 
     def fill_in_player_data(self):
         # get players
@@ -1067,6 +1125,8 @@ if __name__ == '__main__':
         )
     
     db = BoardGameArenaDatabaseOperations(db_path, logger)
+
+    logger.info(db.get_game_for_analyser(126298542))
 
     # ids = db.get_and_mark_game_ids_for_player(84306079, 4, "BUSY")
     # db.set_status_of_game_ids(ids,"TODO")

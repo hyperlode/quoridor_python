@@ -251,11 +251,17 @@ class BoardGameArenaScraper:
         cached = True
 
         try:
+
+            available_offline = False
             # Cached? first, check if already existing offline (previously downloaded. )
             game_raw = self.get_offine_gamedata_raw(table_id)
 
             # download if not cached
-            if game_raw is None:
+            if game_raw is not None:
+                available_offline = True
+
+
+            if not available_offline:
                 cached = False
                 total_delay_seconds = download_delay_seconds + random.randint(0,4)
                 self.logger.info("Wait for a delay of {}s...".format(
@@ -271,8 +277,17 @@ class BoardGameArenaScraper:
             if "code" in list(data_json):
                     
                 if data_json["code"] == 100:
-                    self.logger.error("Code 100 received. That means the download failed. {}".format(data_json) )
+                    self.logger.warning("Failed Download. Code 100 received. {}".format(data_json) )
                     
+                    if data_json["expected"] == 1:
+                        # limit reached
+                        # {'status': '0', 'error': 'You have reached a limit (replay)', 'expected': 1, 'code': 100}
+                        pass
+                    elif data_json["expected"] == 0:
+                        # archived table
+                        # {'status': '0', 'error': 'Cannot find gamenotifs log file of an archived table', 'expected': 0, 'code': 100}
+                        pass
+
                     # "code": 100,
                     # "error": "You have reached a limit (replay)",
                     # "expected": 1,
@@ -283,9 +298,9 @@ class BoardGameArenaScraper:
                         data_json["code"],
                         ))
             else:
-                with open(Path(DATABASE_PATH, RAW_GAME_DATA_FOLDER, r"{}.txt".format(table_id)),"w") as f:
-                    f.write(game_raw)
-            # parsed_game_data = self.parse_scraped_gamedata(game_raw, table_id)
+                if not available_offline:
+                    with open(Path(DATABASE_PATH, RAW_GAME_DATA_FOLDER, r"{}.txt".format(table_id)),"w") as f:
+                        f.write(game_raw)
 
         except Exception as e:
             logger.error("error during retrieving and parsing game data from table: {} ({})".format(
@@ -310,13 +325,12 @@ class BoardGameArenaScraper:
 
             self.scrape_game_data_from_table(table_id, download_delay_seconds)
 
-            self.logger.info("Retrieved data from table {} ({}/{}) process time: {:.2f} (total time: {:.2f} after a delay of {}s.))".format(
+            self.logger.info("Table {} game scraped. ({}/{}) process time: {:.2f} (total time: {:.2f} ))".format(
                 table_id,
                 i+1,
                 len(table_ids),
                 time.time() - previous_t,
                 time.time() - start_t,
-                download_delay_seconds,
                 ))
 
             previous_t = time.time()
@@ -495,8 +509,12 @@ if __name__ == "__main__":
     # table_ids = [130697191] 
     FreshPrinceEric_vs_tdhr = [132281453, 131090390, 130750291, 129683879, 125846414, 125845691, 125253474, 125253713, 125252052, 125241359, 125244248, 125240696, 125054355, 125054614, 125051082, 125052651, 125042679, 125041468, 125044076, 125046015, 125048863, 125045003, 125031629, 124977598, 124971037, 124972675, 124977844, 124975263, 124978162, 124971391, 124964829, 118134184, 117872711, 117864158, 106868598, 103539190, 57349388, 57349049, 57348463, 132281453, 131090390, 130750291, 129683879, 125846414, 125845691, 125253474, 125253713, 125252052, 125241359, 125244248, 125240696, 125054355, 125054614, 125051082, 125052651, 125042679, 125041468, 125044076, 125046015, 125048863, 125045003, 125031629, 124977598, 124971037, 124972675, 124977844, 124975263, 124978162, 124971391, 124964829, 118134184, 117872711, 117864158, 106868598, 103539190, 57349388, 57349049, 57348463]
     FreshPrinceEric_vs_slimeB = [131487175, 131483434, 131489182, 131057193, 126298542, 125440437, 125443565, 125442372, 116411253, 116410081, 114039124, 103907195, 101502232, 131487175, 131483434, 131489182, 131057193, 126298542, 125440437, 125443565, 125442372, 116411253, 116410081, 114039124, 103907195, 101502232]
+    drejt_vs_FreshPrinceEric = [123756731, 120420129, 120424617, 120420584, 120211209, 123756731, 120420129, 120424617, 120420584, 120211209]
+    Godalec_vs_FreshPrinceEric = [132205382, 131931995, 131746775, 130763337, 130760506, 130768015, 130764024, 130763421, 130519088, 130515887, 130516537, 130517706, 130516954, 129103235, 129101054, 129100323, 129100832, 127671700, 127664959, 127665319, 127667968, 127663548, 127668397, 127669927, 127663186, 127661416, 127664275, 127669105, 127664064, 127664573, 127663333, 127666352, 127665202, 127667551, 127668490, 127662550, 127004521, 127005900, 126997109, 126990038, 126784619, 126780377, 126782066, 126782015, 126786414, 126788403, 126010725, 126015193, 126011441, 125957083, 125953733, 125951682, 125952222, 125957571, 125957911, 125958910, 125788562, 125781690, 125778465, 125777614, 125777371, 124924544, 124925183, 123131687, 121746607, 121741406, 118212102, 118218361, 118215890, 117159246, 117151575, 116739851, 116733490, 
+        116738230, 116727379, 116728319, 106848359, 132205382, 131931995, 131746775, 130763337, 130760506, 130768015, 130764024, 130763421, 130519088, 130515887, 130516537, 130517706, 130516954, 129103235, 129101054, 129100323, 129100832, 127671700, 127664959, 127665319, 127667968, 127663548, 127668397, 127669927, 127663186, 127661416, 127664275, 127669105, 127664064, 127664573, 127663333, 127666352, 127665202, 127667551, 127668490, 127662550, 127004521, 127005900, 126997109, 126990038, 126784619, 126780377, 126782066, 126782015, 126786414, 126788403, 126010725, 126015193, 126011441, 125957083, 125953733, 125951682, 125952222, 125957571, 125957911, 125958910, 125788562, 125781690, 125778465, 125777614, 125777371, 124924544, 124925183, 123131687, 121746607, 121741406, 118212102, 118218361, 118215890, 117159246, 117151575, 116739851, 116733490, 116738230, 116727379, 116728319, 106848359]
+    table_ids = Godalec_vs_FreshPrinceEric
 
-    table_ids = FreshPrinceEric_vs_slimeB
+
     logger.info(len(table_ids))
     # exit()
     scrape_game_data(bga_instance, table_ids, 3)    

@@ -149,7 +149,9 @@ class ProcessScrapedGames():
             elif t_type == "updateMoves":
                 pass
             else:
-                print(t_type)
+                self.logger.warning("Unknown type: t_type = {}".format(
+                    t_type,
+                    ))
 
             if at_first_move:
 
@@ -185,8 +187,6 @@ class ProcessScrapedGames():
                             ee,
                             ),exc_info=True)
                         self.logger.error(json.dumps(t_data, indent=4, sort_keys=True))
-
-                # print(reflexion)
 
                 reflexion_times.append((reflexion[str(starting_player)],reflexion[str(non_starting_player)]))
 
@@ -291,7 +291,6 @@ class ProcessScrapedGames():
          # process data
         for table_id, player_1, player_2 in rows:
             try:
-                # print(table_id)
                 count1,avg1, high1 = players_strength_data[int(player_1)]
                 count2,avg2, high2 = players_strength_data[int(player_2)]
             except Exception as e:
@@ -408,11 +407,11 @@ if __name__ == "__main__":
     # add to table games (best to delete the table before executing this)
     scrapedGamesAnalyser = ProcessScrapedGames(Path(DATABASE_PATH,DATABASE_NAME), logger)
     
-    table_ids = get_downloaded_raw_game_data_table_ids(logger)
-    scrapedGamesAnalyser.finalize_games(table_ids)
-    # scrapedGamesAnalyser.finalize_game(131487175)
-    # scrapedGamesAnalyser.finalize_game(23864679)
+    
+    # table_ids = get_downloaded_raw_game_data_table_ids(logger)  # from offline downloaded data
+    # scrapedGamesAnalyser.finalize_games(table_ids)  # parse and add to database
     
     # scrapedGamesAnalyser.get_game_ids_for_player_confrontations("tdhr", "FreshPrinceEric")
     # scrapedGamesAnalyser.get_game_ids_for_player_confrontations("slimeB", "FreshPrinceEric")
+    scrapedGamesAnalyser.get_game_ids_for_player_confrontations("Godalec", "FreshPrinceEric")
 
